@@ -56,6 +56,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 /usr/lib/libdtrace-ctf.so*
 /usr/include/sys/ctf.h
 /usr/include/sys/ctf_api.h
+/usr/include/sys/ctf_types.h
 
 %changelog
 * Thu May 17 2012 - nick.alcock@oracle.com - 0.3

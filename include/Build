@@ -3,7 +3,8 @@
 include_DIR := $(current-dir)
 
 HEADERS_INSTALL := sys/ctf.h \
-                   sys/ctf_api.h
+                   sys/ctf_api.h \
+		   sys/ctf_types.h
 
 # This project is also included in dtrace as a submodule, to assist in
 # test coverage analysis and debugging as part of dtrace.  We don't want
