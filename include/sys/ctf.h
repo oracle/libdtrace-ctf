@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Oracle, Inc.  All rights reserved.
+ * Copyright 2004 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2.
  */
@@ -10,7 +10,7 @@
 #pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
-#include <sys/dtrace_types.h>
+#include <sys/ctf_types.h>
 
 #ifdef	__cplusplus
 extern "C" {
