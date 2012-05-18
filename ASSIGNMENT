@@ -1,0 +1,4 @@
+Contributions to this library require a copyright assignment to Oracle, Inc,
+since it is not only used in the Linux kernel build process but also in the
+DTrace for Linux userspace, which is a proprietary application with source
+code not available outside of Oracle.

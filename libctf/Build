@@ -1,0 +1,31 @@
+# Licensed under the GNU General Public License (GPL), version 2. See the file
+# COPYING in the top level of this tree.
+
+BUILDLIBS += libdtrace-ctf
+SHLIBS += libdtrace-ctf
+# For users of libctf, -DCTF_OLD_VERSIONS is an optional flag to get CTFv1
+# support, but libctf itself must always be built with this flag.
+libdtrace-ctf_CPPFLAGS = -I$(libdtrace-ctf_DIR) -DCTF_OLD_VERSIONS
+libdtrace-ctf_TARGET = libdtrace-ctf
+libdtrace-ctf_DIR := $(current-dir)
+libdtrace-ctf_SOURCES = ctf_open.c ctf_create.c ctf_error.c ctf_hash.c ctf_labels.c \
+                        ctf_lib.c ctf_lookup.c ctf_decl.c ctf_types.c ctf_subr.c \
+                        ctf_util.c
+libdtrace-ctf_VERSION := 1.0.0
+libdtrace-ctf_SONAME := libdtrace-ctf.so.1
+libdtrace-ctf_VERSCRIPT := $(libdtrace-ctf_DIR)libdtrace-ctf.ver
+libdtrace-ctf_LIBSOURCES := libdtrace-ctf
+
+# This project is also included in dtrace as a submodule, to assist in
+# test coverage analysis and debugging as part of dtrace.  We don't want
+# to install it in that situation.
+ifeq ($(PROJECT),libdtrace-ctf)
+install::
+	mkdir -p $(LIBDIR)
+	$(call describe-install-target,$(LIBDIR),$(libdtrace-ctf_TARGET).so.$(libdtrace-ctf_VERSION))
+	install -m 755 -o root -g root $(objdir)/$(libdtrace-ctf_TARGET).so.$(libdtrace-ctf_VERSION) $(LIBDIR)
+	$(call describe-install-target,$(LIBDIR),$(libdtrace-ctf_SONAME))
+	ln -sf libdtrace-ctf.so.$(libdtrace-ctf_VERSION) $(LIBDIR)/$(libdtrace-ctf_SONAME)
+	$(call describe-install-target,$(LIBDIR),$(libdtrace-ctf_TARGET).so)
+	ln -sf libdtrace-ctf.so.$(libdtrace-ctf_VERSION) $(LIBDIR)/$(libdtrace-ctf_TARGET).so
+endif

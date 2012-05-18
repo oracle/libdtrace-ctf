@@ -1,0 +1,93 @@
+/*
+ * Copyright 2012 Oracle, Inc.
+ *
+ * Licensed under the GNU General Public License (GPL), version 2. See the file
+ * COPYING in the top level of this tree.
+ */
+
+LIBDTRACE_CTF_1.0 {
+    global:
+	ctf_bufopen;
+        ctf_fdopen;
+        ctf_open;
+        ctf_create;
+        ctf_close;
+
+        ctf_parent_file;
+        ctf_parent_name;
+
+        ctf_import;
+        ctf_setmodel;
+        ctf_getmodel;
+
+        ctf_setspecific;
+        ctf_getspecific;
+
+        ctf_errno;
+        ctf_errmsg;
+        ctf_version;
+
+        ctf_func_info;
+        ctf_func_args;
+
+        ctf_lookup_by_name;
+        ctf_lookup_by_symbol;
+
+        ctf_type_resolve;
+        ctf_type_lname;
+        ctf_type_name;
+        ctf_type_size;
+        ctf_type_align;
+        ctf_type_kind;
+        ctf_type_reference;
+        ctf_type_pointer;
+        ctf_type_encoding;
+        ctf_type_visit;
+        ctf_type_cmp;
+        ctf_type_compat;
+
+        ctf_member_info;
+        ctf_array_info;
+
+        ctf_enum_name;
+        ctf_enum_value;
+
+        ctf_label_set;
+        ctf_label_get;
+
+        ctf_label_topmost;
+        ctf_label_info;
+
+        ctf_member_iter;
+        ctf_enum_iter;
+        ctf_type_iter;
+        ctf_label_iter;
+
+        ctf_add_array;
+        ctf_add_const;
+        ctf_add_enum;
+        ctf_add_float;
+        ctf_add_forward;
+        ctf_add_function;
+        ctf_add_integer;
+        ctf_add_pointer;
+        ctf_add_type;
+        ctf_add_typedef;
+        ctf_add_restrict;
+        ctf_add_struct;
+        ctf_add_union;
+        ctf_add_volatile;
+
+        ctf_add_enumerator;
+        ctf_add_member;
+        ctf_add_member_offset;
+
+        ctf_set_array;
+
+        ctf_update;
+        ctf_discard;
+        ctf_write;
+        ctf_gzwrite;
+    local:
+	*;
+};

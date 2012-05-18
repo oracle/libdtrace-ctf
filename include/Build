@@ -1,0 +1,17 @@
+# Licensed under the GNU General Public License (GPL), version 2.
+
+include_DIR := $(current-dir)
+
+HEADERS_INSTALL := sys/ctf.h \
+                   sys/ctf_api.h
+
+# This project is also included in dtrace as a submodule, to assist in
+# test coverage analysis and debugging as part of dtrace.  We don't want
+# to install it in that situation.
+ifeq ($(PROJECT),libdtrace-ctf)
+install::
+	mkdir -p $(INCLUDEDIR)/sys
+	$(call describe-install-target,$(INCLUDEDIR),$(HEADERS_INSTALL))
+	cd $(include_DIR) && install -m 644 -o root -g root $(HEADERS_INSTALL) \
+	    $(INCLUDEDIR)/sys
+endif

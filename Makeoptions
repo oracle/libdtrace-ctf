@@ -1,0 +1,31 @@
+# The implementation of the configurable make options.
+#
+# Copyright 2011, 2012 Oracle, Inc.
+#
+# Licensed under the GNU General Public License (GPL), version 2. See the file
+# COPYING in the top level of this tree.
+
+debugging ?= no
+coverage ?= no
+verbose ?= no
+
+PHONIES += help
+
+help::
+	@printf "Options:\n\n" >&2
+	@printf "make debugging=yes [targets]   Disable optimization to make debugger use easier\n" >&2
+	@printf "make coverage=yes [targets]    Turn on test coverage support\n" >&2
+	@printf "make verbose=yes [target]      Enable verbose building\n" >&2
+	@printf "\n" >&2
+
+ifneq ($(debugging),no)
+override CFLAGS += -O0 -g
+endif
+
+ifneq ($(coverage),no)
+override CFLAGS += -O0 --coverage
+endif
+
+ifeq ($(verbose),no)
+override MAKEFLAGS += --silent
+endif

@@ -1,0 +1,10 @@
+# Projects using the DTrace build system can incorporate this project
+# directly by just including this project above their project's root
+# directory.
+#
+# So we need to include a fragment in Build to include sub-Builds
+# for the sake of such projects.
+
+ifneq ($(PROJECT),libdtrace-ctf)
+include $(current-dir)/*/Build
+endif
