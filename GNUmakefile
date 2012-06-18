@@ -20,8 +20,8 @@ $(if $(subst "Linux",,$(shell uname -s)),,$(error "Error: DTrace only supports L
 
 CFLAGS ?= -O2 -g -Wall -pedantic -Wno-unknown-pragmas
 LDFLAGS ?=
-INVARIANT_CFLAGS := -std=gnu99 -D_LITTLE_ENDIAN -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 $(DTO)
-CPPFLAGS += -Iinclude
+INVARIANT_CFLAGS := -std=gnu99 -D_LITTLE_ENDIAN -D_GNU_SOURCE $(DTO)
+CPPFLAGS += -Iinclude -I$(objdir)
 CC = gcc
 override CFLAGS += $(INVARIANT_CFLAGS)
 PREPROCESS = $(CC) -E -C
@@ -41,6 +41,7 @@ $(shell mkdir -p $(objdir))
 
 include Makeoptions
 include Makefunctions
+include Makeconfig
 include Build */Build
 -include $(objdir)/*.d
 include Makerules

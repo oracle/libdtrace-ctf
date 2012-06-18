@@ -1,3 +1,18 @@
+2012-06-18  Nick Alcock  <nick.alcock@oracle.com>
+
+	Synch build system from DTrace.
+
+	Add a crude symbol-checking infrastructure, like Autoconf's
+	AC_CHECK_LIB.  Use it to check for elf_getshdrstrndx().
+
+	* Makeconfig: New file.
+	* GNUmakefile: Include it.  Search the objdir for generated header files.
+	* Makefunctions: All C compilations depend on the config.h file.
+	* README.build.system: Describe the new infrastructure briefly.
+
+	* GNUmakefile: No longer specify 64-bitness of file I/O: it is
+	redundant on x86-64 and breaks fts().
+
 2012-05-18  Nick Alcock  <nick.alcock@oracle.com>
 
 	Creation, split from dtrace and relicensed.
