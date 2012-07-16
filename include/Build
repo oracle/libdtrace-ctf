@@ -12,7 +12,7 @@ HEADERS_INSTALL := sys/ctf.h \
 ifeq ($(PROJECT),libdtrace-ctf)
 install::
 	mkdir -p $(INCLUDEDIR)/sys
-	$(call describe-install-target,$(INCLUDEDIR),$(HEADERS_INSTALL))
+	$(call describe-install-target,$(INCLUDEDIR)/sys,$(notdir $(HEADERS_INSTALL)))
 	cd $(include_DIR) && install -m 644 -o root -g root $(HEADERS_INSTALL) \
 	    $(INCLUDEDIR)/sys
 endif

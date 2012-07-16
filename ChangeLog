@@ -1,3 +1,9 @@
+2012-07-16  Nick Alcock  <nick.alcock@oracle.com>
+
+	* Makeconfig (CONFIG_H): Add missing path slash.
+	* include/Build (install): Fix silent build output during
+	header installation.
+
 2012-06-18  Nick Alcock  <nick.alcock@oracle.com>
 
 	Synch build system from DTrace.
