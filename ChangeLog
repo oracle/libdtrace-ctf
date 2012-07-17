@@ -3,6 +3,9 @@
 	* libctf/ctf_error.c (_ctf_errlist): Synch with the error
 	#defines.
 
+	* .gitignore: New, ignore the build directory, editor backup
+	files, and object files.
+
 2012-07-16  Nick Alcock  <nick.alcock@oracle.com>
 
 	* Makeconfig (CONFIG_H): Add missing path slash.
