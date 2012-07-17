@@ -22,8 +22,6 @@ static const char *const _ctf_errlist[] = {
 	"Type information is in parent and unavailable", /* ECTF_NOPARENT */
 	"Cannot import types with different data model", /* ECTF_DMODEL */
 	"Failed to mmap a needed data section",		 /* ECTF_MMAP */
-	"Decompression package SUNWzlib not installed",	 /* ECTF_ZMISSING */
-	"Failed to initialize decompression library",	 /* ECTF_ZINIT */
 	"Failed to allocate decompression buffer",	 /* ECTF_ZALLOC */
 	"Failed to decompress CTF data",		 /* ECTF_DECOMPRESS */
 	"External string table is not available",	 /* ECTF_STRTAB */
