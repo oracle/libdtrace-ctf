@@ -3,6 +3,12 @@
 	* libctf/ctf_error.c (_ctf_errlist): Synch with the error
 	#defines.
 
+	* include/sys/ctf.h (CTF_MAX_PTYPE): New, the maximum possible
+	parent CTF type ID.
+
+	* libctf/ctf_create.c (ctf_add_generic): Stop parent types from
+	overflowing into the child type ID space.
+
 	* .gitignore: New, ignore the build directory, editor backup
 	files, and object files.
 

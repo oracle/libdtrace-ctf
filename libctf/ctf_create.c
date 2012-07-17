@@ -518,6 +518,9 @@ ctf_add_generic(ctf_file_t *fp, uint_t flag, const char *name, ctf_dtdef_t **rp)
 	if (CTF_INDEX_TO_TYPE(fp->ctf_dtnextid, 1) > CTF_MAX_TYPE)
 		return (ctf_set_errno(fp, ECTF_FULL));
 
+	if (CTF_INDEX_TO_TYPE(fp->ctf_dtnextid, 1) == CTF_MAX_PTYPE)
+		return (ctf_set_errno(fp, ECTF_FULL));
+
 	if ((dtd = ctf_alloc(sizeof (ctf_dtdef_t))) == NULL)
 		return (ctf_set_errno(fp, EAGAIN));
 

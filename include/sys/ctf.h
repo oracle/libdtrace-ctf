@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 Oracle, Inc.
+ * Copyright 2004, 2012 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2.
  */
@@ -83,6 +83,7 @@ extern "C" {
  */
 
 #define	CTF_MAX_TYPE	0xffff	/* max type identifier value */
+#define	CTF_MAX_PTYPE	0x7fff	/* max parent type identifier value */
 #define	CTF_MAX_NAME 0x7fffffff	/* max offset into a string table */
 #define	CTF_MAX_VLEN	0x3ff	/* max struct, union, enum members or args */
 #define	CTF_MAX_INTOFF	0xff	/* max offset of intrinsic value in bits */
