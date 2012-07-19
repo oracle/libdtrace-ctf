@@ -31,7 +31,7 @@ ctf_create(int *errp)
 {
 	static const ctf_header_t hdr = { { CTF_MAGIC, CTF_VERSION, 0 } };
 
-	const ulong_t hashlen = 128;
+	const ulong_t hashlen = 8192;
 	ctf_dtdef_t **hash = ctf_alloc(hashlen * sizeof (ctf_dtdef_t *));
 	ctf_sect_t cts;
 	ctf_file_t *fp;

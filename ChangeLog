@@ -1,3 +1,7 @@
+2012-07-19  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libctf/ctf_create.c (ctf_create): Use a much bigger hash table.
+
 2012-07-17  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libctf/ctf_error.c (_ctf_errlist): Synch with the error
