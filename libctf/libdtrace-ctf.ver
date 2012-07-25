@@ -15,6 +15,7 @@ LIBDTRACE_CTF_1.0 {
 
         ctf_parent_file;
         ctf_parent_name;
+        ctf_parent_name_set;
 
         ctf_import;
         ctf_setmodel;

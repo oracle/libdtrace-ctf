@@ -172,6 +172,7 @@ extern void ctf_close(ctf_file_t *);
 
 extern ctf_file_t *ctf_parent_file(ctf_file_t *);
 extern const char *ctf_parent_name(ctf_file_t *);
+extern void ctf_parent_name_set(ctf_file_t *, const char *);
 
 extern int ctf_import(ctf_file_t *, ctf_file_t *);
 extern int ctf_setmodel(ctf_file_t *, int);

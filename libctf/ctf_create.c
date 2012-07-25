@@ -12,14 +12,6 @@
 #include <ctf_impl.h>
 
 /*
- * This static string is used as the template for initially populating a
- * dynamic container's string table.  We always store \0 in the first byte,
- * and we use the generic string "PARENT" to mark this container's parent
- * if one is associated with the container using ctf_import().
- */
-static const char _CTF_STRTAB_TEMPLATE[] = "\0PARENT";
-
-/*
  * To create an empty CTF container, we just declare a zeroed header and call
  * ctf_bufopen() on it.  If ctf_bufopen succeeds, we mark the new container r/w
  * and initialize the dynamic members.  We set dtstrlen to 1 to reserve the
@@ -56,7 +48,7 @@ ctf_create(int *errp)
 	fp->ctf_dthashlen = hashlen;
 	bzero(hash, hashlen * sizeof (ctf_dtdef_t *));
 	fp->ctf_dthash = hash;
-	fp->ctf_dtstrlen = sizeof (_CTF_STRTAB_TEMPLATE);
+	fp->ctf_dtstrlen = 1;
 	fp->ctf_dtnextid = 1;
 	fp->ctf_dtoldid = 0;
 
@@ -190,7 +182,7 @@ ctf_update(ctf_file_t *fp)
 	hdr.cth_version = CTF_VERSION;
 
 	if (fp->ctf_flags & LCTF_CHILD)
-		hdr.cth_parname = 1; /* i.e. _CTF_STRTAB_TEMPLATE[1] */
+		hdr.cth_parname = 1; /* added just below */
 
 	/*
 	 * Iterate through the dynamic type definition list and compute the
@@ -238,6 +230,9 @@ ctf_update(ctf_file_t *fp)
 	 */
 	hdr.cth_stroff = hdr.cth_typeoff + size;
 	hdr.cth_strlen = fp->ctf_dtstrlen;
+	if (fp->ctf_parname != NULL)
+		hdr.cth_strlen += strlen(fp->ctf_parname) + 1;
+
 	size = sizeof (ctf_header_t) + hdr.cth_stroff + hdr.cth_strlen;
 
 	if ((buf = ctf_data_alloc(size)) == MAP_FAILED)
@@ -247,8 +242,13 @@ ctf_update(ctf_file_t *fp)
 	t = (uchar_t *)buf + sizeof (ctf_header_t);
 	s = s0 = (uchar_t *)buf + sizeof (ctf_header_t) + hdr.cth_stroff;
 
-	bcopy(_CTF_STRTAB_TEMPLATE, s, sizeof (_CTF_STRTAB_TEMPLATE));
-	s += sizeof (_CTF_STRTAB_TEMPLATE);
+	s[0] = '\0';
+	s++;
+
+	if (fp->ctf_parname != NULL) {
+	    bcopy(fp->ctf_parname, s, strlen(fp->ctf_parname) + 1);
+	    s += strlen(fp->ctf_parname) + 1;
+	}
 
 	/*
 	 * We now take a final lap through the dynamic type definition list and

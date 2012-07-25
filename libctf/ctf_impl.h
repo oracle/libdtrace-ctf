@@ -178,6 +178,7 @@ struct ctf_file {
 	struct ctf_file *ctf_parent;	/* parent CTF container (if any) */
 	const char *ctf_parlabel;	/* label in parent container (if any) */
 	const char *ctf_parname;	/* basename of parent (if any) */
+	char *ctf_dynparname;	/* dynamically allocated name of parent */
 	uint_t ctf_refcnt;	/* reference count (for parent links) */
 	uint_t ctf_flags;	/* libctf flags (see below) */
 	int ctf_errno;		/* error code for most recent error */

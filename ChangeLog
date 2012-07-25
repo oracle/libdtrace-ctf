@@ -34,6 +34,20 @@
 
 	* README: Note that the file formats are incompatible now.
 
+	* libctf/ctf_impl.h (ctf_dynparname): New ctf_file field.
+	* libctf/ctf_open.c (ctf_parent_name_set): New function.
+	* include/sys/ctf_api.h: Prototype it.
+	* libctf/libdtrace-ctf.ver: Export it.
+	* libctf/ctf_open.c (ctf_import): Call it with "PARENT" if no name
+	is already set.
+	(ctf_close): Free ctf_dynparname if set.
+	* libctf/ctf_create.c (_CTF_STRTAB_TEMPLATE): Delete.
+	(ctf_create): The dtstrlen no longer includes the size of the
+	template.
+	(ctf_update): If a parname is set, add it to the cth_strlen size.
+	Always add a \0 as the first string table byte; copy in
+	ctf_parname as the first strtab element if set.
+
 2012-07-20  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libctf/ctf_hash.c (ctf_hash_create): Make this hash table bigger

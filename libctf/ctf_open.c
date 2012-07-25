@@ -729,6 +729,9 @@ ctf_close(ctf_file_t *fp)
 		return;
 	}
 
+	if(fp->ctf_dynparname != NULL)
+		ctf_free(fp->ctf_dynparname, strlen(fp->ctf_dynparname) + 1);
+
 	if (fp->ctf_parent != NULL)
 		ctf_close(fp->ctf_parent);
 
@@ -811,6 +814,20 @@ ctf_parent_name(ctf_file_t *fp)
 }
 
 /*
+ * Set the parent name.  It is an error to call this routine without calling
+ * ctf_import() at some point.
+ */
+void
+ctf_parent_name_set(ctf_file_t *fp, const char *name)
+{
+	if(fp->ctf_dynparname != NULL)
+		ctf_free(fp->ctf_dynparname, strlen(fp->ctf_dynparname) + 1);
+
+	fp->ctf_dynparname = ctf_strdup(name);
+	fp->ctf_parname = fp->ctf_dynparname;
+}
+
+/*
  * Import the types from the specified parent container by storing a pointer
  * to it in ctf_parent and incrementing its reference count.  Only one parent
  * is allowed: if a parent already exists, it is replaced by the new parent.
@@ -832,6 +849,8 @@ ctf_import(ctf_file_t *fp, ctf_file_t *pfp)
 		pfp->ctf_refcnt++;
 	}
 
+	if (fp->ctf_parname == NULL)
+		ctf_parent_name_set(fp, "PARENT");
 	fp->ctf_parent = pfp;
 	return (0);
 }
