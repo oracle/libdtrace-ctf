@@ -3,9 +3,7 @@
 
 BUILDLIBS += libdtrace-ctf
 SHLIBS += libdtrace-ctf
-# For users of libctf, -DCTF_OLD_VERSIONS is an optional flag to get CTFv1
-# support, but libctf itself must always be built with this flag.
-libdtrace-ctf_CPPFLAGS = -I$(libdtrace-ctf_DIR) -DCTF_OLD_VERSIONS
+libdtrace-ctf_CPPFLAGS = -I$(libdtrace-ctf_DIR)
 libdtrace-ctf_TARGET = libdtrace-ctf
 libdtrace-ctf_DIR := $(current-dir)
 libdtrace-ctf_SOURCES = ctf_open.c ctf_create.c ctf_error.c ctf_hash.c ctf_labels.c \

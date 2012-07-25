@@ -1,4 +1,7 @@
-libdtrace-ctf is a port of the Solaris Compact Type Format to Linux.
+libdtrace-ctf is a port of the Solaris Compact Type Format library to Linux.
+Its file format is similar to but not compatible with Solaris CTF files, but
+its public API is source-compatible, to ease porting of libctf users to
+Linux.
 
 It's meant for the use of DTrace for Linux, but is dual-licensed under the GPL
 in order that it may be used in the Linux kernel build process, and potentially

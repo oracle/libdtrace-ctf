@@ -33,15 +33,15 @@ extern "C" {
  * of the symbol table to avoid storing redundant information.  The CTF data
  * may be compressed on disk or in memory, indicated by a bit in the header.
  * CTF may be interpreted in a raw disk file, or it may be stored in an ELF
- * section, typically named .SUNW_ctf.  Data structures are aligned so that
+ * section, typically named .dtrace_ctf.  Data structures are aligned so that
  * a raw CTF file or CTF ELF section may be manipulated using mmap(2).
  *
  * The CTF file or section itself has the following structure:
  *
- * +--------+--------+---------+----------+-------+--------+
- * |  file  |  type  |  data   | function | data  | string |
- * | header | labels | objects |   info   | types | table  |
- * +--------+--------+---------+----------+-------+--------+
+ * +--------+--------+---------+----------+----------+-------+--------+
+ * |  file  |  type  |  data   | function | variable | data  | string |
+ * | header | labels | objects |   info   |   info   | types | table  |
+ * +--------+--------+---------+----------+----------+-------+--------+
  *
  * The file header stores a magic number and version information, encoding
  * flags, and the byte offset of each of the sections relative to the end of the
@@ -59,6 +59,10 @@ extern "C" {
  * not stored and symbols that have no type data are padded out with zeroes.
  * For each data object, the type ID (a small integer) is recorded.  For each
  * function, the type ID of the return type and argument types is recorded.
+ *
+ * Variable records (as distinct from data objects) provide a modicum of support
+ * for non-ELF systems, mapping a variable name to a CTF type ID.  The variable
+ * names are sorted into ASCIIbetical order, permitting binary searching.
  *
  * The data types section is a list of variable size records that represent each
  * type, in order by their ID.  The types themselves form a directed graph,
@@ -107,6 +111,7 @@ typedef struct ctf_header {
 	uint_t cth_lbloff;	/* offset of label section */
 	uint_t cth_objtoff;	/* offset of object section */
 	uint_t cth_funcoff;	/* offset of function section */
+	uint_t cth_varoff;	/* offset of variable section */
 	uint_t cth_typeoff;	/* offset of type section */
 	uint_t cth_stroff;	/* offset of string section */
 	uint_t cth_strlen;	/* length of string section in bytes */
@@ -116,25 +121,11 @@ typedef struct ctf_header {
 #define	cth_version cth_preamble.ctp_version
 #define	cth_flags   cth_preamble.ctp_flags
 
-#ifdef CTF_OLD_VERSIONS
-
-typedef struct ctf_header_v1 {
-	ctf_preamble_t cth_preamble;
-	uint_t cth_objtoff;
-	uint_t cth_funcoff;
-	uint_t cth_typeoff;
-	uint_t cth_stroff;
-	uint_t cth_strlen;
-} ctf_header_v1_t;
-
-#endif /* CTF_OLD_VERSIONS */
-
-#define	CTF_MAGIC	0xcff1	/* magic number identifying header */
+#define	CTF_MAGIC	0xdff2	/* magic number identifying header */
 
 /* data format version number */
 #define	CTF_VERSION_1	1
-#define	CTF_VERSION_2	2
-#define	CTF_VERSION	CTF_VERSION_2	/* current version */
+#define	CTF_VERSION	CTF_VERSION_1	/* current version */
 
 #define	CTF_F_COMPRESS	0x1	/* data buffer is compressed */
 
@@ -151,6 +142,11 @@ typedef struct ctf_stype {
 		ushort_t _type;	/* reference to another type */
 	} _u;
 } ctf_stype_t;
+
+typedef struct ctf_varent {
+	uint_t ctv_name;	/* reference to name in string table */
+	uint_t ctv_typeidx;	/* index of type of this variable */
+} ctf_varent_t;
 
 /*
  * type sizes, measured in bytes, come in two flavors.  99% of them fit within
@@ -220,17 +216,6 @@ typedef struct ctf_type {
 	(((uint64_t)(cttp)->ctt_lsizehi) << 32 | (cttp)->ctt_lsizelo)
 #define	CTF_SIZE_TO_LSIZE_HI(size)	((uint32_t)((uint64_t)(size) >> 32))
 #define	CTF_SIZE_TO_LSIZE_LO(size)	((uint32_t)(size))
-
-#ifdef CTF_OLD_VERSIONS
-
-#define	CTF_INFO_KIND_V1(info)		(((info) & 0xf000) >> 12)
-#define	CTF_INFO_ISROOT_V1(info)	(((info) & 0x0800) >> 11)
-#define	CTF_INFO_VLEN_V1(info)		(((info) & 0x07ff))
-
-#define	CTF_TYPE_INFO_V1(kind, isroot, vlen) \
-	(((kind) << 12) | (((isroot) ? 1 : 0) << 11) | ((vlen) & 0x07ff))
-
-#endif /* CTF_OLD_VERSIONS */
 
 /*
  * Values for CTF_TYPE_KIND().  If the kind has an associated data list,

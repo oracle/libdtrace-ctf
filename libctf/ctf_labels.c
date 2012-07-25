@@ -13,12 +13,6 @@ extract_label_info(ctf_file_t *fp, const ctf_lblent_t **ctl, uint_t *num_labels)
 {
 	const ctf_header_t *h;
 
-	/*
-	 * Labels are only supported in V2 or later
-	 */
-	if (fp->ctf_version < CTF_VERSION_2)
-		return (ctf_set_errno(fp, ECTF_NOTSUP));
-
 	h = (const ctf_header_t *)fp->ctf_data.cts_data;
 
 	/* LINTED - pointer alignment */

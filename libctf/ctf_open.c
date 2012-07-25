@@ -18,52 +18,33 @@ static const ctf_dmodel_t _libctf_models[] = {
 	{ NULL, 0, 0, 0, 0, 0, 0 }
 };
 
-const char _CTF_SECTION[] = ".SUNW_ctf";
+const char _CTF_SECTION[] = ".dtrace_ctf";
 const char _CTF_NULLSTR[] = "";
 
 int _libctf_version = CTF_VERSION;	/* library client version */
 int _libctf_debug = 0;			/* debugging messages enabled */
 
 static ushort_t
-get_kind_v1(ushort_t info)
-{
-	return (CTF_INFO_KIND_V1(info));
-}
-
-static ushort_t
-get_kind_v2(ushort_t info)
+get_kind(ushort_t info)
 {
 	return (CTF_INFO_KIND(info));
 }
 
 static ushort_t
-get_root_v1(ushort_t info)
-{
-	return (CTF_INFO_ISROOT_V1(info));
-}
-
-static ushort_t
-get_root_v2(ushort_t info)
+get_root(ushort_t info)
 {
 	return (CTF_INFO_ISROOT(info));
 }
 
 static ushort_t
-get_vlen_v1(ushort_t info)
-{
-	return (CTF_INFO_VLEN_V1(info));
-}
-
-static ushort_t
-get_vlen_v2(ushort_t info)
+get_vlen(ushort_t info)
 {
 	return (CTF_INFO_VLEN(info));
 }
 
 static const ctf_fileops_t ctf_fileops[] = {
-	{ NULL, NULL },
-	{ get_kind_v1, get_root_v1, get_vlen_v1 },
-	{ get_kind_v2, get_root_v2, get_vlen_v2 },
+	{ NULL, NULL, NULL },
+	{ get_kind, get_root, get_vlen }
 };
 
 /*
@@ -191,10 +172,8 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 	uint_t *xp;
 
 	/*
-	 * We initially determine whether the container is a child or a parent
-	 * based on the value of cth_parname.  To support containers that pre-
-	 * date cth_parname, we also scan the types themselves for references
-	 * to values in the range reserved for child types in our first pass.
+	 * We determine whether the container is a child or a parent based on
+	 * the value of cth_parname.
 	 */
 	int child = cth->cth_parname != 0;
 	int nlstructs = 0, nlunions = 0;
@@ -210,7 +189,6 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 		ssize_t size, increment;
 
 		size_t vbytes;
-		uint_t n;
 
 		(void) ctf_get_ctt_size(fp, tp, &size, &increment);
 
@@ -227,23 +205,10 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 			break;
 		case CTF_K_STRUCT:
 		case CTF_K_UNION:
-			if (fp->ctf_version == CTF_VERSION_1 ||
-			    size < CTF_LSTRUCT_THRESH) {
-				ctf_member_t *mp = (ctf_member_t *)
-				    ((uintptr_t)tp + increment);
-
+			if (size < CTF_LSTRUCT_THRESH)
 				vbytes = sizeof (ctf_member_t) * vlen;
-				for (n = vlen; n != 0; n--, mp++)
-					child |= CTF_TYPE_ISCHILD(mp->ctm_type);
-			} else {
-				ctf_lmember_t *lmp = (ctf_lmember_t *)
-				    ((uintptr_t)tp + increment);
-
+			else
 				vbytes = sizeof (ctf_lmember_t) * vlen;
-				for (n = vlen; n != 0; n--, lmp++)
-					child |=
-					    CTF_TYPE_ISCHILD(lmp->ctlm_type);
-			}
 			break;
 		case CTF_K_ENUM:
 			vbytes = sizeof (ctf_enum_t) * vlen;
@@ -268,7 +233,6 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 		case CTF_K_VOLATILE:
 		case CTF_K_CONST:
 		case CTF_K_RESTRICT:
-			child |= CTF_TYPE_ISCHILD(tp->ctt_type);
 			vbytes = 0;
 			break;
 		default:
@@ -279,10 +243,6 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 		pop[kind]++;
 	}
 
-	/*
-	 * If we detected a reference to a child type ID, then we know this
-	 * container is a child and may have a parent's types imported later.
-	 */
 	if (child) {
 		ctf_dprintf("CTF container %p is a child\n", (void *)fp);
 		fp->ctf_flags |= LCTF_CHILD;
@@ -381,8 +341,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 			if (err != 0 && err != ECTF_STRTAB)
 				return (err);
 
-			if (fp->ctf_version == CTF_VERSION_1 ||
-			    size < CTF_LSTRUCT_THRESH)
+			if (size < CTF_LSTRUCT_THRESH)
 				vbytes = sizeof (ctf_member_t) * vlen;
 			else {
 				vbytes = sizeof (ctf_lmember_t) * vlen;
@@ -397,8 +356,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 			if (err != 0 && err != ECTF_STRTAB)
 				return (err);
 
-			if (fp->ctf_version == CTF_VERSION_1 ||
-			    size < CTF_LSTRUCT_THRESH)
+			if (size < CTF_LSTRUCT_THRESH)
 				vbytes = sizeof (ctf_member_t) * vlen;
 			else {
 				vbytes = sizeof (ctf_lmember_t) * vlen;
@@ -561,31 +519,14 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	if (pp->ctp_magic != CTF_MAGIC)
 		return (ctf_set_open_errno(errp, ECTF_NOCTFBUF));
 
-	if (pp->ctp_version == CTF_VERSION_2) {
-		if (ctfsect->cts_size < sizeof (ctf_header_t))
-			return (ctf_set_open_errno(errp, ECTF_NOCTFBUF));
-
-		bcopy(ctfsect->cts_data, &hp, sizeof (hp));
-		hdrsz = sizeof (ctf_header_t);
-
-	} else if (pp->ctp_version == CTF_VERSION_1) {
-		const ctf_header_v1_t *h1p =
-		    (const ctf_header_v1_t *)ctfsect->cts_data;
-
-		if (ctfsect->cts_size < sizeof (ctf_header_v1_t))
-			return (ctf_set_open_errno(errp, ECTF_NOCTFBUF));
-
-		bzero(&hp, sizeof (hp));
-		hp.cth_preamble = h1p->cth_preamble;
-		hp.cth_objtoff = h1p->cth_objtoff;
-		hp.cth_funcoff = h1p->cth_funcoff;
-		hp.cth_typeoff = h1p->cth_typeoff;
-		hp.cth_stroff = h1p->cth_stroff;
-		hp.cth_strlen = h1p->cth_strlen;
-
-		hdrsz = sizeof (ctf_header_v1_t);
-	} else
+	if (pp->ctp_version != CTF_VERSION_1)
 		return (ctf_set_open_errno(errp, ECTF_CTFVERS));
+
+	if (ctfsect->cts_size < sizeof (ctf_header_t))
+		return (ctf_set_open_errno(errp, ECTF_NOCTFBUF));
+
+	bcopy(ctfsect->cts_data, &hp, sizeof (hp));
+	hdrsz = sizeof (ctf_header_t);
 
 	size = hp.cth_stroff + hp.cth_strlen;
 
@@ -599,11 +540,14 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	if (hp.cth_lbloff > hp.cth_objtoff ||
 	    hp.cth_objtoff > hp.cth_funcoff ||
 	    hp.cth_funcoff > hp.cth_typeoff ||
+	    hp.cth_funcoff > hp.cth_varoff ||
+	    hp.cth_varoff > hp.cth_typeoff ||
 	    hp.cth_typeoff > hp.cth_stroff)
 		return (ctf_set_open_errno(errp, ECTF_CORRUPT));
 
 	if ((hp.cth_lbloff & 3) || (hp.cth_objtoff & 1) ||
-	    (hp.cth_funcoff & 1) || (hp.cth_typeoff & 3))
+	    (hp.cth_funcoff & 1) || (hp.cth_varoff & 3) ||
+	    (hp.cth_typeoff & 3))
 		return (ctf_set_open_errno(errp, ECTF_CORRUPT));
 
 	/*

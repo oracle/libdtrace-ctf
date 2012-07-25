@@ -1,3 +1,39 @@
+2012-07-25  Nick Alcock  <nick.alcock@oracle.com>
+
+	* include/sys/ctf.h: Update CTF comment, adding variable
+	info.
+	(CTF_OLD_VERSIONS): Remove.
+	(ctf_header_v1): Likewise.
+	(CTF_*_V1): Likewise.
+	(CTF_MAGIC): Change, this is no longer compatible with Solaris libctf.
+	(CTF_VERSION_2): Delete.
+	(CTF_VERSION): Update.
+	(ctf_header): Add cth_varoff.
+	(ctf_varent): New.
+	* libctf/ctf_open.c (_CTF_SECTION): Change to .dtrace_ctf.
+	(get_kind_v1): Remove.
+	(get_root_v1): Likewise.
+	(get_vlen_v1): Likewise.
+	(get_kind_v2): Rename to...
+	(get_kind): ... this.
+	(get_root_v2): Rename to...
+	(get_root): ... this.
+	(get_vlen_v2): Rename to...
+	(get_vlen)... this.
+	(ctf_fileops): Adjust.
+	(init_types): Remove v1 support, and support for pre-cth_parname
+	containers.
+	(ctf_bufopen): Verify varoff position and alignment.
+	* libctf/ctf_labels.c (extract_label_info): Remove v1 support.
+	* libctf/ctf_types.c (ctf_get_ctt_size): Likewise.
+	(ctf_member_iter): Likewise.
+	(ctf_type_align): Likewise.
+	(ctf_member_info): Likewise.
+	(ctf_type_rvisit): Likewise.
+	libctf/Build (libdtrace-ctf_CPPFLAGS): Drop -D_CTF_OLD_VERSIONS.
+
+	* README: Note that the file formats are incompatible now.
+
 2012-07-20  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libctf/ctf_hash.c (ctf_hash_create): Make this hash table bigger
