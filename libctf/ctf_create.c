@@ -397,7 +397,7 @@ ctf_update(ctf_file_t *fp)
 void
 ctf_dtd_insert(ctf_file_t *fp, ctf_dtdef_t *dtd)
 {
-	ulong_t h = dtd->dtd_type & (fp->ctf_dthashlen - 1);
+	ulong_t h = dtd->dtd_type % (fp->ctf_dthashlen - 1);
 
 	dtd->dtd_hash = fp->ctf_dthash[h];
 	fp->ctf_dthash[h] = dtd;
@@ -407,7 +407,7 @@ ctf_dtd_insert(ctf_file_t *fp, ctf_dtdef_t *dtd)
 void
 ctf_dtd_delete(ctf_file_t *fp, ctf_dtdef_t *dtd)
 {
-	ulong_t h = dtd->dtd_type & (fp->ctf_dthashlen - 1);
+	ulong_t h = dtd->dtd_type % (fp->ctf_dthashlen - 1);
 	ctf_dtdef_t *p, **q = &fp->ctf_dthash[h];
 	ctf_dmdef_t *dmd, *nmd;
 	size_t len;
@@ -456,7 +456,7 @@ ctf_dtd_delete(ctf_file_t *fp, ctf_dtdef_t *dtd)
 ctf_dtdef_t *
 ctf_dtd_lookup(ctf_file_t *fp, ctf_id_t type)
 {
-	ulong_t h = type & (fp->ctf_dthashlen - 1);
+	ulong_t h = type % (fp->ctf_dthashlen - 1);
 	ctf_dtdef_t *dtd;
 
 	if (fp->ctf_dthash == NULL)

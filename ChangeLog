@@ -3,6 +3,10 @@
 	* GNUmakefile: Install libraries to lib64, not lib.
 	* libctf/Build: Link against zlib.
 
+	* libctf/ctf_create.c (ctf_dtd_insert): Use a better hash function.
+	(ctf_dtd_delete): Likewise.
+	(ctf_dtd_lookup): Likewise.
+
 2012-07-25  Nick Alcock  <nick.alcock@oracle.com>
 
 	* include/sys/ctf.h: Update CTF comment, adding variable
