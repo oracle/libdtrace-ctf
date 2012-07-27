@@ -28,7 +28,7 @@ PREPROCESS = $(CC) -E -C
 
 prefix = /usr
 objdir := build-$(shell uname -r)
-LIBDIR := $(DESTDIR)$(prefix)/lib
+LIBDIR := $(DESTDIR)$(prefix)/lib64
 BINDIR := $(DESTDIR)$(prefix)/bin
 INCLUDEDIR := $(DESTDIR)$(prefix)/include
 SBINDIR := $(DESTDIR)$(prefix)/sbin

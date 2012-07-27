@@ -1,3 +1,7 @@
+2012-07-27  Nick Alcock  <nick.alcock@oracle.com>
+
+	* GNUmakefile: Install libraries to lib64, not lib.
+
 2012-07-25  Nick Alcock  <nick.alcock@oracle.com>
 
 	* include/sys/ctf.h: Update CTF comment, adding variable
