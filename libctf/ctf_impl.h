@@ -137,6 +137,14 @@ typedef struct ctf_dtdef {
 	} dtd_u;
 } ctf_dtdef_t;
 
+typedef struct ctf_dvdef {
+	ctf_list_t dvd_list;	/* list forward/back pointers */
+	struct ctf_dvdef *dvd_hash; /* hash chain pointer for ctf_dvhash */
+	char *dvd_name;		/* name associated with variable */
+	ctf_id_t dvd_type;	/* type of variable */
+	ulong_t dvd_updates;	/* updates count when inserted */
+} ctf_dvdef_t;
+
 typedef struct ctf_bundle {
 	ctf_file_t *ctb_file;	/* CTF container handle */
 	ctf_id_t ctb_type;	/* CTF type identifier */
@@ -173,6 +181,8 @@ struct ctf_file {
 	ulong_t ctf_nsyms;	/* number of entries in symtab xlate table */
 	uint_t *ctf_txlate;	/* translation table for type IDs */
 	ushort_t *ctf_ptrtab;	/* translation table for pointer-to lookups */
+	struct ctf_varent *ctf_vars;	/* sorted variable->type mapping */
+	ulong_t ctf_nvars;		/* number of variables in ctf_vars */
 	ulong_t ctf_typemax;	/* maximum valid type ID number */
 	const ctf_dmodel_t *ctf_dmodel;	/* data model pointer (see above) */
 	struct ctf_file *ctf_parent;	/* parent CTF container (if any) */
@@ -186,9 +196,13 @@ struct ctf_file {
 	ctf_dtdef_t **ctf_dthash; /* hash of dynamic type definitions */
 	ulong_t ctf_dthashlen;	/* size of dynamic type hash bucket array */
 	ctf_list_t ctf_dtdefs;	/* list of dynamic type definitions */
-	size_t ctf_dtstrlen;	/* total length of dynamic type strings */
+	ctf_dvdef_t **ctf_dvhash; /* hash of dynamic variable mappings */
+	ulong_t ctf_dvhashlen;	  /* size of dynvar hash bucket array */
+	ctf_list_t ctf_dvdefs;	  /* list of dynamic variable definitions */
+	size_t ctf_dtvstrlen;	/* total length of dynamic type+var strings */
 	ulong_t ctf_dtnextid;	/* next dynamic type id to assign */
 	ulong_t ctf_dtoldid;	/* oldest id that has been committed */
+	ulong_t ctf_updates;	/* ctf_update() call count */
 	void *ctf_specific;	/* data for ctf_get/setspecific */
 };
 
@@ -215,6 +229,7 @@ extern int ctf_hash_define(ctf_hash_t *, ctf_file_t *, ushort_t, uint_t);
 extern ctf_helem_t *ctf_hash_lookup(ctf_hash_t *, ctf_file_t *,
     const char *, size_t);
 extern uint_t ctf_hash_size(const ctf_hash_t *);
+extern ulong_t ctf_hash_compute(const char *key, size_t len);
 extern void ctf_hash_destroy(ctf_hash_t *);
 
 #define	ctf_list_prev(elem)	((void *)(((ctf_list_t *)(elem))->l_prev))
@@ -227,6 +242,10 @@ extern void ctf_list_delete(ctf_list_t *, void *);
 extern void ctf_dtd_insert(ctf_file_t *, ctf_dtdef_t *);
 extern void ctf_dtd_delete(ctf_file_t *, ctf_dtdef_t *);
 extern ctf_dtdef_t *ctf_dtd_lookup(ctf_file_t *, ctf_id_t);
+
+extern void ctf_dvd_insert(ctf_file_t *, ctf_dvdef_t *);
+extern void ctf_dvd_delete(ctf_file_t *, ctf_dvdef_t *);
+extern ctf_dvdef_t *ctf_dvd_lookup(ctf_file_t *, const char *);
 
 extern void ctf_decl_init(ctf_decl_t *, char *, size_t);
 extern void ctf_decl_fini(ctf_decl_t *);

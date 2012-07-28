@@ -633,6 +633,8 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	fp->ctf_base = base;
 	fp->ctf_buf = buf;
 	fp->ctf_size = size + hdrsz;
+	fp->ctf_vars = (ctf_varent_t *)((const char *)buf + hp.cth_varoff);
+	fp->ctf_nvars = (hp.cth_typeoff - hp.cth_varoff) / sizeof (ctf_varent_t);
 
 	/*
 	 * If we have a parent container name and label, store the relocated
@@ -718,6 +720,7 @@ void
 ctf_close(ctf_file_t *fp)
 {
 	ctf_dtdef_t *dtd, *ntd;
+	ctf_dvdef_t *dvd, *nvd;
 
 	if (fp == NULL)
 		return; /* allow ctf_close(NULL) to simplify caller code */
@@ -741,6 +744,13 @@ ctf_close(ctf_file_t *fp)
 	}
 
 	ctf_free(fp->ctf_dthash, fp->ctf_dthashlen * sizeof (ctf_dtdef_t *));
+
+	for (dvd = ctf_list_next(&fp->ctf_dvdefs); dvd != NULL; dvd = nvd) {
+		nvd = ctf_list_next(dvd);
+		ctf_dvd_delete(fp, dvd);
+	}
+
+	ctf_free(fp->ctf_dvhash, fp->ctf_dvhashlen * sizeof (ctf_dvdef_t *));
 
 	if (fp->ctf_flags & LCTF_MMAP) {
 		if (fp->ctf_data.cts_data != NULL)

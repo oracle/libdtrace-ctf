@@ -7,6 +7,7 @@
 
 #include <sys/param.h>
 #include <sys/mman.h>
+#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 #include <ctf_impl.h>
@@ -14,7 +15,7 @@
 /*
  * To create an empty CTF container, we just declare a zeroed header and call
  * ctf_bufopen() on it.  If ctf_bufopen succeeds, we mark the new container r/w
- * and initialize the dynamic members.  We set dtstrlen to 1 to reserve the
+ * and initialize the dynamic members.  We set dtvstrlen to 1 to reserve the
  * first byte of the string table for a \0 byte, and we start assigning type
  * IDs at 1 because type ID 0 is used as a sentinel.
  */
@@ -23,13 +24,19 @@ ctf_create(int *errp)
 {
 	static const ctf_header_t hdr = { { CTF_MAGIC, CTF_VERSION, 0 } };
 
-	const ulong_t hashlen = 8192;
-	ctf_dtdef_t **hash = ctf_alloc(hashlen * sizeof (ctf_dtdef_t *));
+	const ulong_t hashlen = 1024;
+	ctf_dtdef_t **dthash = ctf_alloc(hashlen * sizeof (ctf_dtdef_t *));
+	ctf_dvdef_t **dvhash = ctf_alloc(hashlen * sizeof (ctf_dvdef_t *));
 	ctf_sect_t cts;
 	ctf_file_t *fp;
 
-	if (hash == NULL)
+	if (dthash == NULL)
 		return (ctf_set_open_errno(errp, EAGAIN));
+
+	if (dvhash == NULL) {
+		ctf_free(dthash, hashlen * sizeof (ctf_dtdef_t *));
+		return (ctf_set_open_errno(errp, EAGAIN));
+	}
 
 	cts.cts_name = _CTF_SECTION;
 	cts.cts_type = SHT_PROGBITS;
@@ -40,17 +47,22 @@ ctf_create(int *errp)
 	cts.cts_offset = 0;
 
 	if ((fp = ctf_bufopen(&cts, NULL, NULL, errp)) == NULL) {
-		ctf_free(hash, hashlen * sizeof (ctf_dtdef_t *));
+		ctf_free(dthash, hashlen * sizeof (ctf_dtdef_t *));
+		ctf_free(dvhash, hashlen * sizeof (ctf_dvdef_t *));
 		return (NULL);
 	}
 
 	fp->ctf_flags |= LCTF_RDWR;
 	fp->ctf_dthashlen = hashlen;
-	bzero(hash, hashlen * sizeof (ctf_dtdef_t *));
-	fp->ctf_dthash = hash;
-	fp->ctf_dtstrlen = 1;
+	fp->ctf_dvhashlen = hashlen;
+	bzero(dthash, hashlen * sizeof (ctf_dtdef_t *));
+	bzero(dvhash, hashlen * sizeof (ctf_dvdef_t *));
+	fp->ctf_dthash = dthash;
+	fp->ctf_dvhash = dvhash;
+	fp->ctf_dtvstrlen = 1;
 	fp->ctf_dtnextid = 1;
 	fp->ctf_dtoldid = 0;
+	fp->ctf_updates = 0;
 
 	return (fp);
 }
@@ -138,6 +150,21 @@ ctf_copy_membnames(ctf_dtdef_t *dtd, uchar_t *s)
 }
 
 /*
+ * Sort a newly-constructed static variable array.
+ */
+static int
+sort_var(const void *one_, const void *two_, void *strtab_)
+{
+	const ctf_varent_t *one = one_;
+	const ctf_varent_t *two = two_;
+	const char *strtab = strtab_;
+	const char *n1 = strtab + CTF_NAME_OFFSET(one->ctv_name);
+	const char *n2 = strtab + CTF_NAME_OFFSET(two->ctv_name);
+
+	return (strcmp(n1, n2));
+}
+
+/*
  * If the specified CTF container is writable and has been modified, reload
  * this container with the updated type definitions.  In order to make this
  * code and the rest of libctf as simple as possible, we perform updates by
@@ -158,10 +185,13 @@ ctf_update(ctf_file_t *fp)
 	ctf_file_t ofp, *nfp;
 	ctf_header_t hdr;
 	ctf_dtdef_t *dtd;
+	ctf_dvdef_t *dvd;
+	ctf_varent_t *dvarents;
 	ctf_sect_t cts;
 
 	uchar_t *s, *s0, *t;
-	size_t size;
+	ulong_t i;
+	size_t buf_size, type_size, nvars;
 	void *buf;
 	int err;
 
@@ -188,58 +218,66 @@ ctf_update(ctf_file_t *fp)
 	 * Iterate through the dynamic type definition list and compute the
 	 * size of the CTF type section we will need to generate.
 	 */
-	for (size = 0, dtd = ctf_list_next(&fp->ctf_dtdefs);
-	    dtd != NULL; dtd = ctf_list_next(dtd)) {
+	for (type_size = 0, dtd = ctf_list_next(&fp->ctf_dtdefs);
+	     dtd != NULL; dtd = ctf_list_next(dtd)) {
 
 		uint_t kind = CTF_INFO_KIND(dtd->dtd_data.ctt_info);
 		uint_t vlen = CTF_INFO_VLEN(dtd->dtd_data.ctt_info);
 
 		if (dtd->dtd_data.ctt_size != CTF_LSIZE_SENT)
-			size += sizeof (ctf_stype_t);
+			type_size += sizeof (ctf_stype_t);
 		else
-			size += sizeof (ctf_type_t);
+			type_size += sizeof (ctf_type_t);
 
 		switch (kind) {
 		case CTF_K_INTEGER:
 		case CTF_K_FLOAT:
-			size += sizeof (uint_t);
+			type_size += sizeof (uint_t);
 			break;
 		case CTF_K_ARRAY:
-			size += sizeof (ctf_array_t);
+			type_size += sizeof (ctf_array_t);
 			break;
 		case CTF_K_FUNCTION:
-			size += sizeof (ushort_t) * (vlen + (vlen & 1));
+			type_size += sizeof (ushort_t) * (vlen + (vlen & 1));
 			break;
 		case CTF_K_STRUCT:
 		case CTF_K_UNION:
 			if (dtd->dtd_data.ctt_size < CTF_LSTRUCT_THRESH)
-				size += sizeof (ctf_member_t) * vlen;
+				type_size += sizeof (ctf_member_t) * vlen;
 			else
-				size += sizeof (ctf_lmember_t) * vlen;
+				type_size += sizeof (ctf_lmember_t) * vlen;
 			break;
 		case CTF_K_ENUM:
-			size += sizeof (ctf_enum_t) * vlen;
+			type_size += sizeof (ctf_enum_t) * vlen;
 			break;
 		}
 	}
 
 	/*
-	 * Fill in the string table offset and size, compute the size of the
-	 * entire CTF buffer we need, and then allocate a new buffer and
+	 * Computing the number of entries in the CTF variable section is much
+	 * simpler.
+	 */
+	for (nvars = 0, dvd = ctf_list_next(&fp->ctf_dvdefs);
+	     dvd != NULL; dvd = ctf_list_next(dvd), nvars++);
+
+	/*
+	 * Fill in the string table and type offset and size, compute the size
+	 * of the entire CTF buffer we need, and then allocate a new buffer and
 	 * bcopy the finished header to the start of the buffer.
 	 */
-	hdr.cth_stroff = hdr.cth_typeoff + size;
-	hdr.cth_strlen = fp->ctf_dtstrlen;
+	hdr.cth_typeoff = hdr.cth_varoff + (nvars * sizeof (ctf_varent_t));
+	hdr.cth_stroff = hdr.cth_typeoff + type_size;
+	hdr.cth_strlen = fp->ctf_dtvstrlen;
 	if (fp->ctf_parname != NULL)
 		hdr.cth_strlen += strlen(fp->ctf_parname) + 1;
 
-	size = sizeof (ctf_header_t) + hdr.cth_stroff + hdr.cth_strlen;
+	buf_size = sizeof (ctf_header_t) + hdr.cth_stroff + hdr.cth_strlen;
 
-	if ((buf = ctf_data_alloc(size)) == MAP_FAILED)
+	if ((buf = ctf_data_alloc(buf_size)) == MAP_FAILED)
 		return (ctf_set_errno(fp, EAGAIN));
 
 	bcopy(&hdr, buf, sizeof (ctf_header_t));
-	t = (uchar_t *)buf + sizeof (ctf_header_t);
+	t = (uchar_t *)buf + sizeof (ctf_header_t) + hdr.cth_varoff;
 	s = s0 = (uchar_t *)buf + sizeof (ctf_header_t) + hdr.cth_stroff;
 
 	s[0] = '\0';
@@ -249,6 +287,29 @@ ctf_update(ctf_file_t *fp)
 	    bcopy(fp->ctf_parname, s, strlen(fp->ctf_parname) + 1);
 	    s += strlen(fp->ctf_parname) + 1;
 	}
+
+	/*
+	 * Work over the variable list, translating everything into
+	 * ctf_varent_t's and filling out the string table, then sort the buffer
+	 * of ctf_varent_t's.
+	 */
+	dvarents = (ctf_varent_t *)t;
+	for (i = 0, dvd = ctf_list_next(&fp->ctf_dvdefs); dvd != NULL;
+	     dvd = ctf_list_next(dvd), i++) {
+		ctf_varent_t *var = &dvarents[i];
+		size_t len = strlen(dvd->dvd_name) + 1;
+
+		var->ctv_name = (uint_t)(s - s0);
+		var->ctv_typeidx = dvd->dvd_type;
+		bcopy(dvd->dvd_name, s, len);
+		s += len;
+	}
+	assert(i == nvars);
+
+	qsort_r(dvarents, nvars, sizeof (ctf_varent_t), sort_var, s0);
+	t += sizeof(ctf_varent_t) * nvars;
+
+	assert(t == (uchar_t *)buf + sizeof (ctf_header_t) + hdr.cth_typeoff);
 
 	/*
 	 * We now take a final lap through the dynamic type definition list and
@@ -337,22 +398,23 @@ ctf_update(ctf_file_t *fp)
 			break;
 		}
 	}
+	assert(t == (uchar_t *)buf + sizeof (ctf_header_t) + hdr.cth_stroff);
 
 	/*
 	 * Finally, we are ready to ctf_bufopen() the new container.  If this
 	 * is successful, we then switch nfp and fp and free the old container.
 	 */
-	ctf_data_protect(buf, size);
+	ctf_data_protect(buf, buf_size);
 	cts.cts_name = _CTF_SECTION;
 	cts.cts_type = SHT_PROGBITS;
 	cts.cts_flags = 0;
 	cts.cts_data = buf;
-	cts.cts_size = size;
+	cts.cts_size = buf_size;
 	cts.cts_entsize = 1;
 	cts.cts_offset = 0;
 
 	if ((nfp = ctf_bufopen(&cts, NULL, NULL, &err)) == NULL) {
-		ctf_data_free(buf, size);
+		ctf_data_free(buf, buf_size);
 		return (ctf_set_errno(fp, err));
 	}
 
@@ -365,14 +427,22 @@ ctf_update(ctf_file_t *fp)
 	nfp->ctf_dthash = fp->ctf_dthash;
 	nfp->ctf_dthashlen = fp->ctf_dthashlen;
 	nfp->ctf_dtdefs = fp->ctf_dtdefs;
-	nfp->ctf_dtstrlen = fp->ctf_dtstrlen;
+	nfp->ctf_dvhash = fp->ctf_dvhash;
+	nfp->ctf_dvhashlen = fp->ctf_dvhashlen;
+	nfp->ctf_dvdefs = fp->ctf_dvdefs;
+	nfp->ctf_dtvstrlen = fp->ctf_dtvstrlen;
 	nfp->ctf_dtnextid = fp->ctf_dtnextid;
 	nfp->ctf_dtoldid = fp->ctf_dtnextid - 1;
+	nfp->ctf_updates = fp->ctf_updates;
 	nfp->ctf_specific = fp->ctf_specific;
 
 	fp->ctf_dthash = NULL;
 	fp->ctf_dthashlen = 0;
 	bzero(&fp->ctf_dtdefs, sizeof (ctf_list_t));
+
+	fp->ctf_dvhash = NULL;
+	fp->ctf_dvhashlen = 0;
+	bzero(&fp->ctf_dvdefs, sizeof (ctf_list_t));
 
 	bcopy(fp, &ofp, sizeof (ctf_file_t));
 	bcopy(nfp, fp, sizeof (ctf_file_t));
@@ -390,6 +460,8 @@ ctf_update(ctf_file_t *fp)
 
 	nfp->ctf_refcnt = 1; /* force nfp to be freed */
 	ctf_close(nfp);
+
+	fp->ctf_updates++;
 
 	return (0);
 }
@@ -431,7 +503,7 @@ ctf_dtd_delete(ctf_file_t *fp, ctf_dtdef_t *dtd)
 			if (dmd->dmd_name != NULL) {
 				len = strlen(dmd->dmd_name) + 1;
 				ctf_free(dmd->dmd_name, len);
-				fp->ctf_dtstrlen -= len;
+				fp->ctf_dtvstrlen -= len;
 			}
 			nmd = ctf_list_next(dmd);
 			ctf_free(dmd, sizeof (ctf_dmdef_t));
@@ -446,7 +518,7 @@ ctf_dtd_delete(ctf_file_t *fp, ctf_dtdef_t *dtd)
 	if (dtd->dtd_name) {
 		len = strlen(dtd->dtd_name) + 1;
 		ctf_free(dtd->dtd_name, len);
-		fp->ctf_dtstrlen -= len;
+		fp->ctf_dtvstrlen -= len;
 	}
 
 	ctf_list_delete(&fp->ctf_dtdefs, dtd);
@@ -470,16 +542,77 @@ ctf_dtd_lookup(ctf_file_t *fp, ctf_id_t type)
 	return (dtd);
 }
 
+void
+ctf_dvd_insert(ctf_file_t *fp, ctf_dvdef_t *dvd)
+{
+	ulong_t h = ctf_hash_compute(dvd->dvd_name, strlen(dvd->dvd_name)) %
+	    (fp->ctf_dvhashlen - 1);
+
+	dvd->dvd_hash = fp->ctf_dvhash[h];
+	fp->ctf_dvhash[h] = dvd;
+	ctf_list_append(&fp->ctf_dvdefs, dvd);
+}
+
+void
+ctf_dvd_delete(ctf_file_t *fp, ctf_dvdef_t *dvd)
+{
+	size_t len = strlen(dvd->dvd_name);
+	ulong_t h = ctf_hash_compute(dvd->dvd_name, len) %
+	    (fp->ctf_dvhashlen - 1);
+	ctf_dvdef_t *p, **q = &fp->ctf_dvhash[h];
+
+	for (p = *q; p != NULL; p = p->dvd_hash) {
+		if (p != dvd)
+			q = &p->dvd_hash;
+		else
+			break;
+	}
+
+	if (p != NULL)
+		*q = p->dvd_hash;
+
+	if (dvd->dvd_name) {
+		ctf_free(dvd->dvd_name, len + 1);
+		fp->ctf_dtvstrlen -= len + 1;
+	}
+
+	ctf_list_delete(&fp->ctf_dvdefs, dvd);
+	ctf_free(dvd, sizeof (ctf_dvdef_t));
+}
+
+ctf_dvdef_t *
+ctf_dvd_lookup(ctf_file_t *fp, const char *name)
+{
+	ulong_t h = ctf_hash_compute(name, strlen(name)) %
+	    (fp->ctf_dvhashlen - 1);
+	ctf_dvdef_t *dvd;
+
+	if (fp->ctf_dvhash == NULL)
+		return (NULL);
+
+	for (dvd = fp->ctf_dvhash[h]; dvd != NULL; dvd = dvd->dvd_hash) {
+		if (strcmp(name, dvd->dvd_name) == 0)
+			break;
+	}
+
+	return (dvd);
+}
+
 /*
- * Discard all of the dynamic type definitions that have been added to the
- * container since the last call to ctf_update().  We locate such types by
- * scanning the list and deleting elements that have type IDs greater than
- * ctf_dtoldid, which is set by ctf_update(), above.
+ * Discard all of the dynamic type definitions and variable definitions that
+ * have been added to the container since the last call to ctf_update().  We
+ * locate such types by scanning the dtd list and deleting elements that have
+ * type IDs greater than ctf_dtoldid, which is set by ctf_update(), above,
+ * and by scanning the variable list and deleting elements that have update
+ * IDs equal to the current value of ctf_updates (indicating that they were
+ * added after the most recent call to that function).
  */
 int
 ctf_discard(ctf_file_t *fp)
 {
 	ctf_dtdef_t *dtd, *ntd;
+	ctf_dvdef_t *dvd, *nvd;
+
 
 	if (!(fp->ctf_flags & LCTF_RDWR))
 		return (ctf_set_errno(fp, ECTF_RDONLY));
@@ -494,6 +627,15 @@ ctf_discard(ctf_file_t *fp)
 			continue; /* skip types that have been committed */
 
 		ctf_dtd_delete(fp, dtd);
+	}
+
+	for (dvd = ctf_list_next(&fp->ctf_dvdefs); dvd != NULL; dvd = nvd) {
+		nvd = ctf_list_next(dvd);
+
+		if (dvd->dvd_updates < fp->ctf_updates)
+			continue;
+
+		ctf_dvd_delete(fp, dvd);
 	}
 
 	fp->ctf_dtnextid = fp->ctf_dtoldid + 1;
@@ -537,7 +679,7 @@ ctf_add_generic(ctf_file_t *fp, uint_t flag, const char *name, ctf_dtdef_t **rp)
 	dtd->dtd_type = type;
 
 	if (s != NULL)
-		fp->ctf_dtstrlen += strlen(s) + 1;
+		fp->ctf_dtvstrlen += strlen(s) + 1;
 
 	ctf_dtd_insert(fp, dtd);
 	fp->ctf_flags |= LCTF_DIRTY;
@@ -870,7 +1012,7 @@ ctf_add_enumerator(ctf_file_t *fp, ctf_id_t enid, const char *name, int value)
 	for (dmd = ctf_list_next(&dtd->dtd_u.dtu_members);
 	    dmd != NULL; dmd = ctf_list_next(dmd)) {
 		if (strcmp(dmd->dmd_name, name) == 0)
-			return (ctf_set_errno(fp, ECTF_DUPMEMBER));
+			return (ctf_set_errno(fp, ECTF_DUPLICATE));
 	}
 
 	if ((dmd = ctf_alloc(sizeof (ctf_dmdef_t))) == NULL)
@@ -889,7 +1031,7 @@ ctf_add_enumerator(ctf_file_t *fp, ctf_id_t enid, const char *name, int value)
 	dtd->dtd_data.ctt_info = CTF_TYPE_INFO(kind, root, vlen + 1);
 	ctf_list_append(&dtd->dtd_u.dtu_members, dmd);
 
-	fp->ctf_dtstrlen += strlen(s) + 1;
+	fp->ctf_dtvstrlen += strlen(s) + 1;
 	fp->ctf_flags |= LCTF_DIRTY;
 
 	return (0);
@@ -927,7 +1069,7 @@ ctf_add_member_offset(ctf_file_t *fp, ctf_id_t souid, const char *name,
 		    dmd != NULL; dmd = ctf_list_next(dmd)) {
 			if (dmd->dmd_name != NULL &&
 			    strcmp(dmd->dmd_name, name) == 0)
-				return (ctf_set_errno(fp, ECTF_DUPMEMBER));
+				return (ctf_set_errno(fp, ECTF_DUPLICATE));
 		}
 	}
 
@@ -1001,7 +1143,7 @@ ctf_add_member_offset(ctf_file_t *fp, ctf_id_t souid, const char *name,
 	ctf_list_append(&dtd->dtd_u.dtu_members, dmd);
 
 	if (s != NULL)
-		fp->ctf_dtstrlen += strlen(s) + 1;
+		fp->ctf_dtvstrlen += strlen(s) + 1;
 
 	fp->ctf_flags |= LCTF_DIRTY;
 	return (0);
@@ -1011,6 +1153,35 @@ int
 ctf_add_member(ctf_file_t *fp, ctf_id_t souid, const char *name, ctf_id_t type)
 {
 	return ctf_add_member_offset(fp, souid, name, type, (ulong_t) -1);
+}
+
+int
+ctf_add_variable(ctf_file_t *fp, const char *name, ctf_id_t ref)
+{
+	ctf_dvdef_t *dvd;
+
+	if (!(fp->ctf_flags & LCTF_RDWR))
+		return (ctf_set_errno(fp, ECTF_RDONLY));
+
+	if (ctf_dvd_lookup(fp, name) != NULL)
+		return (ctf_set_errno(fp, ECTF_DUPLICATE));
+
+	if ((dvd = ctf_alloc(sizeof (ctf_dvdef_t))) == NULL)
+		return (ctf_set_errno(fp, EAGAIN));
+
+	if (name != NULL &&
+	    (dvd->dvd_name = ctf_strdup(name)) == NULL) {
+		ctf_free(dvd, sizeof (ctf_dvdef_t));
+		return (ctf_set_errno(fp, EAGAIN));
+	}
+	dvd->dvd_type = ref;
+	dvd->dvd_updates = fp->ctf_updates;
+
+	ctf_dvd_insert(fp, dvd);
+
+	fp->ctf_dtvstrlen += strlen(name) + 1;
+	fp->ctf_flags |= LCTF_DIRTY;
+	return (0);
 }
 
 static int
@@ -1070,7 +1241,7 @@ membadd(const char *name, ctf_id_t type, ulong_t offset, void *arg)
 	ctf_list_append(&ctb->ctb_dtd->dtd_u.dtu_members, dmd);
 
 	if (s != NULL)
-		ctb->ctb_file->ctf_dtstrlen += strlen(s) + 1;
+		ctb->ctb_file->ctf_dtvstrlen += strlen(s) + 1;
 
 	ctb->ctb_file->ctf_flags |= LCTF_DIRTY;
 	return (0);

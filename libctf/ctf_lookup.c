@@ -150,6 +150,51 @@ err:
 	return (CTF_ERR);
 }
 
+typedef struct lookup_var_key
+{
+	ctf_file_t *fp;
+	const char *name;
+} lookup_var_key_t;
+
+/*
+ * A bsearch function for variable names.
+ */
+static int
+lookup_var(const void *key_, const void *memb_)
+{
+	const lookup_var_key_t *key = key_;
+	const ctf_varent_t *memb = memb_;
+
+	return (strcmp(key->name, ctf_strptr(key->fp, memb->ctv_name)));
+}
+
+/*
+ * Given a variable name, return the type of the variable with that name.
+ */
+ctf_id_t
+ctf_lookup_variable(ctf_file_t *fp, const char *name)
+{
+    ctf_varent_t *ent;
+    lookup_var_key_t key = { fp, name };
+
+    /*
+     * This array is sorted, so we can bsearch for it.
+     */
+
+    ent = bsearch(&key, fp->ctf_vars, fp->ctf_nvars, sizeof (ctf_varent_t),
+	lookup_var);
+
+    if (ent == NULL) {
+
+	    if (fp->ctf_parent != NULL)
+		    return ctf_lookup_variable(fp->ctf_parent, name);
+
+	    return (ctf_set_errno(fp, ECTF_NOTYPEDAT));
+    }
+
+    return ent->ctv_typeidx;
+}
+
 /*
  * Given a symbol table index, return the type of the data object described
  * by the corresponding entry in the symbol table.

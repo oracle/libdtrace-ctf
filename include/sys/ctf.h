@@ -207,7 +207,6 @@ typedef struct ctf_type {
 
 #define	CTF_TYPE_TO_INDEX(id)		((id) & 0x7fff)
 #define	CTF_INDEX_TO_TYPE(id, child)	((child) ? ((id) | 0x8000) : (id))
-#define	CTF_PARENT_SHIFT	15
 
 #define	CTF_STRTAB_0	0	/* symbolic define for string table id 0 */
 #define	CTF_STRTAB_1	1	/* symbolic define for string table id 1 */

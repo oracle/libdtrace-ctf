@@ -128,7 +128,7 @@ enum {
 	ECTF_RDONLY,		/* CTF container is read-only */
 	ECTF_DTFULL,		/* CTF type is full (no more members allowed) */
 	ECTF_FULL,		/* CTF container is full */
-	ECTF_DUPMEMBER,		/* duplicate member name definition */
+	ECTF_DUPLICATE,		/* duplicate member or variable name */
 	ECTF_CONFLICT		/* conflicting type definition present */
 };
 
@@ -190,6 +190,7 @@ extern int ctf_func_args(ctf_file_t *, ulong_t, uint_t, ctf_id_t *);
 
 extern ctf_id_t ctf_lookup_by_name(ctf_file_t *, const char *);
 extern ctf_id_t ctf_lookup_by_symbol(ctf_file_t *, ulong_t);
+extern ctf_id_t ctf_lookup_variable(ctf_file_t *, const char *);
 
 extern ctf_id_t ctf_type_resolve(ctf_file_t *, ctf_id_t);
 extern ssize_t ctf_type_lname(ctf_file_t *, ctf_id_t, char *, size_t);
@@ -244,6 +245,8 @@ extern int ctf_add_enumerator(ctf_file_t *, ctf_id_t, const char *, int);
 extern int ctf_add_member(ctf_file_t *, ctf_id_t, const char *, ctf_id_t);
 extern int ctf_add_member_offset(ctf_file_t *, ctf_id_t, const char *,
     ctf_id_t, ulong_t);
+
+extern int ctf_add_variable(ctf_file_t *, const char *, ctf_id_t);
 
 extern int ctf_set_array(ctf_file_t *, ctf_id_t, const ctf_arinfo_t *);
 

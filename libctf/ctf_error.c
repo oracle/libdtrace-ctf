@@ -48,7 +48,7 @@ static const char *const _ctf_errlist[] = {
 	"CTF container is read-only",			 /* ECTF_RDONLY */
 	"Limit on number of dynamic type members reached", /* ECTF_DTFULL */
 	"Limit on number of dynamic types reached",	 /* ECTF_FULL */
-	"Duplicate member name definition",		 /* ECTF_DUPMEMBER */
+	"Duplicate member or variable name",		 /* ECTF_DUPLICATE */
 	"Conflicting type is already defined",		 /* ECTF_CONFLICT */
 };
 

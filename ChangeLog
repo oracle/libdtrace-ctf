@@ -1,11 +1,57 @@
 2012-07-27  Nick Alcock  <nick.alcock@oracle.com>
 
+	Varname->type-id tracking.
+
+	* libctf/ctf_impl.h: Prototype new functions and newly-non-static
+	functions.
+	(ctf_dvdef): New structure, for dynamic variable definitions.
+	(ctf_file): Add ctf_vars, ctf_nvars, ctf_dvhash, ctf_dvhashlen,
+	and ctf_dvdefs for var-update tracking, and ctf_updates for
+	tracking var creation time.  Rename ctf_dtstrlen to ctf_dtvstrlen.
+	* libctf/ctf_error.c (ECTF_DUPMEMBER): Rename to...
+	(ECTF_DUPLICATE): ... this, now that we use it for tracking
+	duplicate variables too.
+
+	* libctf/ctf_create.c (ctf_create): Initialize the new, and
+	renamed, ctf_file_t fields.  Reduce the hashlen size again.
+	(sort_var): New qsort() function to sort an array of ctf_varents.
+	(ctf_update): Fill out the cth_typeoff header field and the varent
+	section; sort that section.  Add assertions verifying that the
+	section sizes and their dead-reckoned counts match.  Increment the
+	ctf_updates field. Rename all size vars to something less
+	confusing.
+	(ctf_dvd_insert): New, insert a dynamic variable definition.
+	(ctf_dvd_delete): New, delete one, using ctf_updates to track
+	definition ages.
+	(ctf_dvd_lookup): New, look one up.
+	(ctf_discard): Discard appropriate dvd entries.
+	(ctf_add_variable): New, add a variable to the ctf_dvdhash.
+	(ctf_dtd_delete): Rename ctf_dtstrlen to ctf_dtvstrlen.
+	(ctf_add_generic): Likewise.
+	(membadd): Likewise.
+	(ctf_add_enumerator): Likewise.  Rename ECTF_DUPMEMBER to
+	ECTF_DUPLICATE.
+	(ctf_add_member_offset): Likewise.
+	* libctf/ctf_hash.c (ctf_hash_create): Reduce the hashlen size
+	again.
+	(ctf_hash_compute): No longer static.
+	* libctf/ctf_lookup.c: (lookup_var_key): New.
+	(lookup_var): New bsearch() function, look up a variable.
+	(ctf_lookup_variable): New, look up a variable.
+	* libctf/ctf_open.c (ctf_bufopen): Load the variables section.
+	(ctf_close): Free the dvdhash and list.
+	* libctf/libdtrace-ctf.ver: Newly-exported ctf_lookup_variable()
+	and ctf_add_variable().
+	* include/sys/ctf_api.h: Adjust appropriately.
+
 	* GNUmakefile: Install libraries to lib64, not lib.
 	* libctf/Build: Link against zlib.
 
 	* libctf/ctf_create.c (ctf_dtd_insert): Use a better hash function.
 	(ctf_dtd_delete): Likewise.
 	(ctf_dtd_lookup): Likewise.
+
+	* include/sys/ctf.h (CTF_PARENT_SHIFT): Drop, unused.
 
 2012-07-25  Nick Alcock  <nick.alcock@oracle.com>
 

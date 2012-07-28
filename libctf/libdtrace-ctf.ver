@@ -7,7 +7,7 @@
 
 LIBDTRACE_CTF_1.0 {
     global:
-	ctf_bufopen;
+        ctf_bufopen;
         ctf_fdopen;
         ctf_open;
         ctf_create;
@@ -33,6 +33,7 @@ LIBDTRACE_CTF_1.0 {
 
         ctf_lookup_by_name;
         ctf_lookup_by_symbol;
+        ctf_lookup_variable;
 
         ctf_type_resolve;
         ctf_type_lname;
@@ -82,6 +83,7 @@ LIBDTRACE_CTF_1.0 {
         ctf_add_enumerator;
         ctf_add_member;
         ctf_add_member_offset;
+        ctf_add_variable;
 
         ctf_set_array;
 
@@ -90,5 +92,5 @@ LIBDTRACE_CTF_1.0 {
         ctf_write;
         ctf_gzwrite;
     local:
-	*;
+        *;
 };
