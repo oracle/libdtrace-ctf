@@ -857,10 +857,10 @@ ctf_import(ctf_file_t *fp, ctf_file_t *pfp)
 	if (pfp != NULL) {
 		fp->ctf_flags |= LCTF_CHILD;
 		pfp->ctf_refcnt++;
-	}
 
-	if (fp->ctf_parname == NULL)
-		ctf_parent_name_set(fp, "PARENT");
+		if (fp->ctf_parname == NULL)
+			ctf_parent_name_set(fp, "PARENT");
+	}
 	fp->ctf_parent = pfp;
 	return (0);
 }

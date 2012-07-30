@@ -53,6 +53,9 @@
 
 	* include/sys/ctf.h (CTF_PARENT_SHIFT): Drop, unused.
 
+	* libctf/ctf_open.c (ctf_import): Only set the parent name if the
+	parent is non-NULL.
+
 2012-07-25  Nick Alcock  <nick.alcock@oracle.com>
 
 	* include/sys/ctf.h: Update CTF comment, adding variable
