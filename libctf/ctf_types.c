@@ -540,10 +540,11 @@ ctf_type_cmp(ctf_file_t *lfp, ctf_id_t ltype, ctf_file_t *rfp, ctf_id_t rtype)
 }
 
 /*
- * Return a boolean value indicating if two types are compatible integers or
- * floating-pointer values.  This function returns true if the two types are
- * the same, or if they have the same ASCII name and encoding properties.
- * This function could be extended to test for compatibility for other kinds.
+ * Return a boolean value indicating if two types are compatible.  This function
+ * returns true if the two types are the same, or if they (or their ultimate
+ * base type) have the same encoding properties, or (for structs / unions /
+ * enums / forward declarations) if they have the same name and (for structs /
+ * unions) member count.
  */
 int
 ctf_type_compat(ctf_file_t *lfp, ctf_id_t ltype,
@@ -553,6 +554,7 @@ ctf_type_compat(ctf_file_t *lfp, ctf_id_t ltype,
 	ctf_encoding_t le, re;
 	ctf_arinfo_t la, ra;
 	uint_t lkind, rkind;
+	int same_names = 0;
 
 	if (ctf_type_cmp(lfp, ltype, rfp, rtype) == 0)
 		return (1);
@@ -563,16 +565,21 @@ ctf_type_compat(ctf_file_t *lfp, ctf_id_t ltype,
 	rtype = ctf_type_resolve(rfp, rtype);
 	rkind = ctf_type_kind(rfp, rtype);
 
-	if (lkind != rkind ||
-	    (ltp = ctf_lookup_by_id(&lfp, ltype)) == NULL ||
-	    (rtp = ctf_lookup_by_id(&rfp, rtype)) == NULL ||
-	    strcmp(ctf_strptr(lfp, ltp->ctt_name),
-	    ctf_strptr(rfp, rtp->ctt_name)) != 0)
+	ltp = ctf_lookup_by_id(&lfp, ltype);
+	rtp = ctf_lookup_by_id(&rfp, rtype);
+
+	if (ltp != NULL && rtp != NULL)
+		same_names = (strcmp(ctf_strptr(lfp, ltp->ctt_name),
+			ctf_strptr(rfp, rtp->ctt_name)) == 0);
+
+	if (lkind != rkind)
 		return (0);
 
 	switch (lkind) {
 	case CTF_K_INTEGER:
 	case CTF_K_FLOAT:
+		bzero(&le, sizeof (le));
+		bzero(&re, sizeof (re));
 		return (ctf_type_encoding(lfp, ltype, &le) == 0 &&
 		    ctf_type_encoding(rfp, rtype, &re) == 0 &&
 		    bcmp(&le, &re, sizeof (ctf_encoding_t)) == 0);
@@ -587,10 +594,11 @@ ctf_type_compat(ctf_file_t *lfp, ctf_id_t ltype,
 		    ctf_type_compat(lfp, la.ctr_index, rfp, ra.ctr_index));
 	case CTF_K_STRUCT:
 	case CTF_K_UNION:
-		return (ctf_type_size(lfp, ltype) == ctf_type_size(rfp, rtype));
+		return (same_names &&
+		    ctf_type_size(lfp, ltype) == ctf_type_size(rfp, rtype));
 	case CTF_K_ENUM:
 	case CTF_K_FORWARD:
-		return (1); /* no other checks required for these type kinds */
+		return (same_names); /* no other checks required for these type kinds */
 	default:
 		return (0); /* should not get here since we did a resolve */
 	}
