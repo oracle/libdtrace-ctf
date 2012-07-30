@@ -1,3 +1,7 @@
+2012-07-30  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec: Update specfile for new library location.
+
 2012-07-27  Nick Alcock  <nick.alcock@oracle.com>
 
 	Varname->type-id tracking.

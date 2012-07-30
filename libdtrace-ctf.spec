@@ -53,7 +53,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %defattr(-,root,root,755)
 %exclude /usr/src/debug
 %exclude /usr/lib/debug
-/usr/lib/libdtrace-ctf.so*
+/usr/lib64/libdtrace-ctf.so*
 /usr/include/sys/ctf.h
 /usr/include/sys/ctf_api.h
 /usr/include/sys/ctf_types.h
