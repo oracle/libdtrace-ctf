@@ -20,13 +20,19 @@ BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 ExclusiveArch:    x86_64
 
 %description
-The libdtrace-ctf package provides a DSO implementing the Compact Type Format
-library, a C-level representation of a subset of the C type system.
+The Compact Type Format library provides a C-level representation of
+a subset of the C type system.
 
 Maintainers:
 -----------
 Nick Alcock <nick.alcock@oracle.com>
 Kris van Hees <kris.van.hees@oracle.com>
+
+%package devel
+Summary:      Compact Type Format development headers.
+
+%description devel
+Headers and libraries to develop applications using the Compact Type Format.
 
 %prep
 %setup -q
@@ -53,11 +59,17 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %defattr(-,root,root,755)
 %exclude /usr/src/debug
 %exclude /usr/lib/debug
-/usr/lib64/libdtrace-ctf.so*
-/usr/include/sys/ctf.h
-/usr/include/sys/ctf_api.h
-/usr/include/sys/ctf_types.h
+${_libdir}/libdtrace-ctf.so.*
+
+%files devel
+%defattr(-,root,root,755)
+%exclude /usr/src/debug
+%exclude /usr/lib/debug
+${_libdir}/libdtrace-ctf.so
+${_includedir}/sys/ctf.h
+${_includedir}/sys/ctf_api.h
+${_includedir}/sys/ctf_types.h
 
 %changelog
-* Thu May 17 2012 - nick.alcock@oracle.com - 0.3
+* Fri Aug 30 2012 - nick.alcock@oracle.com - 0.3
 - Split off from dtrace.

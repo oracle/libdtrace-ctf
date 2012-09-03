@@ -1,3 +1,8 @@
+2012-08-30  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec: Create a libdtrace-ctf-devel package.
+	Use macros for most file locations.
+
 2012-07-30  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libdtrace-ctf.spec: Update specfile for new library location.
