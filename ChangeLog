@@ -2,6 +2,7 @@
 
 	* libdtrace-ctf.spec: Create a libdtrace-ctf-devel package.
 	Use macros for most file locations.
+	* NEWS: New file.
 
 2012-07-30  Nick Alcock  <nick.alcock@oracle.com>
 
