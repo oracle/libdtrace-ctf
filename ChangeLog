@@ -1,3 +1,8 @@
+2012-09-05  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec: Move include/sys/ctf_types.h out of the
+	devel package.
+
 2012-08-30  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libdtrace-ctf.spec: Create a libdtrace-ctf-devel package.
