@@ -59,16 +59,16 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %defattr(-,root,root,755)
 %exclude /usr/src/debug
 %exclude /usr/lib/debug
-${_libdir}/libdtrace-ctf.so.*
-${_includedir}/sys/ctf_types.h
+%{_libdir}/libdtrace-ctf.so.*
+%{_includedir}/sys/ctf_types.h
 
 %files devel
 %defattr(-,root,root,755)
 %exclude /usr/src/debug
 %exclude /usr/lib/debug
-${_libdir}/libdtrace-ctf.so
-${_includedir}/sys/ctf.h
-${_includedir}/sys/ctf_api.h
+%{_libdir}/libdtrace-ctf.so
+%{_includedir}/sys/ctf.h
+%{_includedir}/sys/ctf_api.h
 
 %changelog
 * Fri Aug 30 2012 - nick.alcock@oracle.com - 0.3

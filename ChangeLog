@@ -1,3 +1,7 @@
+2012-09-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec: RPM macros use %, not $.
+
 2012-09-05  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libdtrace-ctf.spec: Move include/sys/ctf_types.h out of the
