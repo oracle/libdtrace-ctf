@@ -1,3 +1,7 @@
+2012-09-10  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec: This is version 0.3.0, not version 0.3.
+
 2012-09-07  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libdtrace-ctf.spec: RPM macros use %, not $.

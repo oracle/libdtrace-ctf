@@ -71,5 +71,5 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
-* Fri Aug 30 2012 - nick.alcock@oracle.com - 0.3
+* Fri Aug 30 2012 - nick.alcock@oracle.com - 0.3.0
 - Split off from dtrace.
