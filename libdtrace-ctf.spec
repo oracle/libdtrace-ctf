@@ -30,6 +30,7 @@ Kris van Hees <kris.van.hees@oracle.com>
 
 %package devel
 Summary:      Compact Type Format development headers.
+Requires:     zlib-devel
 
 %description devel
 Headers and libraries to develop applications using the Compact Type Format.

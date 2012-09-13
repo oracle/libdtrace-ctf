@@ -1,3 +1,8 @@
+2012-09-13  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec (Requires): The devel package requires
+	zlib-devel.
+
 2012-09-10  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libdtrace-ctf.spec: This is version 0.3.0, not version 0.3.
