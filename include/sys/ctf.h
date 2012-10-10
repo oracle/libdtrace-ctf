@@ -33,8 +33,8 @@ extern "C" {
  * of the symbol table to avoid storing redundant information.  The CTF data
  * may be compressed on disk or in memory, indicated by a bit in the header.
  * CTF may be interpreted in a raw disk file, or it may be stored in an ELF
- * section, typically named .dtrace_ctf.  Data structures are aligned so that
- * a raw CTF file or CTF ELF section may be manipulated using mmap(2).
+ * section, typically named .ctf.  Data structures are aligned so that a raw
+ * CTF file or CTF ELF section may be manipulated using mmap(2).
  *
  * The CTF file or section itself has the following structure:
  *

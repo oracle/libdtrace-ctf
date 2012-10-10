@@ -18,7 +18,7 @@ static const ctf_dmodel_t _libctf_models[] = {
 	{ NULL, 0, 0, 0, 0, 0, 0 }
 };
 
-const char _CTF_SECTION[] = ".dtrace_ctf";
+const char _CTF_SECTION[] = ".ctf";
 const char _CTF_NULLSTR[] = "";
 
 int _libctf_version = CTF_VERSION;	/* library client version */
