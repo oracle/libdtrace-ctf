@@ -1,3 +1,9 @@
+2012-11-02  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec: Release 0.3.2.
+	* NEWS: Likewise.
+	* Makefile: Likewise.
+
 2012-10-10  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libctf/ctf_open.c (_CTF_SECTION): Change to .ctf.

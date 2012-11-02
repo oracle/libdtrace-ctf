@@ -11,7 +11,7 @@
 .SUFFIXES:
 
 PROJECT := libdtrace-ctf
-VERSION := trunk
+VERSION := 0.3.2
 
 # Verify supported hardware.
 

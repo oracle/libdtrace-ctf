@@ -1,3 +1,9 @@
+0.3.2
+-----
+
+CTF sections are now named .ctf by default, not .dtrace_ctf: this package is
+not dependent on DTrace.
+
 0.3
 ---
 
