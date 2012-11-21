@@ -1,3 +1,10 @@
+2012-11-21  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libctf/ctf_lookup.c (ctf_lookup_by_id): Report errors on type
+	lookup in parent containers in the container on which lookup was
+	initiated.
+	* NEWS: Updated.
+
 2012-11-02  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libdtrace-ctf.spec: Release 0.3.2.

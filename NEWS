@@ -1,3 +1,10 @@
+0.3.3
+-----
+
+A failed ctf_lookup_by_id() of a type which should have been found in a parent
+container now sets the errno on the CTF file on which the lookup was initiated,
+rather than mistakenly setting it on its parent.
+
 0.3.2
 -----
 

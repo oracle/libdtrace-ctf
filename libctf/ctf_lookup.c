@@ -253,7 +253,7 @@ ctf_lookup_by_id(ctf_file_t **fpp, ctf_id_t type)
 		return (LCTF_INDEX_TO_TYPEPTR(fp, type));
 	}
 
-	(void) ctf_set_errno(fp, ECTF_BADID);
+	(void) ctf_set_errno(*fpp, ECTF_BADID);
 	return (NULL);
 }
 
