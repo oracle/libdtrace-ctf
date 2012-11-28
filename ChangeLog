@@ -1,3 +1,9 @@
+2012-11-28  Kris Van Hees  <kris.van.hees@oracle.com>
+
+	* libdtrace-ctf.spec: Release 0.3.3.
+	* NEWS: Likewise.
+	* Makefile: Likewise.
+
 2012-11-21  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libctf/ctf_lookup.c (ctf_lookup_by_id): Report errors on type
