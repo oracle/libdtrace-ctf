@@ -14,8 +14,6 @@
 #ifndef	_LIBCTF_H
 #define	_LIBCTF_H
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
-
 #include <sys/ctf_api.h>
 
 #ifdef	__cplusplus

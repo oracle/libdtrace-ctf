@@ -8,8 +8,6 @@
 #ifndef	_CTF_IMPL_H
 #define	_CTF_IMPL_H
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
-
 #include <sys/errno.h>
 #include <sys/ctf_api.h>
 #include <sys/types.h>

@@ -1,7 +1,20 @@
+2012-12-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* include/sys/ctf.h: Ditch #pragma ident.
+	* libctf/libctf.h: Likewise.
+	* libctf/ctf_impl.h: Likewise.
+	* libctf/ctf_create.c (sort_var): Rename to...
+	(ctf_sort_var): ... this.
+	(ctf_update): Adjust.
+	* libctf/ctf_lookup.c (lookup_var_key): Rename to...
+	(ctf_lookup_var_key): ... this.  Prefix member names.
+	(lookup_var): Rename to...
+	(ctf_lookup_var): ... this.  Adjust for renamings.
+	(ctf_lookup_variable): Adjust for renamings.
+
 2012-11-28  Kris Van Hees  <kris.van.hees@oracle.com>
 
 	* libdtrace-ctf.spec: Release 0.3.3.
-	* NEWS: Likewise.
 	* Makefile: Likewise.
 
 2012-11-21  Nick Alcock  <nick.alcock@oracle.com>

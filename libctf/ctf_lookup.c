@@ -150,22 +150,23 @@ err:
 	return (CTF_ERR);
 }
 
-typedef struct lookup_var_key
+typedef struct ctf_lookup_var_key
 {
-	ctf_file_t *fp;
-	const char *name;
-} lookup_var_key_t;
+	ctf_file_t *clvk_fp;
+	const char *clvk_name;
+} ctf_lookup_var_key_t;
 
 /*
  * A bsearch function for variable names.
  */
 static int
-lookup_var(const void *key_, const void *memb_)
+ctf_lookup_var(const void *key_, const void *memb_)
 {
-	const lookup_var_key_t *key = key_;
+	const ctf_lookup_var_key_t *key = key_;
 	const ctf_varent_t *memb = memb_;
 
-	return (strcmp(key->name, ctf_strptr(key->fp, memb->ctv_name)));
+	return (strcmp(key->clvk_name, ctf_strptr(key->clvk_fp,
+		    memb->ctv_name)));
 }
 
 /*
@@ -175,14 +176,14 @@ ctf_id_t
 ctf_lookup_variable(ctf_file_t *fp, const char *name)
 {
     ctf_varent_t *ent;
-    lookup_var_key_t key = { fp, name };
+    ctf_lookup_var_key_t key = { fp, name };
 
     /*
      * This array is sorted, so we can bsearch for it.
      */
 
     ent = bsearch(&key, fp->ctf_vars, fp->ctf_nvars, sizeof (ctf_varent_t),
-	lookup_var);
+	ctf_lookup_var);
 
     if (ent == NULL) {
 

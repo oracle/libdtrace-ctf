@@ -153,7 +153,7 @@ ctf_copy_membnames(ctf_dtdef_t *dtd, uchar_t *s)
  * Sort a newly-constructed static variable array.
  */
 static int
-sort_var(const void *one_, const void *two_, void *strtab_)
+ctf_sort_var(const void *one_, const void *two_, void *strtab_)
 {
 	const ctf_varent_t *one = one_;
 	const ctf_varent_t *two = two_;
@@ -306,7 +306,7 @@ ctf_update(ctf_file_t *fp)
 	}
 	assert(i == nvars);
 
-	qsort_r(dvarents, nvars, sizeof (ctf_varent_t), sort_var, s0);
+	qsort_r(dvarents, nvars, sizeof (ctf_varent_t), ctf_sort_var, s0);
 	t += sizeof(ctf_varent_t) * nvars;
 
 	assert(t == (uchar_t *)buf + sizeof (ctf_header_t) + hdr.cth_typeoff);
