@@ -1,3 +1,10 @@
+Unreleased
+----------
+
+A new function for iterating over variables stored in a CTF file,
+ctf_variable_iter(), is introduced.  Iteration fails immediately if
+this is a child CTF file with no associated parent.
+
 0.3.3
 -----
 

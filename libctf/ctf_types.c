@@ -138,6 +138,27 @@ ctf_type_iter(ctf_file_t *fp, ctf_type_f *func, void *arg)
 }
 
 /*
+ * Iterate over every variable in the given CTF container, in arbitrary order.
+ * We pass the name of each variable to the specified callback function.
+ */
+int
+ctf_variable_iter(ctf_file_t *fp, ctf_variable_f *func, void *arg)
+{
+	ulong_t i;
+	int rc;
+
+	if ((fp->ctf_flags & LCTF_CHILD) && (fp->ctf_parent == NULL))
+		return (ECTF_NOPARENT);
+
+	for (i = 0; i < fp->ctf_nvars; i++)
+		if ((rc = func(ctf_strptr(fp, fp->ctf_vars[i].ctv_name),
+			    fp->ctf_vars[i].ctv_typeidx, arg)) != 0)
+			return (rc);
+
+	return (0);
+}
+
+/*
  * Follow a given type through the graph for TYPEDEF, VOLATILE, CONST, and
  * RESTRICT nodes until we reach a "base" type node.  This is useful when
  * we want to follow a type ID to a node that has members or a size.  To guard

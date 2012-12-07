@@ -94,3 +94,8 @@ LIBDTRACE_CTF_1.0 {
     local:
         *;
 };
+
+LIBDTRACE_CTF_1.1 {
+    global:
+        ctf_variable_iter;
+} LIBDTRACE_CTF_1.0;

@@ -160,6 +160,7 @@ enum {
 typedef int ctf_visit_f(const char *, ctf_id_t, ulong_t, int, void *);
 typedef int ctf_member_f(const char *, ctf_id_t, ulong_t, void *);
 typedef int ctf_enum_f(const char *, int, void *);
+typedef int ctf_variable_f(const char *, ctf_id_t, void *);
 typedef int ctf_type_f(ctf_id_t, void *);
 typedef int ctf_label_f(const char *, const ctf_lblinfo_t *, void *);
 
@@ -222,6 +223,7 @@ extern int ctf_member_iter(ctf_file_t *, ctf_id_t, ctf_member_f *, void *);
 extern int ctf_enum_iter(ctf_file_t *, ctf_id_t, ctf_enum_f *, void *);
 extern int ctf_type_iter(ctf_file_t *, ctf_type_f *, void *);
 extern int ctf_label_iter(ctf_file_t *, ctf_label_f *, void *);
+extern int ctf_variable_iter(ctf_file_t *, ctf_variable_f *, void *);
 
 extern ctf_id_t ctf_add_array(ctf_file_t *, uint_t, const ctf_arinfo_t *);
 extern ctf_id_t ctf_add_const(ctf_file_t *, uint_t, ctf_id_t);

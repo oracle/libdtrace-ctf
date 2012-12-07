@@ -1,5 +1,14 @@
 2012-12-07  Nick Alcock  <nick.alcock@oracle.com>
 
+	* include/sys/ctf_api.h (ctf_variable_f): New.
+	(ctf_variable_iter): New.
+	* libctf/ctf_types.c (ctf_variable_iter): Implement it.
+	* libctf/libdtrace-ctf.ver (LIBDTRACE_CTF_1.1): Add to a new
+	symbol version.
+	* libctf/Build (libdtrace-ctf_VERSION): Bump.
+
+	* NEWS: Adjust.
+
 	* include/sys/ctf.h: Ditch #pragma ident.
 	* libctf/libctf.h: Likewise.
 	* libctf/ctf_impl.h: Likewise.
