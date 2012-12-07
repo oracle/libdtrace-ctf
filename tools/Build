@@ -1,0 +1,10 @@
+# Licensed under the GNU General Public License (GPL), version 2. See the file
+# COPYING in the top level of this tree.
+
+CMDS += ctf_dump
+ctf_dump_CPPFLAGS = -Iinclude
+ctf_dump_TARGET = ctf_dump
+ctf_dump_DIR := $(current-dir)
+ctf_dump_SOURCES = ctf_dump.c
+ctf_dump_DEPS = libdtrace-ctf.so
+ctf_dump_LIBS = -L$(objdir) -ldtrace-ctf -lz

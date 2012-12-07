@@ -1,6 +1,9 @@
 Unreleased
 ----------
 
+ctf_dump, a new CTF dumping tool, is introduced.  It is meant for debugging,
+so it is built by default, but not installed.
+
 A new function for iterating over variables stored in a CTF file,
 ctf_variable_iter(), is introduced.  Iteration fails immediately if
 this is a child CTF file with no associated parent.

@@ -7,6 +7,9 @@
 	symbol version.
 	* libctf/Build (libdtrace-ctf_VERSION): Bump.
 
+	* tools/ctf_dump.c: New, CTF dumping tool.
+	* tools/Build: New, build (but do not install) ctf_dump.
+
 	* NEWS: Adjust.
 
 	* include/sys/ctf.h: Ditch #pragma ident.
