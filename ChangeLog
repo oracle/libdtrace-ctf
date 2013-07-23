@@ -1,5 +1,7 @@
 2013-07-23  Nick Alcock  <nick.alcock@oracle.com>
 
+	* */Build (install): Do not explicitly specify installation user
+	and group.
 	* libdtrace-ctf.spec: Release 0.4.0.
 	* GNUmakefile: Likewise.
 

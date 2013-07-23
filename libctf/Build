@@ -22,7 +22,7 @@ ifeq ($(PROJECT),libdtrace-ctf)
 install::
 	mkdir -p $(LIBDIR)
 	$(call describe-install-target,$(LIBDIR),$(libdtrace-ctf_TARGET).so.$(libdtrace-ctf_VERSION))
-	install -m 755 -o root -g root $(objdir)/$(libdtrace-ctf_TARGET).so.$(libdtrace-ctf_VERSION) $(LIBDIR)
+	install -m 755 $(objdir)/$(libdtrace-ctf_TARGET).so.$(libdtrace-ctf_VERSION) $(LIBDIR)
 	$(call describe-install-target,$(LIBDIR),$(libdtrace-ctf_SONAME))
 	ln -sf libdtrace-ctf.so.$(libdtrace-ctf_VERSION) $(LIBDIR)/$(libdtrace-ctf_SONAME)
 	$(call describe-install-target,$(LIBDIR),$(libdtrace-ctf_TARGET).so)

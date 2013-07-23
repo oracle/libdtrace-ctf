@@ -11,7 +11,7 @@ License:      GPLv2
 Group:        Development/Libraries
 Provides:     libdtrace-ctf
 Requires:     gcc elfutils-libelf zlib
-BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers fakeroot zlib-devel
+BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
 Version:      0.4.0
 Release:      1
@@ -44,7 +44,7 @@ make -j $(getconf _NPROCESSORS_ONLN) VERSION=%{version}
 %install
 echo rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
-fakeroot make DESTDIR=$RPM_BUILD_ROOT VERSION=%{version} install
+make DESTDIR=$RPM_BUILD_ROOT VERSION=%{version} install
 
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf "$RPM_BUILD_ROOT"
