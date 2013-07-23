@@ -13,7 +13,7 @@ Provides:     libdtrace-ctf
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers fakeroot zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.3.3
+Version:      0.4.0
 Release:      1
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -72,6 +72,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Tue Jul 23 2013 - nick.alcock@oracle.com - 0.4.0
+- New ctf_dump tool and ctf_variable_iter() iteration function.
 * Wed Nov 28 2012 - kris.van.hees@oracle.com - 0.3.3
 - Report errors on type lookup correctly.
 * Fri Nov  2 2012 - nick.alcock@oracle.com - 0.3.2
