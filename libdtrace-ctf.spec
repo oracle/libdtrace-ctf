@@ -17,7 +17,7 @@ Version:      0.4.0
 Release:      1
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
-ExclusiveArch:    x86_64
+ExclusiveArch:    x86_64 sparc64
 
 %description
 The Compact Type Format library provides a C-level representation of

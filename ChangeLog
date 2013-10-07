@@ -1,3 +1,10 @@
+2013-10-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* GNUmakefile: Support SPARC64. No longer define -D_LITTLE_ENDIAN,
+	it is a Solarisism (and wrong for SPARC64).
+	* libdtrace-ctf.spec (ExclusiveArch): Add sparc64.
+	* libctf/ctf_lib.c (ctf_fdopen): Use __BIG_ENDIAN, not _BIG_ENDIAN.
+
 2013-07-23  Nick Alcock  <nick.alcock@oracle.com>
 
 	* */Build (install): Do not explicitly specify installation user

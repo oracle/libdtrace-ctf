@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 -- 2012 Oracle, Inc.
+ * Copyright 2003 -- 2013 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2. See the file
  * COPYING in the top level of this tree.
@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <endian.h>
 #include <gelf.h>
 
 static size_t _PAGESIZE;
@@ -169,10 +170,12 @@ ctf_fdopen(int fd, int *errp)
 	 */
 	if (nbytes >= sizeof (Elf32_Ehdr) &&
 	    bcmp(&hdr.e32.e_ident[EI_MAG0], ELFMAG, SELFMAG) == 0) {
-#ifdef	_BIG_ENDIAN
+#if __BYTE_ORDER == __BIG_ENDIAN
 		uchar_t order = ELFDATA2MSB;
-#else
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
 		uchar_t order = ELFDATA2LSB;
+#else
+#error Unknown endianness
 #endif
 		GElf_Half i, n;
 		GElf_Shdr *sp;

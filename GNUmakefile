@@ -15,12 +15,14 @@ VERSION := 0.4.0
 
 # Verify supported hardware.
 
-$(if $(subst "x86_64",,$(shell uname -m)),,$(error "Error: DTrace for Linux only supports x86_64"),)
-$(if $(subst "Linux",,$(shell uname -s)),,$(error "Error: DTrace only supports Linux"),)
+$(if $(subst sparc64,,$(subst x86_64,,$(shell uname -m))), \
+    $(error "Error: DTrace for Linux only supports x86_64 and sparc64"),)
+$(if $(subst Linux,,$(shell uname -s)), \
+    $(error "Error: DTrace only supports Linux"),)
 
 CFLAGS ?= -O2 -g -Wall -pedantic -Wno-unknown-pragmas
 LDFLAGS ?=
-INVARIANT_CFLAGS := -std=gnu99 -D_LITTLE_ENDIAN -D_GNU_SOURCE $(DTO)
+INVARIANT_CFLAGS := -std=gnu99 -D_GNU_SOURCE $(DTO)
 CPPFLAGS += -Iinclude -I$(objdir)
 CC = gcc
 override CFLAGS += $(INVARIANT_CFLAGS)
