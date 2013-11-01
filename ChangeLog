@@ -1,3 +1,8 @@
+2013-11-01  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libctf/ctf_lookup.c (ctf_lookup_by_name): Do not look for a
+	prefix if the remaining name is too small to contain it.
+
 2013-10-07  Nick Alcock  <nick.alcock@oracle.com>
 
 	* GNUmakefile: Support SPARC64. No longer define -D_LITTLE_ENDIAN,
