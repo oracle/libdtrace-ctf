@@ -64,6 +64,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_types.h
 
 %files devel
+%defattr(-,root,root,-)
+%{_bindir}/ctf_dump
 %defattr(-,root,root,755)
 %exclude /usr/src/debug
 %exclude /usr/lib/debug
