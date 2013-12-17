@@ -3,6 +3,10 @@
 
 A bug causing reads of unintialized memory is fixed.
 
+ctf_dump is much more useful, dumping information on structure and union members
+recursively, and supporting a couple of extra flags that may be useful when
+driving ctf_dump from another process.
+
 0.4.0
 -----
 

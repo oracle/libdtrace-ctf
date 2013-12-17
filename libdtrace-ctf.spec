@@ -74,6 +74,9 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Tue Dec 17 2013 - nick.alcock@oracle.com - 0.4.1
+- Improvements to ctf_dump.
+- No longer look off the end of strings when looking up types by name.
 * Tue Jul 23 2013 - nick.alcock@oracle.com - 0.4.0
 - New ctf_dump tool and ctf_variable_iter() iteration function.
 * Wed Nov 28 2012 - kris.van.hees@oracle.com - 0.3.3
