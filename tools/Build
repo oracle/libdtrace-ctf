@@ -8,3 +8,8 @@ ctf_dump_DIR := $(current-dir)
 ctf_dump_SOURCES = ctf_dump.c
 ctf_dump_DEPS = libdtrace-ctf.so
 ctf_dump_LIBS = -L$(objdir) -ldtrace-ctf -lz
+
+install::
+	mkdir -p $(BINDIR)
+	$(call describe-install-target,$(BINDIR),ctf_dump)
+	install -m 755 $(objdir)/ctf_dump $(BINDIR)

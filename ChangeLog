@@ -1,3 +1,7 @@
+2013-12-17  Nick Alcock  <nick.alcock@oracle.com>
+
+	* tools/Build: Install ctf_dump.
+
 2013-11-01  Nick Alcock  <nick.alcock@oracle.com>
 
 	* libctf/ctf_lookup.c (ctf_lookup_by_name): Do not look for a
