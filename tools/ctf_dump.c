@@ -136,12 +136,13 @@ read_ctf(const char *file)
 }
 
 static void
-dump_ctf(const char *file, ctf_file_t *fp)
+dump_ctf(const char *file, ctf_file_t *fp, int quiet)
 {
         const char *errmsg;
         int err;
 
-        printf("\nCTF file: %s\n", file);
+	if (!quiet)
+		printf("\nCTF file: %s\n", file);
 
         printf ("\n  Types: \n");
         err = ctf_type_iter(fp, ctf_type_print, &fp);
@@ -171,10 +172,12 @@ err:
 static void
 usage(int argc, char *argv[])
 {
-        printf("Syntax: %s [-p parent-ctf] ctf...\n\n", argv[0]);
-        printf("-p is mandatory if any CTF files have parents.\n");
-        printf("If any CTF file has parents, all CTF files must have the "
-            "same parent.\n");
+	fprintf(stderr, "Syntax: %s [-p parent-ctf] -n ctf...\n\n", argv[0]);
+	fprintf(stderr, "-n: Do not dump parent's contents after loading.\n\n");
+	fprintf(stderr, "-q: Quiet: do not dump the CTF filename.\n\n");
+	fprintf(stderr, "-p is mandatory if any CTF files have parents.\n");
+	fprintf(stderr, "If any CTF file has parents, all CTF files must have "
+	    "the same parent.\n");
 }
 
 int
@@ -183,8 +186,10 @@ main(int argc, char *argv[])
         const char *parent = NULL;
         ctf_file_t *pfp = NULL;
         char opt;
+	int skip_parent = 0;
+	int quiet = 0;
 
-        while ((opt = getopt(argc, argv, "hp:")) != -1) {
+        while ((opt = getopt(argc, argv, "hnqp:")) != -1) {
                 switch (opt) {
                 case 'h':
                         usage(argc, argv);
@@ -192,13 +197,20 @@ main(int argc, char *argv[])
                 case 'p':
                         parent = optarg;
                         pfp = read_ctf(parent);
+			break;
+		case 'q':
+			quiet = 1;
+			break;
+		case 'n':
+			skip_parent = 1;
+			break;
                 }
         }
 
 	char **name;
 
-        if (pfp)
-                dump_ctf(parent, pfp);
+        if (pfp && !skip_parent)
+                dump_ctf(parent, pfp, quiet);
 
         for (name = &argv[optind]; *name; name++) {
 		ctf_file_t *fp = read_ctf(*name);
@@ -209,7 +221,7 @@ main(int argc, char *argv[])
                 if (parent)
                         ctf_import(fp, pfp);
 
-                dump_ctf(*name, fp);
+                dump_ctf(*name, fp, quiet);
 
 		ctf_close(fp);
 	}

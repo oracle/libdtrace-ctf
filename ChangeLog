@@ -6,6 +6,9 @@
 	* tools/ctf_dump.c (ctf_member_print): New function.
 	(ctf_type_print): Call it.  Call out type IDs explicitly.
 	(ctf_var_print): Call out type IDs explicitly.
+	(dump_ctf): Support quiet mode.
+	(usage): Add new quiet and no-parent-dump modes.
+	(main): Implement them.
 
 2013-11-01  Nick Alcock  <nick.alcock@oracle.com>
 
