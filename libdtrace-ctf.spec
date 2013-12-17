@@ -1,6 +1,6 @@
-# spec file for package dtrace-utils.
+# spec file for package libdtrace-ctf
 #
-# Copyright 2011, 2012 Oracle, Inc.
+# Copyright 2011, 2012, 2013 Oracle, Inc.
 #
 # Licensed under the GNU General Public License (GPL), version 2. See the file
 # COPYING in the top level of this tree.

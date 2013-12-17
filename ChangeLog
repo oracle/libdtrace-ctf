@@ -1,6 +1,8 @@
 2013-12-17  Nick Alcock  <nick.alcock@oracle.com>
 
 	* tools/Build: Install ctf_dump.
+	* libdtrace-ctf.spec: Fix copyright date and package name comment
+	in specfile.
 
 2013-11-01  Nick Alcock  <nick.alcock@oracle.com>
 
