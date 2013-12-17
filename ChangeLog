@@ -3,6 +3,9 @@
 	* tools/Build: Install ctf_dump.
 	* libdtrace-ctf.spec: Fix copyright date and package name comment
 	in specfile.
+	* tools/ctf_dump.c (ctf_member_print): New function.
+	(ctf_type_print): Call it.  Call out type IDs explicitly.
+	(ctf_var_print): Call out type IDs explicitly.
 
 2013-11-01  Nick Alcock  <nick.alcock@oracle.com>
 

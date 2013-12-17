@@ -1,7 +1,7 @@
 /*
  * A simple CTF dumper.
  *
- * Copyright 2012 Oracle, Inc.
+ * Copyright 2012, 2013 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2. See the file
  * COPYING in the top level of this tree.
@@ -16,6 +16,9 @@
 #include <zlib.h>
 
 #define GZCHUNKSIZE (1024*512)		    /* gzip uncompression chunk size */
+
+static int
+ctf_type_print(ctf_id_t id, void *state);
 
 static ctf_sect_t
 ctf_uncompress(const char *name)
@@ -59,13 +62,35 @@ ctf_uncompress(const char *name)
 }
 
 static int
+ctf_member_print(const char *name, ctf_id_t id, ulong_t offset, int depth,
+    void *state)
+{
+	ctf_file_t **fp = state;
+	char buf[512];
+	int i;
+
+	printf("           ");
+	for (i = 1; i < depth; i++)
+		printf("    ");
+
+	ctf_type_lname(*fp, id, buf, sizeof (buf));
+	printf("    [%lx] (ID %lx) %s %s (aligned at %lx)\n", offset, id, buf,
+	    name, ctf_type_align(*fp, id));
+
+	return 0;
+}
+
+static int
 ctf_type_print(ctf_id_t id, void *state)
 {
 	ctf_file_t **fp = state;
 	char buf[512];
 
 	ctf_type_lname(*fp, id, buf, sizeof (buf));
-	printf("    %lx: %s\n", id, buf);
+	printf("    ID %lx: %s\n", id, buf);
+
+	ctf_type_visit(*fp, id, ctf_member_print, state);
+
 	return 0;
 }
 
@@ -76,7 +101,7 @@ ctf_var_print(const char *name, ctf_id_t id, void *state)
 	char buf[512];
 
 	ctf_type_lname(*fp, id, buf, sizeof (buf));
-	printf("    %s -> %lx: %s\n", name, id, buf);
+	printf("    %s -> ID %lx: %s\n", name, id, buf);
 	return 0;
 }
 
