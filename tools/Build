@@ -9,7 +9,12 @@ ctf_dump_SOURCES = ctf_dump.c
 ctf_dump_DEPS = libdtrace-ctf.so
 ctf_dump_LIBS = -L$(objdir) -ldtrace-ctf -lz
 
+# This project is also included in dtrace as a submodule, to assist in
+# test coverage analysis and debugging as part of dtrace.  We don't want
+# to install it in that situation.
+ifeq ($(PROJECT),libdtrace-ctf)
 install::
 	mkdir -p $(BINDIR)
 	$(call describe-install-target,$(BINDIR),ctf_dump)
 	install -m 755 $(objdir)/ctf_dump $(BINDIR)
+endif
