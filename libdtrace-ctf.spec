@@ -13,7 +13,7 @@ Provides:     libdtrace-ctf
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.4.0
+Version:      0.4.1
 Release:      1
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
