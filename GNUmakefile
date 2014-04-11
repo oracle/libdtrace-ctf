@@ -42,7 +42,7 @@ $(shell mkdir -p $(objdir))
 include Makeoptions
 include Makefunctions
 include Makeconfig
-include Build */Build
+include Build $(wildcard $(sort */Build))
 -include $(objdir)/*.d
 include Makerules
 

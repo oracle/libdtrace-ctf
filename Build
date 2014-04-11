@@ -6,5 +6,5 @@
 # for the sake of such projects.
 
 ifneq ($(PROJECT),libdtrace-ctf)
-include $(current-dir)/*/Build
+include $(wildcard $(sort $(current-dir)/*/Build))
 endif
