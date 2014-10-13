@@ -1,4 +1,9 @@
-2014-04-11  Nick Alcock  <nick.alcokc@oracle.com>
+2014-10-13  Nick Alcock  <nick.alcock@oracle.com>
+
+	* libdtrace-ctf.spec: Release 0.4.2.
+	* GNUmakefile: Likewise.
+
+2014-04-11  Nick Alcock  <nick.alcock@oracle.com>
 
 	* GNUmakefile (include): Sort inclusions, for compatibility with
 	GNU make 4.0.
