@@ -62,7 +62,8 @@ ctf_create(int *errp)
 	fp->ctf_dtvstrlen = 1;
 	fp->ctf_dtnextid = 1;
 	fp->ctf_dtoldid = 0;
-	fp->ctf_updates = 0;
+	fp->ctf_snapshots = 0;
+	fp->ctf_snapshot_lu = 0;
 
 	return (fp);
 }
@@ -433,8 +434,10 @@ ctf_update(ctf_file_t *fp)
 	nfp->ctf_dtvstrlen = fp->ctf_dtvstrlen;
 	nfp->ctf_dtnextid = fp->ctf_dtnextid;
 	nfp->ctf_dtoldid = fp->ctf_dtnextid - 1;
-	nfp->ctf_updates = fp->ctf_updates;
+	nfp->ctf_snapshots = fp->ctf_snapshots + 1;
 	nfp->ctf_specific = fp->ctf_specific;
+
+	nfp->ctf_snapshot_lu = fp->ctf_snapshots;
 
 	fp->ctf_dthash = NULL;
 	fp->ctf_dthashlen = 0;
@@ -460,8 +463,6 @@ ctf_update(ctf_file_t *fp)
 
 	nfp->ctf_refcnt = 1; /* force nfp to be freed */
 	ctf_close(nfp);
-
-	fp->ctf_updates++;
 
 	return (0);
 }
@@ -602,29 +603,55 @@ ctf_dvd_lookup(ctf_file_t *fp, const char *name)
  * Discard all of the dynamic type definitions and variable definitions that
  * have been added to the container since the last call to ctf_update().  We
  * locate such types by scanning the dtd list and deleting elements that have
- * type IDs greater than ctf_dtoldid, which is set by ctf_update(), above,
- * and by scanning the variable list and deleting elements that have update
- * IDs equal to the current value of ctf_updates (indicating that they were
- * added after the most recent call to that function).
+ * type IDs greater than ctf_dtoldid, which is set by ctf_update(), above, and
+ * by scanning the variable list and deleting elements that have update IDs
+ * equal to the current value of the last-update snapshot count (indicating that
+ * they were added after the most recent call to ctf_update()).
  */
 int
 ctf_discard(ctf_file_t *fp)
 {
-	ctf_dtdef_t *dtd, *ntd;
-	ctf_dvdef_t *dvd, *nvd;
-
-
-	if (!(fp->ctf_flags & LCTF_RDWR))
-		return (ctf_set_errno(fp, ECTF_RDONLY));
+	ctf_snapshot_id_t last_update = { fp->ctf_dtoldid,
+					  fp->ctf_snapshot_lu + 1 };
 
 	if (!(fp->ctf_flags & LCTF_DIRTY))
 		return (0); /* no update required */
 
+	return (ctf_rollback(fp, last_update));
+}
+
+ctf_snapshot_id_t
+ctf_snapshot(ctf_file_t *fp)
+{
+	ctf_snapshot_id_t snapid;
+	snapid.dtd_id = fp->ctf_dtnextid - 1;
+	snapid.snapshot_id = fp->ctf_snapshots++;
+	return snapid;
+}
+
+/*
+ * Like ctf_discard(), only discards everything after a particular ID.
+ */
+int
+ctf_rollback(ctf_file_t *fp, ctf_snapshot_id_t id)
+{
+	ctf_dtdef_t *dtd, *ntd;
+	ctf_dvdef_t *dvd, *nvd;
+
+	if (!(fp->ctf_flags & LCTF_RDWR))
+		return (ctf_set_errno(fp, ECTF_RDONLY));
+
+	if (fp->ctf_dtoldid > id.dtd_id)
+		return (ctf_set_errno(fp, ECTF_OVERROLLBACK));
+
+	if (fp->ctf_snapshot_lu >= id.snapshot_id)
+		return (ctf_set_errno(fp, ECTF_OVERROLLBACK));
+
 	for (dtd = ctf_list_next(&fp->ctf_dtdefs); dtd != NULL; dtd = ntd) {
 		ntd = ctf_list_next(dtd);
 
-		if (dtd->dtd_type <= fp->ctf_dtoldid)
-			continue; /* skip types that have been committed */
+		if (dtd->dtd_type <= id.dtd_id)
+			continue;
 
 		ctf_dtd_delete(fp, dtd);
 	}
@@ -632,17 +659,21 @@ ctf_discard(ctf_file_t *fp)
 	for (dvd = ctf_list_next(&fp->ctf_dvdefs); dvd != NULL; dvd = nvd) {
 		nvd = ctf_list_next(dvd);
 
-		if (dvd->dvd_updates < fp->ctf_updates)
+		if (dvd->dvd_snapshots <= id.snapshot_id)
 			continue;
 
 		ctf_dvd_delete(fp, dvd);
 	}
 
-	fp->ctf_dtnextid = fp->ctf_dtoldid + 1;
-	fp->ctf_flags &= ~LCTF_DIRTY;
+	fp->ctf_dtnextid = id.dtd_id + 1;
+	fp->ctf_snapshots = id.snapshot_id;
+
+	if (fp->ctf_snapshots == fp->ctf_snapshot_lu)
+		fp->ctf_flags &= ~LCTF_DIRTY;
 
 	return (0);
 }
+
 
 static ctf_id_t
 ctf_add_generic(ctf_file_t *fp, uint_t flag, const char *name, ctf_dtdef_t **rp)
@@ -1175,7 +1206,7 @@ ctf_add_variable(ctf_file_t *fp, const char *name, ctf_id_t ref)
 		return (ctf_set_errno(fp, EAGAIN));
 	}
 	dvd->dvd_type = ref;
-	dvd->dvd_updates = fp->ctf_updates;
+	dvd->dvd_snapshots = fp->ctf_snapshots;
 
 	ctf_dvd_insert(fp, dvd);
 

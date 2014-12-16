@@ -1,5 +1,5 @@
 /*
- * Copyright 2005, 2011 Oracle, Inc.
+ * Copyright 2005, 2011, 2012, 2014 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2.
  */
@@ -77,6 +77,11 @@ typedef struct ctf_lblinfo {
 	ctf_id_t ctb_typeidx;	/* last type associated with the label */
 } ctf_lblinfo_t;
 
+typedef struct ctf_snapshot_id {
+	ulong_t dtd_id;		/* highest DTD ID at time of snapshot */
+	ulong_t snapshot_id;	/* snapshot id at time of snapshot */
+} ctf_snapshot_id_t;
+
 #define	CTF_FUNC_VARARG	0x1	/* function arguments end with varargs */
 
 /*
@@ -129,7 +134,8 @@ enum {
 	ECTF_DTFULL,		/* CTF type is full (no more members allowed) */
 	ECTF_FULL,		/* CTF container is full */
 	ECTF_DUPLICATE,		/* duplicate member or variable name */
-	ECTF_CONFLICT		/* conflicting type definition present */
+	ECTF_CONFLICT,		/* conflicting type definition present */
+	ECTF_OVERROLLBACK	/* attempt to roll back past a ctf_update */
 };
 
 /*
@@ -253,6 +259,8 @@ extern int ctf_add_variable(ctf_file_t *, const char *, ctf_id_t);
 extern int ctf_set_array(ctf_file_t *, ctf_id_t, const ctf_arinfo_t *);
 
 extern int ctf_update(ctf_file_t *);
+extern ctf_snapshot_id_t ctf_snapshot(ctf_file_t *);
+extern int ctf_rollback(ctf_file_t *, ctf_snapshot_id_t);
 extern int ctf_discard(ctf_file_t *);
 extern int ctf_write(ctf_file_t *, int);
 extern int ctf_gzwrite(ctf_file_t *fp, gzFile fd);

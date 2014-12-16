@@ -140,7 +140,7 @@ typedef struct ctf_dvdef {
 	struct ctf_dvdef *dvd_hash; /* hash chain pointer for ctf_dvhash */
 	char *dvd_name;		/* name associated with variable */
 	ctf_id_t dvd_type;	/* type of variable */
-	ulong_t dvd_updates;	/* updates count when inserted */
+	ulong_t dvd_snapshots;	/* snapshot count when inserted */
 } ctf_dvdef_t;
 
 typedef struct ctf_bundle {
@@ -200,7 +200,8 @@ struct ctf_file {
 	size_t ctf_dtvstrlen;	/* total length of dynamic type+var strings */
 	ulong_t ctf_dtnextid;	/* next dynamic type id to assign */
 	ulong_t ctf_dtoldid;	/* oldest id that has been committed */
-	ulong_t ctf_updates;	/* ctf_update() call count */
+	ulong_t ctf_snapshots;	/* ctf_snapshot() plus ctf_update() count */
+	ulong_t ctf_snapshot_lu; /* ctf_snapshot() call count at last update */
 	void *ctf_specific;	/* data for ctf_get/setspecific */
 };
 
