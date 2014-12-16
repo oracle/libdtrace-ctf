@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 -- 2012 Oracle, Inc.
+ * Copyright 2003 -- 2014 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2. See the file
  * COPYING in the top level of this tree.
@@ -50,6 +50,7 @@ static const char *const _ctf_errlist[] = {
 	"Limit on number of dynamic types reached",	 /* ECTF_FULL */
 	"Duplicate member or variable name",		 /* ECTF_DUPLICATE */
 	"Conflicting type is already defined",		 /* ECTF_CONFLICT */
+	"Attempt to roll back past a ctf_update"	 /* ECTF_OVERROLLBACK */
 };
 
 static const int _ctf_nerr = sizeof (_ctf_errlist) / sizeof (_ctf_errlist[0]);

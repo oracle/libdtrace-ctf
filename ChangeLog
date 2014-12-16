@@ -1,4 +1,28 @@
-2014-04-11  Nick Alcock  <nick.alcokc@oracle.com>
+2014-12-16  Nick Alcock  <nick.alcock@oracle.com>
+
+	* include/sys/ctf_api.h (ctf_snapshot_id_t): New type.
+	(ECTF_OVERROLLBACK): New error.
+	(ctf_snapshot): New.
+	(ctf_rollback): Likewise.
+	* libctf/ctf_error.c (_ctf_errlist): Add ECTF_OVERROLLBACK.
+	* libctf/libdtrace-ctf.ver (LIBDTRACE_CTF_1.2): Add to a new
+	symbol version.
+	* libctf/Build (libdtrace-ctf_VERSION): Bump.
+
+	* libctf/ctf_impl.h (ctf_file): Rename ctf_updates to
+	ctf_snapshots, tracking snapshot calls too.  Add ctf_snapshot_lu,
+	tracking snapshot value at last update.
+	(ctf_dvdef): Rename dvd_updates to dvd_snapshots.
+	* libctf/ctf_create.c (ctf_create): Initialize the new fields.
+	(ctf_update): Likewise, boosting ctf_snapshots and setting
+	ctf_snapshot_lu to the old value.
+	(ctf_add_variable): Update accordingly.
+	(ctf_sanpshot): New, boost the snapshot ID and return the old
+	value.
+	(ctf_discard): Reimplement in terms of...
+	(ctf_rollback): ... this new function.
+
+2014-04-11  Nick Alcock  <nick.alcock@oracle.com>
 
 	* GNUmakefile (include): Sort inclusions, for compatibility with
 	GNU make 4.0.
