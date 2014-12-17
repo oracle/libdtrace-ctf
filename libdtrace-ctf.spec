@@ -13,7 +13,7 @@ Provides:     libdtrace-ctf
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.4.2
+Version:      0.4.3
 Release:      1
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -74,6 +74,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Wed Nov 17 2014 - nick.alcock@oracle.com - 0.4.3
+- New ctf_snapshot() and ctf_rollback() functions. [Orabug: 20229533]
 * Mon Oct 13 2014 - nick.alcock@oracle.com - 0.4.2
 - Work with GNU Make 4.0.
 * Tue Dec 17 2013 - nick.alcock@oracle.com - 0.4.1

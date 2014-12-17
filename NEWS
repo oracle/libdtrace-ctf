@@ -1,3 +1,10 @@
+0.4.3
+-----
+
+A pair of new functions, ctf_snapshot() and ctf_rollback(), provide type-
+and-variable discarding functionality like that ctf_discard() did, but
+without the expense of calling ctf_update() to get a point to discard to.
+
 0.4.2
 -----
 
