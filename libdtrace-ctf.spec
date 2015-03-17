@@ -1,6 +1,6 @@
 # spec file for package libdtrace-ctf
 #
-# Copyright 2011, 2012, 2013, 2014 Oracle, Inc.
+# Copyright 2011, 2012, 2013, 2014, 2015 Oracle, Inc.
 #
 # Licensed under the GNU General Public License (GPL), version 2. See the file
 # COPYING in the top level of this tree.
@@ -74,7 +74,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
-* Wed Nov 17 2014 - nick.alcock@oracle.com - 0.4.3
+* Tue Mar 17 2015 - nick.alcock@oracle.com - 0.4.3
 - New ctf_snapshot() and ctf_rollback() functions. [Orabug: 20229533]
 * Mon Oct 13 2014 - nick.alcock@oracle.com - 0.4.2
 - Work with GNU Make 4.0.
