@@ -1,7 +1,28 @@
+0.5.0
+-----
+
+libdtrace-ctf is now compatible with big-endian systems (like SPARC).
+
+0.4.3
+-----
+
+A pair of new functions, ctf_snapshot() and ctf_rollback(), provide type-
+and-variable discarding functionality like that ctf_discard() did, but
+without the expense of calling ctf_update() to get a point to discard to.
+
+0.4.2
+-----
+
+The build system is now compatible with GNU Make 4.0.
+
 0.4.1
 -----
 
 A bug causing reads of unintialized memory is fixed.
+
+ctf_dump is much more useful, dumping information on structure and union members
+recursively, and supporting a couple of extra flags that may be useful when
+driving ctf_dump from another process.
 
 0.4.0
 -----

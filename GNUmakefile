@@ -2,7 +2,7 @@
 #
 # Build files in subdirectories are included by this file.
 #
-# Copyright 2011, 2012 Oracle, Inc.
+# Copyright 2011, 2012, 2013, 2014, 2015 Oracle, Inc.
 #
 # Licensed under the GNU General Public License (GPL), version 2. See the file
 # COPYING in the top level of this tree.
@@ -11,7 +11,7 @@
 .SUFFIXES:
 
 PROJECT := libdtrace-ctf
-VERSION := 0.4.0
+VERSION := 0.5.0
 
 # Verify supported hardware.
 

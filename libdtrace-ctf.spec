@@ -1,6 +1,6 @@
 # spec file for package libdtrace-ctf
 #
-# Copyright 2011, 2012, 2013 Oracle, Inc.
+# Copyright 2011, 2012, 2013, 2014, 2015 Oracle, Inc.
 #
 # Licensed under the GNU General Public License (GPL), version 2. See the file
 # COPYING in the top level of this tree.
@@ -13,7 +13,7 @@ Provides:     libdtrace-ctf
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.4.0
+Version:      0.5.0
 Release:      1
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -74,6 +74,15 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Fri Mar 20 2015 - nick.alcock@oracle.com - 0.5.0
+- SPARC / big-endian support.
+* Tue Mar 17 2015 - nick.alcock@oracle.com - 0.4.3
+- New ctf_snapshot() and ctf_rollback() functions. [Orabug: 20229533]
+* Mon Oct 13 2014 - nick.alcock@oracle.com - 0.4.2
+- Work with GNU Make 4.0.
+* Tue Dec 17 2013 - nick.alcock@oracle.com - 0.4.1
+- Improvements to ctf_dump.
+- No longer look off the end of strings when looking up types by name.
 * Tue Jul 23 2013 - nick.alcock@oracle.com - 0.4.0
 - New ctf_dump tool and ctf_variable_iter() iteration function.
 * Wed Nov 28 2012 - kris.van.hees@oracle.com - 0.3.3
