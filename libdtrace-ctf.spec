@@ -74,6 +74,9 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Fri Aug 14 2015 - nick.alcock@oracle.com - 0.5.0-3
+- Include the distribution in the RPM release. [Orabug: 21211461]
+- No longer Provide: our own name. [Orabug: 21622263]
 * Thu Apr 23 2015 - nick.alcock%oracle.com - 0.5.0-2
 - libdtrace-ctf-devel now depends on the appropriate version of libdtrace-ctf.
 [Orabug: 20948460]
