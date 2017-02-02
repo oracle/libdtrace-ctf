@@ -1291,10 +1291,10 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	ctf_id_t dst_type = CTF_ERR;
 	uint_t dst_kind = CTF_K_UNKNOWN;
 
-	const ctf_type_t *tp;
 	const char *name;
 	uint_t kind, flag, vlen;
 
+	const ctf_type_t *src_tp, *dst_tp;
 	ctf_bundle_t src, dst;
 	ctf_encoding_t src_en, dst_en;
 	ctf_arinfo_t src_ar, dst_ar;
@@ -1309,13 +1309,13 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	if (!(dst_fp->ctf_flags & LCTF_RDWR))
 		return (ctf_set_errno(dst_fp, ECTF_RDONLY));
 
-	if ((tp = ctf_lookup_by_id(&src_fp, src_type)) == NULL)
+	if ((src_tp = ctf_lookup_by_id(&src_fp, src_type)) == NULL)
 		return (ctf_set_errno(dst_fp, ctf_errno(src_fp)));
 
-	name = ctf_strptr(src_fp, tp->ctt_name);
-	kind = LCTF_INFO_KIND(src_fp, tp->ctt_info);
-	flag = LCTF_INFO_ROOT(src_fp, tp->ctt_info);
-	vlen = LCTF_INFO_VLEN(src_fp, tp->ctt_info);
+	name = ctf_strptr(src_fp, src_tp->ctt_name);
+	kind = LCTF_INFO_KIND(src_fp, src_tp->ctt_info);
+	flag = LCTF_INFO_ROOT(src_fp, src_tp->ctt_info);
+	vlen = LCTF_INFO_VLEN(src_fp, src_tp->ctt_info);
 
 	switch (kind) {
 	case CTF_K_STRUCT:
@@ -1354,6 +1354,51 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
 
 	/*
+	 * We take special action for an integer or a float since it is
+	 * described not only by its name but also its encoding.  For integers,
+	 * bit-fields exploit this degeneracy.
+	 */
+	if (kind == CTF_K_INTEGER || kind == CTF_K_FLOAT) {
+		if (ctf_type_encoding(src_fp, src_type, &src_en) != 0)
+			return (ctf_set_errno(dst_fp, ctf_errno(src_fp)));
+
+		if (dst_type != CTF_ERR) {
+			ctf_file_t *fp = dst_fp;
+
+			if ((dst_tp = ctf_lookup_by_id(&fp, dst_type)) == NULL)
+				return (CTF_ERR);
+
+			if (LCTF_INFO_ROOT(fp, dst_tp->ctt_info) &
+			    CTF_ADD_ROOT) {
+				/*
+				 * The type that we found in the hash is also
+				 * root-visible.  If the two types match then
+				 * use the existing one; otherwise, declare a
+				 * conflict.
+				 */
+				if (ctf_type_encoding(dst_fp, dst_type,
+				    &dst_en) != 0)
+					return (CTF_ERR); /* errno set for us */
+
+				if (bcmp(&src_en, &dst_en,
+				    sizeof (ctf_encoding_t)) == 0)
+					return (dst_type);
+				else
+					return (ctf_set_errno(dst_fp,
+					    ECTF_CONFLICT));
+			} else {
+				/*
+				 * We found a non-root-visible type in the hash.
+				 * We reset dst_type to ensure that we continue
+				 * to look for a possible conflict in the
+				 * pending list.
+				 */
+				dst_type = CTF_ERR;
+			}
+		}
+	}
+
+	/*
 	 * If the non-empty name was not found in the appropriate hash, search
 	 * the list of pending dynamic definitions that are not yet committed.
 	 * If a matching name and kind are found, assume this is the type that
@@ -1363,12 +1408,43 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	 */
 	if (dst_type == CTF_ERR && name[0] != '\0') {
 		for (dtd = ctf_list_prev(&dst_fp->ctf_dtdefs); dtd != NULL &&
-		    dtd->dtd_type > dst_fp->ctf_dtoldid;
+		    CTF_TYPE_TO_INDEX(dtd->dtd_type) > dst_fp->ctf_dtoldid;
 		    dtd = ctf_list_prev(dtd)) {
 			if (CTF_INFO_KIND(dtd->dtd_data.ctt_info) == kind &&
 			    dtd->dtd_name != NULL &&
-			    strcmp(dtd->dtd_name, name) == 0)
-				return (dtd->dtd_type);
+			    strcmp(dtd->dtd_name, name) == 0) {
+				uint_t sroot;   /* is the src root-visible */
+				uint_t droot;   /* is the dst root-visible */
+				uint_t match;   /* do the encodings match */
+
+				if (kind != CTF_K_INTEGER &&
+				    kind != CTF_K_FLOAT)
+					return (dtd->dtd_type);
+
+				sroot = (flag & CTF_ADD_ROOT);
+				droot = (LCTF_INFO_ROOT(dst_fp,
+				    dtd->dtd_data.ctt_info) & CTF_ADD_ROOT);
+
+				match = (bcmp(&src_en, &dtd->dtd_u.dtu_enc,
+				    sizeof (ctf_encoding_t)) == 0);
+
+				/*
+				 * If the types share the same encoding then
+				 * return the id of the first unless one type
+				 * is root-visible and the other is not; in
+				 * that case the new type must get a new id
+				 * if a match is never found.
+				 *
+				 * If there's no match then keep looking unless
+				 * both types are root-visible, in which case
+				 * we report a conflict.
+				 */
+				if (match && sroot == droot)
+					return (dtd->dtd_type);
+				else if (!match && sroot && droot)
+					return (ctf_set_errno(dst_fp,
+					    ECTF_CONFLICT));
+			}
 		}
 	}
 
@@ -1388,21 +1464,19 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	 */
 	switch (kind) {
 	case CTF_K_INTEGER:
+		/*
+		 * If we found a match we will have either returned it or
+		 * declared a conflict.
+		 */
+		dst_type = ctf_add_integer(dst_fp, flag, name, &src_en);
+		break;
+
 	case CTF_K_FLOAT:
-		if (ctf_type_encoding(src_fp, src_type, &src_en) != 0)
-			return (ctf_set_errno(dst_fp, ctf_errno(src_fp)));
-
-		if (dst_type != CTF_ERR) {
-			if (ctf_type_encoding(dst_fp, dst_type, &dst_en) != 0)
-				return (CTF_ERR); /* errno is set for us */
-
-			if (bcmp(&src_en, &dst_en, sizeof (ctf_encoding_t)))
-				return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
-
-		} else if (kind == CTF_K_INTEGER) {
-			dst_type = ctf_add_integer(dst_fp, flag, name, &src_en);
-		} else
-			dst_type = ctf_add_float(dst_fp, flag, name, &src_en);
+		/*
+		 * If we found a match we will have either returned it or
+		 * declared a conflict.
+		 */
+		dst_type = ctf_add_float(dst_fp, flag, name, &src_en);
 		break;
 
 	case CTF_K_POINTER:
@@ -1443,7 +1517,7 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		break;
 
 	case CTF_K_FUNCTION:
-		ctc.ctc_return = ctf_add_type(dst_fp, src_fp, tp->ctt_type);
+		ctc.ctc_return = ctf_add_type(dst_fp, src_fp, src_tp->ctt_type);
 		ctc.ctc_argc = 0;
 		ctc.ctc_flags = 0;
 

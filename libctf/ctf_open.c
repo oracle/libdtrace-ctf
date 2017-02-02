@@ -286,13 +286,13 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 	 */
 	for (id = 1, tp = tbuf; tp < tend; xp++, id++) {
 		ushort_t kind = LCTF_INFO_KIND(fp, tp->ctt_info);
+		ushort_t flag = LCTF_INFO_ROOT(fp, tp->ctt_info);
 		ulong_t vlen = LCTF_INFO_VLEN(fp, tp->ctt_info);
 		ssize_t size, increment;
 
 		const char *name;
 		size_t vbytes;
 		ctf_helem_t *hep;
-		ctf_encoding_t cte;
 
 		(void) ctf_get_ctt_size(fp, tp, &size, &increment);
 		name = ctf_strptr(fp, tp->ctt_name);
@@ -301,9 +301,13 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 		case CTF_K_INTEGER:
 		case CTF_K_FLOAT:
 			/*
-			 * Only insert a new integer base type definition if
-			 * this type name has not been defined yet.  We re-use
-			 * the names with different encodings for bit-fields.
+			 * Names are reused by bit-fields, which are
+			 * differentiated by their encodings, and so typically
+			 * we'd record only the first instance of a given
+			 * intrinsic.  However, we replace an existing type with
+			 * a root-visible version so that we can be sure to find
+			 * it when checking for conflicting definitions in
+			 * ctf_add_type().
 			 */
 			if ((hep = ctf_hash_lookup(&fp->ctf_names, fp,
 			    name, strlen(name))) == NULL) {
@@ -311,12 +315,7 @@ init_types(ctf_file_t *fp, const ctf_header_t *cth)
 				    CTF_INDEX_TO_TYPE(id, child), tp->ctt_name);
 				if (err != 0 && err != ECTF_STRTAB)
 					return (err);
-			} else if (ctf_type_encoding(fp, hep->h_type,
-			    &cte) == 0 && cte.cte_bits == 0) {
-				/*
-				 * Work-around SOS8 stabs bug: replace existing
-				 * intrinsic w/ same name if it was zero bits.
-				 */
+			} else if (flag & CTF_ADD_ROOT) {
 				hep->h_type = CTF_INDEX_TO_TYPE(id, child);
 			}
 			vbytes = sizeof (uint_t);
