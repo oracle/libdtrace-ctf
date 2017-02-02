@@ -1,7 +1,7 @@
 /*
  * A simple CTF dumper.
  *
- * Copyright 2012, 2013 Oracle, Inc.
+ * Copyright 2012, 2013, 2017 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2. See the file
  * COPYING in the top level of this tree.
@@ -74,8 +74,16 @@ ctf_member_print(const char *name, ctf_id_t id, ulong_t offset, int depth,
 		printf("    ");
 
 	ctf_type_lname(*fp, id, buf, sizeof (buf));
-	printf("    [%lx] (ID %lx) %s %s (aligned at %lx)\n", offset, id, buf,
+	printf("    [0x%lx] (ID 0x%lx) %s %s (aligned at 0x%lx", offset, id, buf,
 	    name, ctf_type_align(*fp, id));
+	if ((ctf_type_kind(*fp, id) == CTF_K_INTEGER) ||
+	    (ctf_type_kind(*fp, id) == CTF_K_FLOAT)) {
+		ctf_encoding_t ep;
+		ctf_type_encoding(*fp, id, &ep);
+		printf(", format 0x%x, offset 0x%x, bits 0x%x", ep.cte_format,
+		    ep.cte_offset, ep.cte_bits);
+	}
+	printf(")\n");
 
 	return 0;
 }
