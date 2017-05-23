@@ -12,8 +12,8 @@ Group:        Development/Libraries
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.5.0
-Release:      3%{?dist}
+Version:      0.6.0
+Release:      1%{?dist}
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 ExclusiveArch:    x86_64 sparc64
@@ -74,6 +74,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Tue May 23 2017 - nick.alcock@oracle.com - 0.6.0-1
+- Bitfield support (Robert M. Harris) [Orabug: 25815088]
 * Fri Aug 14 2015 - nick.alcock@oracle.com - 0.5.0-3
 - Include the distribution in the RPM release. [Orabug: 21211461]
 - No longer Provide: our own name. [Orabug: 21622263]
@@ -81,7 +83,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 - libdtrace-ctf-devel now depends on the appropriate version of libdtrace-ctf.
 [Orabug: 20948460]
 * Fri Mar 20 2015 - nick.alcock@oracle.com - 0.5.0
-- SPARC / big-endian support.
+- SPARC / big-endian support. [Orabug: 20762799]
 * Tue Mar 17 2015 - nick.alcock@oracle.com - 0.4.3
 - New ctf_snapshot() and ctf_rollback() functions. [Orabug: 20229533]
 * Mon Oct 13 2014 - nick.alcock@oracle.com - 0.4.2

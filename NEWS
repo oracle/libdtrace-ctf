@@ -1,3 +1,13 @@
+0.6.0
+-----
+
+Support multiple types with the same name where only one is a root type better
+(as seen in the definition of bitfields).  This introduces additional error
+checking which may break situations in which multiple root types with the same
+name but different definitions.  All such situations are undefined: previously,
+libdtrace-ctf would have returned either the last such type defined or a random
+one depending on which API function was used.
+
 0.5.0
 -----
 
