@@ -1373,19 +1373,15 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 				/*
 				 * The type that we found in the hash is also
 				 * root-visible.  If the two types match then
-				 * use the existing one; otherwise, declare a
-				 * conflict.
-				 */
-				if (ctf_type_encoding(dst_fp, dst_type,
-				    &dst_en) != 0)
-					return (CTF_ERR); /* errno set for us */
-
-				if (bcmp(&src_en, &dst_en,
-				    sizeof (ctf_encoding_t)) == 0)
+				 * use the existing one: otherwise, ignore the
+				 * existing type, to avoid problems with
+				 * existing buggy CTF.
+ 				 */
+				if ((ctf_type_encoding(dst_fp, dst_type,
+					    &dst_en) == 0) &&
+				    (bcmp(&src_en, &dst_en,
+					sizeof (ctf_encoding_t)) == 0))
 					return (dst_type);
-				else
-					return (ctf_set_errno(dst_fp,
-					    ECTF_CONFLICT));
 			} else {
 				/*
 				 * We found a non-root-visible type in the hash.
@@ -1435,15 +1431,10 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 				 * that case the new type must get a new id
 				 * if a match is never found.
 				 *
-				 * If there's no match then keep looking unless
-				 * both types are root-visible, in which case
-				 * we report a conflict.
+				 * If there's no match then keep looking.
 				 */
 				if (match && sroot == droot)
 					return (dtd->dtd_type);
-				else if (!match && sroot && droot)
-					return (ctf_set_errno(dst_fp,
-					    ECTF_CONFLICT));
 			}
 		}
 	}
