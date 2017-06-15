@@ -1221,8 +1221,18 @@ enumcmp(const char *name, int value, void *arg)
 	ctf_bundle_t *ctb = arg;
 	int bvalue;
 
-	return (ctf_enum_value(ctb->ctb_file, ctb->ctb_type,
-	    name, &bvalue) == CTF_ERR || value != bvalue);
+	if (ctf_enum_value(ctb->ctb_file, ctb->ctb_type,
+		name, &bvalue) == CTF_ERR) {
+		ctf_dprintf("Conflict due to member %s iteration error.\n",
+		    name);
+		return 1;
+	}
+	if (value != bvalue) {
+		ctf_dprintf("Conflict due to value change: %i versus %i\n",
+		    value, bvalue);
+		return 1;
+	}
+	return 0;
 }
 
 static int
@@ -1241,8 +1251,18 @@ membcmp(const char *name, ctf_id_t type, ulong_t offset, void *arg)
 	ctf_bundle_t *ctb = arg;
 	ctf_membinfo_t ctm;
 
-	return (ctf_member_info(ctb->ctb_file, ctb->ctb_type,
-	    name, &ctm) == CTF_ERR || ctm.ctm_offset != offset);
+	if (ctf_member_info(ctb->ctb_file, ctb->ctb_type,
+		name, &ctm) == CTF_ERR) {
+		ctf_dprintf("Conflict due to member %s iteration error.\n",
+		    name);
+		return 1;
+	}
+	if (ctm.ctm_offset != offset) {
+		ctf_dprintf("Conflict due to member %s offset change: "
+		    "%lx versus %lx\n", name, ctm.ctm_offset, offset);
+		return 1;
+	}
+	return 0;
 }
 
 static int
@@ -1350,8 +1370,11 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	 */
 	if (dst_type != CTF_ERR && dst_kind != kind && (
 	    dst_kind != CTF_K_FORWARD || (kind != CTF_K_ENUM &&
-	    kind != CTF_K_STRUCT && kind != CTF_K_UNION)))
+	    kind != CTF_K_STRUCT && kind != CTF_K_UNION))) {
+		ctf_dprintf("Conflict for type %s: kinds differ, new: %i; "
+		    "old (ID %lx): %i\n", name, kind, dst_type, dst_kind);
 		return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
+	}
 
 	/*
 	 * If the non-empty name was not found in the appropriate hash, search
@@ -1396,8 +1419,14 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 			if (ctf_type_encoding(dst_fp, dst_type, &dst_en) != 0)
 				return (CTF_ERR); /* errno is set for us */
 
-			if (bcmp(&src_en, &dst_en, sizeof (ctf_encoding_t)))
+			if (bcmp(&src_en, &dst_en, sizeof (ctf_encoding_t))) {
+				ctf_dprintf("Conflict for type %s against ID %lx: "
+				    "integer encodings differ, old %x/%x/%x; "
+				    "new: %x/%x/%x\n", name, dst_type,
+				    src_en.cte_format, src_en.cte_offset, src_en.cte_bits,
+				    dst_en.cte_format, dst_en.cte_offset, dst_en.cte_bits);
 				return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
+			}
 
 		} else if (kind == CTF_K_INTEGER) {
 			dst_type = ctf_add_integer(dst_fp, flag, name, &src_en);
@@ -1436,8 +1465,14 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 			if (ctf_array_info(dst_fp, dst_type, &dst_ar) != 0)
 				return (CTF_ERR); /* errno is set for us */
 
-			if (bcmp(&src_ar, &dst_ar, sizeof (ctf_arinfo_t)))
+			if (bcmp(&src_ar, &dst_ar, sizeof (ctf_arinfo_t))) {
+				ctf_dprintf("Conflict for type %s against ID %lx: "
+				    "array info differs, old %lx/%lx/%x; "
+				    "new: %lx/%lx/%x\n", name, dst_type,
+				    src_ar.ctr_contents, src_ar.ctr_index, src_ar.ctr_nelems,
+				    dst_ar.ctr_contents, dst_ar.ctr_index, dst_ar.ctr_nelems);
 				return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
+			}
 		} else
 			dst_type = ctf_add_array(dst_fp, flag, &src_ar);
 		break;
@@ -1469,11 +1504,19 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		 */
 		if (dst_type != CTF_ERR && dst_kind != CTF_K_FORWARD) {
 			if (ctf_type_size(src_fp, src_type) !=
-			    ctf_type_size(dst_fp, dst_type))
+			    ctf_type_size(dst_fp, dst_type)) {
+				ctf_dprintf("Conflict for type %s against ID %lx: "
+				    "union size differs, old %li, new %li\n",
+				    name, dst_type, ctf_type_size(src_fp, src_type),
+				    ctf_type_size(dst_fp, dst_type));
 				return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
+			}
 
-			if (ctf_member_iter(src_fp, src_type, membcmp, &dst))
+			if (ctf_member_iter(src_fp, src_type, membcmp, &dst)) {
+				ctf_dprintf("Conflict for type %s against ID %lx: "
+				    "members differ, see above\n", name, dst_type);
 				return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
+			}
 
 			break;
 		}
@@ -1522,8 +1565,11 @@ ctf_add_type(ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	case CTF_K_ENUM:
 		if (dst_type != CTF_ERR && dst_kind != CTF_K_FORWARD) {
 			if (ctf_enum_iter(src_fp, src_type, enumcmp, &dst) ||
-			    ctf_enum_iter(dst_fp, dst_type, enumcmp, &src))
+			    ctf_enum_iter(dst_fp, dst_type, enumcmp, &src)) {
+				ctf_dprintf("Conflict for enum %s against ID %lx: "
+				    "members differ, see above\n", name, dst_type);
 				return (ctf_set_errno(dst_fp, ECTF_CONFLICT));
+			}
 		} else {
 			dst_type = ctf_add_enum(dst_fp, flag, name);
 			if ((dst.ctb_type = dst_type) == CTF_ERR ||
