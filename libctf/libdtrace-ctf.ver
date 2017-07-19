@@ -109,4 +109,9 @@ LIBDTRACE_CTF_1.2 {
 LIBDTRACE_CTF_1.3 {
     global:
         ctf_compress_write;
+        ctf_arc_write;
+        ctf_arc_open;
+        ctf_arc_close;
+        ctf_arc_open_by_name;
+        ctf_archive_iter;
 } LIBDTRACE_CTF_1.2;

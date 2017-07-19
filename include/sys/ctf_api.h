@@ -1,5 +1,5 @@
 /*
- * Copyright 2005, 2011, 2012, 2014 Oracle, Inc.
+ * Copyright 2005, 2011, 2012, 2014, 2017 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2.
  */
@@ -25,9 +25,13 @@ extern "C" {
 /*
  * Clients can open one or more CTF containers and obtain a pointer to an
  * opaque ctf_file_t.  Types are identified by an opaque ctf_id_t token.
+ * They can also open or create read-only archives of CTF containers in a
+ * ctf_archive_t.
+ *
  * These opaque definitions allow libctf to evolve without breaking clients.
  */
 typedef struct ctf_file ctf_file_t;
+typedef struct ctf_archive ctf_archive_t;
 typedef long ctf_id_t;
 
 /*
@@ -136,8 +140,9 @@ enum {
 	ECTF_DUPLICATE,		/* duplicate member or variable name */
 	ECTF_CONFLICT,		/* conflicting type definition present */
 	ECTF_OVERROLLBACK,	/* attempt to roll back past a ctf_update */
-	ECTF_COMPRESS		/* failed to compress CTF data */
-};
+	ECTF_COMPRESS,		/* failed to compress CTF data */
+	ECTF_ARCREATE,		/* error creating CTF archive */
+	ECTF_ARNNAME		/* name not found in CTF archive */
 };
 
 /*
@@ -171,6 +176,7 @@ typedef int ctf_enum_f(const char *, int, void *);
 typedef int ctf_variable_f(const char *, ctf_id_t, void *);
 typedef int ctf_type_f(ctf_id_t, void *);
 typedef int ctf_label_f(const char *, const ctf_lblinfo_t *, void *);
+typedef int ctf_archive_member_f(ctf_file_t *, const char *name, void *); 
 
 extern ctf_file_t *ctf_bufopen(const ctf_sect_t *, const ctf_sect_t *,
     const ctf_sect_t *, int *);
@@ -178,6 +184,11 @@ extern ctf_file_t *ctf_fdopen(int, int *);
 extern ctf_file_t *ctf_open(const char *, int *);
 extern ctf_file_t *ctf_create(int *);
 extern void ctf_close(ctf_file_t *);
+
+extern int ctf_arc_write(const char *, ctf_file_t **, size_t, const char **, size_t);
+extern ctf_archive_t *ctf_arc_open(const char *, int *);
+extern void ctf_arc_close(ctf_archive_t *);
+extern ctf_file_t *ctf_arc_open_by_name(const ctf_archive_t *, const char *, int *);
 
 extern ctf_file_t *ctf_parent_file(ctf_file_t *);
 extern const char *ctf_parent_name(ctf_file_t *);
@@ -232,6 +243,7 @@ extern int ctf_enum_iter(ctf_file_t *, ctf_id_t, ctf_enum_f *, void *);
 extern int ctf_type_iter(ctf_file_t *, ctf_type_f *, void *);
 extern int ctf_label_iter(ctf_file_t *, ctf_label_f *, void *);
 extern int ctf_variable_iter(ctf_file_t *, ctf_variable_f *, void *);
+extern int ctf_archive_iter(const ctf_archive_t *, ctf_archive_member_f *, void *);
 
 extern ctf_id_t ctf_add_array(ctf_file_t *, uint_t, const ctf_arinfo_t *);
 extern ctf_id_t ctf_add_const(ctf_file_t *, uint_t, ctf_id_t);

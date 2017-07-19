@@ -1,13 +1,20 @@
 # Licensed under the GNU General Public License (GPL), version 2. See the file
 # COPYING in the top level of this tree.
 
-CMDS += ctf_dump
+CMDS += ctf_dump ctf_ar
 ctf_dump_CPPFLAGS = -Iinclude
 ctf_dump_TARGET = ctf_dump
 ctf_dump_DIR := $(current-dir)
 ctf_dump_SOURCES = ctf_dump.c
 ctf_dump_DEPS = libdtrace-ctf.so
 ctf_dump_LIBS = -L$(objdir) -ldtrace-ctf -lz
+
+ctf_ar_CPPFLAGS = -Ilibctf -Iinclude
+ctf_ar_TARGET = ctf_ar
+ctf_ar_DIR := $(current-dir)
+ctf_ar_SOURCES = car.c
+ctf_ar_DEPS = libdtrace-ctf.so
+ctf_ar_LIBS = -L$(objdir) -ldtrace-ctf
 
 # This project is also included in dtrace as a submodule, to assist in
 # test coverage analysis and debugging as part of dtrace.  We don't want
@@ -17,4 +24,6 @@ install::
 	mkdir -p $(BINDIR)
 	$(call describe-install-target,$(BINDIR),ctf_dump)
 	install -m 755 $(objdir)/ctf_dump $(BINDIR)
+	$(call describe-install-target,$(BINDIR),ctf_ar)
+	install -m 755 $(objdir)/ctf_ar $(BINDIR)
 endif

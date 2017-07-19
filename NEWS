@@ -1,3 +1,11 @@
+0.7.0
+-----
+
+Support creation and use of "CTF archives" that contain any number of CTF files
+in an efficient, endian-independent, mmap()able representation.  A new tool,
+ctf_ar, supports listing and extraction of CTF files from these archives,
+for debugging.
+
 0.6.0
 -----
 

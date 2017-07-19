@@ -51,8 +51,9 @@ static const char *const _ctf_errlist[] = {
 	"Duplicate member or variable name",		 /* ECTF_DUPLICATE */
 	"Conflicting type is already defined",		 /* ECTF_CONFLICT */
 	"Attempt to roll back past a ctf_update",	 /* ECTF_OVERROLLBACK */
-	"Failed to compress CTF data"			 /* ECTF_COMPRESS */
-};
+	"Failed to compress CTF data",			 /* ECTF_COMPRESS */
+	"Failed to create CTF archive",			 /* ECTF_ARCREATE */
+	"Name not found in CTF archive"			 /* ECTF_ARNNAME */
 };
 
 static const int _ctf_nerr = sizeof (_ctf_errlist) / sizeof (_ctf_errlist[0]);
