@@ -12,29 +12,12 @@
 #include <sys/ctf_api.h>
 #include <sys/types.h>
 #include <sys/compiler.h>
-
-#ifdef _KERNEL
-
-#include <sys/systm.h>
-#include <sys/cmn_err.h>
-#include <sys/varargs.h>
-
-#define	isspace(c) \
-	((c) == ' ' || (c) == '\t' || (c) == '\n' || \
-	(c) == '\r' || (c) == '\f' || (c) == '\v')
-
-#define	MAP_FAILED	((void *)-1)
-
-#else	/* _KERNEL */
-
 #include <strings.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <limits.h>
 #include <ctype.h>
-
-#endif	/* _KERNEL */
 
 #ifdef	__cplusplus
 extern "C" {
