@@ -107,7 +107,7 @@ enum {
 	ECTF_NOPARENT,		/* parent CTF container is not available */
 	ECTF_DMODEL,		/* data model mismatch */
 	ECTF_MMAP,		/* failed to mmap a data section */
-	ECTF_ZALLOC,		/* failed to allocate decompression buffer */
+	ECTF_ZALLOC,		/* failed to allocate (de)compression buffer */
 	ECTF_DECOMPRESS,	/* failed to decompress CTF data */
 	ECTF_STRTAB,		/* string table for this string is missing */
 	ECTF_BADNAME,		/* string offset is corrupt w.r.t. strtab */
@@ -135,7 +135,9 @@ enum {
 	ECTF_FULL,		/* CTF container is full */
 	ECTF_DUPLICATE,		/* duplicate member or variable name */
 	ECTF_CONFLICT,		/* conflicting type definition present */
-	ECTF_OVERROLLBACK	/* attempt to roll back past a ctf_update */
+	ECTF_OVERROLLBACK,	/* attempt to roll back past a ctf_update */
+	ECTF_COMPRESS		/* failed to compress CTF data */
+};
 };
 
 /*
@@ -264,6 +266,7 @@ extern int ctf_rollback(ctf_file_t *, ctf_snapshot_id_t);
 extern int ctf_discard(ctf_file_t *);
 extern int ctf_write(ctf_file_t *, int);
 extern int ctf_gzwrite(ctf_file_t *fp, gzFile fd);
+extern int ctf_compress_write(ctf_file_t *fp, int fd);
 
 #ifdef	__cplusplus
 }

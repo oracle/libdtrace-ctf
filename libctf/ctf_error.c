@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 -- 2014 Oracle, Inc.
+ * Copyright 2003 -- 2017 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2. See the file
  * COPYING in the top level of this tree.
@@ -22,7 +22,7 @@ static const char *const _ctf_errlist[] = {
 	"Type information is in parent and unavailable", /* ECTF_NOPARENT */
 	"Cannot import types with different data model", /* ECTF_DMODEL */
 	"Failed to mmap a needed data section",		 /* ECTF_MMAP */
-	"Failed to allocate decompression buffer",	 /* ECTF_ZALLOC */
+	"Failed to allocate (de)compression buffer",	 /* ECTF_ZALLOC */
 	"Failed to decompress CTF data",		 /* ECTF_DECOMPRESS */
 	"External string table is not available",	 /* ECTF_STRTAB */
 	"String name offset is corrupt",		 /* ECTF_BADNAME */
@@ -50,7 +50,9 @@ static const char *const _ctf_errlist[] = {
 	"Limit on number of dynamic types reached",	 /* ECTF_FULL */
 	"Duplicate member or variable name",		 /* ECTF_DUPLICATE */
 	"Conflicting type is already defined",		 /* ECTF_CONFLICT */
-	"Attempt to roll back past a ctf_update"	 /* ECTF_OVERROLLBACK */
+	"Attempt to roll back past a ctf_update",	 /* ECTF_OVERROLLBACK */
+	"Failed to compress CTF data"			 /* ECTF_COMPRESS */
+};
 };
 
 static const int _ctf_nerr = sizeof (_ctf_errlist) / sizeof (_ctf_errlist[0]);

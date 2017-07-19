@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 -- 2013 Oracle, Inc.
+ * Copyright 2003 -- 2017 Oracle, Inc.
  *
  * Licensed under the GNU General Public License (GPL), version 2. See the file
  * COPYING in the top level of this tree.
@@ -17,6 +17,7 @@
 #include <dlfcn.h>
 #include <endian.h>
 #include <gelf.h>
+#include <zlib.h>
 
 static size_t _PAGESIZE;
 static size_t _PAGEMASK;
@@ -372,6 +373,62 @@ ctf_gzwrite(ctf_file_t *fp, gzFile fd)
 	}
 
 	return (0);
+}
+
+/*
+ * Compress the specified CTF data stream and write it to the specified file
+ * descriptor.
+ */
+int
+ctf_compress_write(ctf_file_t *fp, int fd)
+{
+	uchar_t *buf;
+	uchar_t *bp;
+	ctf_header_t h;
+	ctf_header_t *hp = &h;
+	ssize_t header_len = sizeof(ctf_header_t);
+	ssize_t compress_len;
+	size_t max_compress_len = compressBound(fp->ctf_size - header_len);
+	ssize_t len;
+	int rc;
+	int err = 0;
+
+	bcopy(fp->ctf_base, hp, header_len);
+	hp->cth_flags |= CTF_F_COMPRESS;
+
+	if ((buf = ctf_data_alloc(max_compress_len)) == MAP_FAILED)
+		return (ctf_set_errno(fp, ECTF_ZALLOC));
+
+	compress_len = max_compress_len;
+	if ((rc = compress(buf, (uLongf *) &compress_len, fp->ctf_base + header_len,
+		    fp->ctf_size - header_len)) != Z_OK) {
+		ctf_dprintf("zlib deflate err: %s\n", zError(rc));
+		err = ctf_set_errno(fp, ECTF_COMPRESS);
+		goto ret;
+	}
+
+	while (header_len > 0) {
+		if ((len = write(fd, hp, header_len)) < 0) {
+			err = ctf_set_errno(fp, errno);
+			goto ret;
+		}
+		header_len -= len;
+		hp += len;
+	}
+
+	bp = buf;
+	while (compress_len > 0) {
+		if ((len = write(fd, bp, compress_len)) < 0) {
+			err = ctf_set_errno(fp, errno);
+			goto ret;
+		}
+		compress_len -= len;
+		bp += len;
+	}
+
+ret:
+	ctf_data_free(buf, max_compress_len);
+	return (err);
 }
 
 /*
