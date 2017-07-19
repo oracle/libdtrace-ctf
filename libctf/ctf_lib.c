@@ -443,7 +443,7 @@ ctf_write(ctf_file_t *fp, int fd)
 	ssize_t len;
 
 	while (resid != 0) {
-		if ((len = write(fd, buf, resid)) <= 0)
+		if ((len = write(fd, buf, resid)) < 0)
 			return (ctf_set_errno(fp, errno));
 		resid -= len;
 		buf += len;
