@@ -1,7 +1,11 @@
 /*
- * Copyright 2011 Oracle, Inc.  All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  *
- * Licensed under the GNU General Public License (GPL), version 2.
+ * Licensed under the Universal Permissive License v 1.0 as shown at
+ * http://oss.oracle.com/licenses/upl.
+ *
+ * Licensed under the GNU General Public License (GPL), version 2. See the file
+ * COPYING in the top level of this tree.
  */
 
 #ifndef _SYS_COMPILER_H
