@@ -1,0 +1,43 @@
+* Efficiency
+** TODO Move to a decent hash?
+Currently, there are two distinct classes of hashtable used in libctf:
+
+ - ctf_hash hashes, used for hashes of data read from CTF sections only.  These
+   do not support element deletion and have a fixed maximum size, but have a
+   reasonably good hash function.  They are fundamental to the performance of
+   CTF in normal operation (when the hashes indeeed do not change in size).
+
+ - handrolled dtd hashes, used for the ctf_dthash and ctf_dvhash, i.e. for
+   hashes of dynamic data in CTF files under construction.  These support
+   deletion (very crudely) but have a fixed bucket count (sigh) and in the case
+   of ctf_dthash have an astonishingly crude hash function, which nonetheless
+   probably works.
+
+The latter class of hash has two instances at present, which share no code at
+all.  This is disgusting.  Their deletion support is also crude in the extreme
+and very slow -- though as it is only used when ctf_discard() is called, and
+that is only called on the occasion of a type error, this is probably not
+important.
+
+** TODO vape ctf_txlate
+This great big table is added to lots of things, initialized to zero... and
+never used for anything else.
+
+* Reliability
+** TODO Add a testsuite.
+OpenSolaris doesn't come with one, as far as I can tell.
+
+It is true that the only fundamental question is whether dwarf2ctf and dtrace
+work, and the latter has a testsuite and the former is *itself* a pretty
+effective testsuite by virtue of the sheer volume of data it must chew through
+--- but the dtrace testsuite is not publically available, and waiting twenty
+minutes to see if you've introduced a bug is terribly tiresome.
+** TODO Add a feature flag system to allow backwardly-incompatible changes.
+Right now we have no way to add extra validation because existing codebases
+might be broken (and have to revert one commit on every release branch as a
+consequence).  Add a feature-flag system to allow codebases to certify that they
+are ready for such changes in a fine-grained manner.
+
+* Features
+** TODO Add function-signature mapping
+Required for typed args in FBT and systrace.

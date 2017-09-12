@@ -6,6 +6,9 @@ in an efficient, endian-independent, mmap()able representation.  A new tool,
 ctf_ar, supports listing and extraction of CTF files from these archives,
 for debugging.
 
+libdtrace-ctf now supports not only reading compressed archives but also their
+creation, through the new function ctf_compress_write().
+
 0.6.0
 -----
 
