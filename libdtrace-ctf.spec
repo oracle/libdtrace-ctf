@@ -75,7 +75,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
-* Wed Sep  6 2017 - nick.alcock@oracle.com - 0.7.0-1
+* Tue Sep 12 2017 - nick.alcock@oracle.com - 0.7.0-1
 - CTF archive support [Orabug: 25815388]
 * Tue May 23 2017 - nick.alcock@oracle.com - 0.6.0-1
 - Bitfield support (Robert M. Harris) [Orabug: 25815088]
