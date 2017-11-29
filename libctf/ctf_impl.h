@@ -242,6 +242,12 @@ typedef struct ctf_archive_modent {
 	uint64_t ctf_offset;
 } ctf_archive_modent_t;
 
+
+/*
+ * If an offs is not aligned already then round it up and align it.
+ */
+#define	LCTF_ALIGN_OFFS(offs, align) ((offs + (align - 1)) & ~(align - 1))
+
 #define	LCTF_INDEX_TO_TYPEPTR(fp, i) \
 	((ctf_type_t *)((uintptr_t)(fp)->ctf_buf + (fp)->ctf_txlate[(i)]))
 
