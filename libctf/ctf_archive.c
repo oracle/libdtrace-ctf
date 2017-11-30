@@ -252,6 +252,7 @@ arc_write_one_ctf(ctf_file_t *f, int fd, size_t threshold)
 		if (writelen < 0)
 			return errno * -1;
 		ctfsz_len -= writelen;
+		ctfszp += writelen;
 	}
 
 	if (writefn(f, fd) != 0)
@@ -270,6 +271,7 @@ arc_write_one_ctf(ctf_file_t *f, int fd, size_t threshold)
 		if (writelen < 0)
 			return errno * -1;
 		ctfsz_len -= writelen;
+		ctfszp += writelen;
 	}
 
 	end_off = LCTF_ALIGN_OFFS(end_off, 8);
