@@ -225,7 +225,7 @@ arc_write_one_ctf(ctf_file_t *f, int fd, size_t threshold)
 {
 	off_t off, end_off;
 	uint64_t ctfsz = 0;
-	char *ctfszp = (char *) &ctfsz;
+	char *ctfszp;
 	size_t ctfsz_len;
 	int (*writefn) (ctf_file_t *fp, int fd);
 	struct stat s;
@@ -247,6 +247,7 @@ arc_write_one_ctf(ctf_file_t *f, int fd, size_t threshold)
 	 * This turns into the size in a moment.
 	 */
 	ctfsz_len = sizeof (ctfsz);
+	ctfszp = (char *) &ctfsz;
 	while (ctfsz_len > 0) {
 		ssize_t writelen = write(fd, ctfszp, ctfsz_len);
 		if (writelen < 0)
@@ -266,6 +267,7 @@ arc_write_one_ctf(ctf_file_t *f, int fd, size_t threshold)
 		return errno * -1;
 
 	ctfsz_len = sizeof (ctfsz);
+	ctfszp = (char *) &ctfsz;
 	while (ctfsz_len > 0) {
 		ssize_t writelen = write(fd, ctfszp, ctfsz_len);
 		if (writelen < 0)
