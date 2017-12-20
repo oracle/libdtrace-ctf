@@ -18,8 +18,8 @@ VERSION := 0.7.0
 
 # Verify supported hardware.
 
-$(if $(subst sparc64,,$(subst x86_64,,$(shell uname -m))), \
-    $(error "Error: DTrace for Linux only supports x86_64 and sparc64"),)
+$(if $(subst sparc64,,$(subst aarch64,,$(subst x86_64,,$(shell uname -m)))), \
+    $(error "Error: DTrace for Linux only supports x86_64, ARM64 and sparc64"),)
 $(if $(subst Linux,,$(shell uname -s)), \
     $(error "Error: DTrace only supports Linux"),)
 
