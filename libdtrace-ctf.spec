@@ -12,7 +12,7 @@ Group:        Development/Libraries
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.7.0
+Version:      0.7.1
 Release:      1%{?dist}
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -24,8 +24,7 @@ a subset of the C type system.
 
 Maintainers:
 -----------
-Nick Alcock <nick.alcock@oracle.com>
-Kris van Hees <kris.van.hees@oracle.com>
+DTrace external development mailing list <dtrace-devel@oss.oracle.com>
 
 %package devel
 Summary:      Compact Type Format development headers.
@@ -75,6 +74,10 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Mon Jan 22 2018 - nick.alcock@oracle.com - 0.7.1-1
+- Fix CTF archive alignment and failed write() handling
+  (Tomas Jedlicka) [Orabug: 27191792, 27204447]
+- Build on arm64 (Vincent Lim) [Orabug: 27418554]
 * Tue Sep 12 2017 - nick.alcock@oracle.com - 0.7.0-1
 - CTF archive support [Orabug: 25815388]
 * Tue May 23 2017 - nick.alcock@oracle.com - 0.6.0-1
