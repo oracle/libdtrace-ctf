@@ -114,7 +114,7 @@ int
 main(int argc, char *argv[])
 {
 	char **name;
-	char opt;
+	int opt;
 
 	while ((opt = getopt(argc, argv, "hxtvi:")) != -1) {
 		switch (opt) {
