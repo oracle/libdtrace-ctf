@@ -196,7 +196,7 @@ main(int argc, char *argv[])
 {
         const char *parent = NULL;
         ctf_file_t *pfp = NULL;
-        char opt;
+        int opt;
 	int skip_parent = 0;
 	int quiet = 0;
 
