@@ -1,6 +1,9 @@
 # spec file for package libdtrace-ctf
 #
-# Copyright 2011, 2012, 2013, 2014, 2015, 2017 Oracle, Inc.
+# Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+#
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# http://oss.oracle.com/licenses/upl.
 #
 # Licensed under the GNU General Public License (GPL), version 2. See the file
 # COPYING in the top level of this tree.
@@ -12,7 +15,7 @@ Group:        Development/Libraries
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.7.1
+Version:      0.8.0
 Release:      1%{?dist}
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -74,6 +77,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Mon Jan 29 2018 - nick.alcock@oracle.com - 0.8.0-1
+- Add CTF_CHAR.
 * Mon Jan 22 2018 - nick.alcock@oracle.com - 0.7.1-1
 - Fix CTF archive alignment and failed write() handling
   (Tomas Jedlicka) [Orabug: 27191792, 27204447]

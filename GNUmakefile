@@ -2,7 +2,7 @@
 #
 # Build files in subdirectories are included by this file.
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
@@ -14,7 +14,7 @@
 .SUFFIXES:
 
 PROJECT := libdtrace-ctf
-VERSION := 0.7.1
+VERSION := 0.8.0
 
 # Verify supported hardware.
 

@@ -1,3 +1,11 @@
+0.8.0
+-----
+
+Support for ARM64.
+
+A new #define is provided, CTF_CHAR, which can be used to produce a char type
+with the same signedness as the system's native char type.
+
 0.7.0
 -----
 
