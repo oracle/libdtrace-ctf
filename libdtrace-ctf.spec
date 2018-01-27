@@ -108,5 +108,5 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 - Report errors on type lookup correctly.
 * Fri Nov  2 2012 - nick.alcock@oracle.com - 0.3.2
 - CTF sections renamed to .ctf.
-* Fri Aug 30 2012 - nick.alcock@oracle.com - 0.3.0
+* Thu Aug 30 2012 - nick.alcock@oracle.com - 0.3.0
 - Split off from dtrace.
