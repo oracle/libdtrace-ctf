@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -12,6 +12,7 @@
 
 #include <sys/types.h>
 #include <sys/ctf_types.h>
+#include <limits.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -255,6 +256,16 @@ typedef struct ctf_type {
 #define	CTF_INT_CHAR	0x02	/* character display format */
 #define	CTF_INT_BOOL	0x04	/* boolean display format */
 #define	CTF_INT_VARARGS	0x08	/* varargs display format */
+
+/*
+ * Use CTF_CHAR to produce a char that agrees with the system's native
+ * char signedness.
+ */
+#if CHAR_MIN == 0
+#define CTF_CHAR (CTF_INT_CHAR)
+#else
+#define CTF_CHAR (CTF_INT_CHAR | CTF_INT_SIGNED)
+#endif
 
 /*
  * Values for ctt_type when kind is CTF_K_FLOAT.  The encoding, offset in bits,
