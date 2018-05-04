@@ -653,7 +653,7 @@ ctf_rollback(ctf_file_t *fp, ctf_snapshot_id_t id)
 	for (dtd = ctf_list_next(&fp->ctf_dtdefs); dtd != NULL; dtd = ntd) {
 		ntd = ctf_list_next(dtd);
 
-		if (dtd->dtd_type <= id.dtd_id)
+		if (CTF_TYPE_TO_INDEX(dtd->dtd_type) <= id.dtd_id)
 			continue;
 
 		ctf_dtd_delete(fp, dtd);
