@@ -15,7 +15,7 @@ Group:        Development/Libraries
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      0.8.0
+Version:      0.8.1
 Release:      1%{?dist}
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -77,6 +77,10 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Fri May 04 2018 - nick.alcock@oracle.com - 0.8.1-1
+- Fix ctf_rollback() in client containers to delete only the types
+added since the last snapshot, rather than all of them.
+[Orabug: 27971037]
 * Mon Jan 29 2018 - nick.alcock@oracle.com - 0.8.0-1
 - Add CTF_CHAR.
 * Mon Jan 22 2018 - nick.alcock@oracle.com - 0.7.1-1
