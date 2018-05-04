@@ -14,7 +14,7 @@
 .SUFFIXES:
 
 PROJECT := libdtrace-ctf
-VERSION := 0.8.0
+VERSION := 0.8.1
 
 # Verify supported hardware.
 

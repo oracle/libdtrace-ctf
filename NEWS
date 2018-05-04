@@ -1,3 +1,10 @@
+0.8.1
+-----
+
+Fix bug causing loss of all types in a CTF container if the container has
+a parent and ctf_rollback() is called.  (Only the types since the last
+ctf_snapshot() should be removed, not every type.)
+
 0.8.0
 -----
 
