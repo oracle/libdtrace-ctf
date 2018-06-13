@@ -1,7 +1,7 @@
 /*
  * A simple CTF dumper.
  *
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -225,6 +225,7 @@ main(int argc, char *argv[])
 
         for (name = &argv[optind]; *name; name++) {
 		ctf_file_t *fp = read_ctf(*name);
+		ctf_sect_t sect;
 
 		if (!fp)
 		    continue;
@@ -234,11 +235,17 @@ main(int argc, char *argv[])
 
                 dump_ctf(*name, fp, quiet);
 
+		sect = ctf_getdatasect(fp);
 		ctf_close(fp);
+		free((void *) sect.cts_data);
 	}
 
-        if (pfp)
+        if (pfp) {
+		ctf_sect_t sect;
+		sect = ctf_getdatasect(pfp);
                 ctf_close(pfp);
+		free((void *) sect.cts_data);
+	}
 
         return 0;
 }
