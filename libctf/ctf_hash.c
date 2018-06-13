@@ -30,7 +30,7 @@ ctf_hash_create(ctf_hash_t *hp, ulong_t nelems)
 		return (0);
 	}
 
-	hp->h_nbuckets = 2053;		/* use a prime number of hash buckets */
+	hp->h_nbuckets = 8191;		/* use a prime number of hash buckets */
 	hp->h_nelems = nelems + 1;	/* we use index zero as a sentinel */
 	hp->h_free = 1;			/* first free element is index 1 */
 
