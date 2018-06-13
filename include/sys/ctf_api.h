@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -196,6 +196,8 @@ extern ctf_file_t *ctf_arc_open_by_name(const ctf_archive_t *, const char *, int
 extern ctf_file_t *ctf_parent_file(ctf_file_t *);
 extern const char *ctf_parent_name(ctf_file_t *);
 extern void ctf_parent_name_set(ctf_file_t *, const char *);
+extern int ctf_type_isparent(ctf_file_t *, ctf_id_t);
+extern int ctf_type_ischild(ctf_file_t *, ctf_id_t);
 
 extern int ctf_import(ctf_file_t *, ctf_file_t *);
 extern int ctf_setmodel(ctf_file_t *, int);

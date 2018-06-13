@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -74,7 +74,7 @@ ctf_hash_compute(const char *key, size_t len)
 }
 
 int
-ctf_hash_insert(ctf_hash_t *hp, ctf_file_t *fp, ushort_t type, uint_t name)
+ctf_hash_insert(ctf_hash_t *hp, ctf_file_t *fp, uint32_t type, uint_t name)
 {
 	ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID(name)];
 	const char *str = ctsp->cts_strs + CTF_NAME_OFFSET(name);
@@ -111,7 +111,7 @@ ctf_hash_insert(ctf_hash_t *hp, ctf_file_t *fp, ushort_t type, uint_t name)
  * If the key is not present, then call ctf_hash_insert() and hash it in.
  */
 int
-ctf_hash_define(ctf_hash_t *hp, ctf_file_t *fp, ushort_t type, uint_t name)
+ctf_hash_define(ctf_hash_t *hp, ctf_file_t *fp, uint32_t type, uint_t name)
 {
 	const char *str = ctf_strptr(fp, name);
 	ctf_helem_t *hep = ctf_hash_lookup(hp, fp, str, strlen(str));

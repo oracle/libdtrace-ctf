@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -468,7 +468,12 @@ ctf_version(int version)
 	}
 
 	if (version > 0) {
-		if (version > CTF_VERSION) {
+		/*
+		 * Dynamic version switching is not presently supported.
+		 * We only support running as v2, which creates v2 files
+		 * but can read v1 files as well.
+		 */
+		if (version != CTF_VERSION_2) {
 			errno = ENOTSUP;
 			return (-1);
 		}

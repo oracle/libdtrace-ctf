@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -91,17 +91,17 @@ ctf_lookup_by_name(ctf_file_t *fp, const char *name)
 			 * data includes "struct foo *" but not "foo_t *" and
 			 * the user tries to access "foo_t *" in the debugger.
 			 */
-			ntype = fp->ctf_ptrtab[CTF_TYPE_TO_INDEX(type)];
+			ntype = fp->ctf_ptrtab[LCTF_TYPE_TO_INDEX(fp, type)];
 			if (ntype == 0) {
 				ntype = ctf_type_resolve(fp, type);
 				if (ntype == CTF_ERR || (ntype = fp->ctf_ptrtab[
-				    CTF_TYPE_TO_INDEX(ntype)]) == 0) {
+				    LCTF_TYPE_TO_INDEX(fp, ntype)]) == 0) {
 					(void) ctf_set_errno(fp, ECTF_NOTYPE);
 					goto err;
 				}
 			}
 
-			type = CTF_INDEX_TO_TYPE(ntype,
+			type = LCTF_INDEX_TO_TYPE(fp, ntype,
 			    (fp->ctf_flags & LCTF_CHILD));
 
 			q = p + 1;
@@ -229,7 +229,7 @@ ctf_lookup_by_symbol(ctf_file_t *fp, ulong_t symidx)
 	if (fp->ctf_sxlate[symidx] == -1u)
 		return (ctf_set_errno(fp, ECTF_NOTYPEDAT));
 
-	type = *(ushort_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]);
+	type = *(uint32_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]);
 	if (type == 0)
 		return (ctf_set_errno(fp, ECTF_NOTYPEDAT));
 
@@ -246,13 +246,13 @@ ctf_lookup_by_id(ctf_file_t **fpp, ctf_id_t type)
 {
 	ctf_file_t *fp = *fpp; /* caller passes in starting CTF container */
 
-	if ((fp->ctf_flags & LCTF_CHILD) && CTF_TYPE_ISPARENT(type) &&
+	if ((fp->ctf_flags & LCTF_CHILD) && LCTF_TYPE_ISPARENT(fp, type) &&
 	    (fp = fp->ctf_parent) == NULL) {
 		(void) ctf_set_errno(*fpp, ECTF_NOPARENT);
 		return (NULL);
 	}
 
-	type = CTF_TYPE_TO_INDEX(type);
+	type = LCTF_TYPE_TO_INDEX(fp, type);
 	if (type > 0 && type <= fp->ctf_typemax) {
 		*fpp = fp; /* function returns ending CTF container */
 		return (LCTF_INDEX_TO_TYPEPTR(fp, type));
@@ -270,8 +270,8 @@ int
 ctf_func_info(ctf_file_t *fp, ulong_t symidx, ctf_funcinfo_t *fip)
 {
 	const ctf_sect_t *sp = &fp->ctf_symtab;
-	const ushort_t *dp;
-	ushort_t info, kind, n;
+	const uint32_t *dp;
+	uint_t info, kind, n;
 
 	if (sp->cts_data == NULL)
 		return (ctf_set_errno(fp, ECTF_NOSYMTAB));
@@ -292,7 +292,7 @@ ctf_func_info(ctf_file_t *fp, ulong_t symidx, ctf_funcinfo_t *fip)
 	if (fp->ctf_sxlate[symidx] == -1u)
 		return (ctf_set_errno(fp, ECTF_NOFUNCDAT));
 
-	dp = (ushort_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]);
+	dp = (uint32_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]);
 
 	info = *dp++;
 	kind = LCTF_INFO_KIND(fp, info);
@@ -323,17 +323,17 @@ ctf_func_info(ctf_file_t *fp, ulong_t symidx, ctf_funcinfo_t *fip)
 int
 ctf_func_args(ctf_file_t *fp, ulong_t symidx, uint_t argc, ctf_id_t *argv)
 {
-	const ushort_t *dp;
+	const uint32_t *dp;
 	ctf_funcinfo_t f;
 
 	if (ctf_func_info(fp, symidx, &f) == CTF_ERR)
 		return (CTF_ERR); /* errno is set for us */
 
 	/*
-	 * The argument data is two ushort_t's past the translation table
+	 * The argument data is two uint32_t's past the translation table
 	 * offset: one for the function info, and one for the return type.
 	 */
-	dp = (ushort_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]) + 2;
+	dp = (uint32_t *)((uintptr_t)fp->ctf_buf + fp->ctf_sxlate[symidx]) + 2;
 
 	for (argc = MIN(argc, f.ctc_argc); argc != 0; argc--)
 		*argv++ = *dp++;

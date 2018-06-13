@@ -1,3 +1,48 @@
+1.0.0
+-----
+
+CTF format v2, boosting the number of types from 32767*2 to 2^31*2, the
+number of struct and union members and enumerated values from 2^10 to
+2^25, and the number of type kinds to 64 (for future expansion).
+
+The ABI is unchanged, and v1 CTF files will be transparently upgraded to
+v2 at open time, with unchanged type IDs.  Newly-created files will have
+type IDs in child containers starting at 0x80000000 (printf()s should use
+%lx or %lu, not %i, to avoid spuriously negatively-signed type IDs).
+
+We do not support using v1 files as the parent of v2 files, nor vice versa,
+and it is unlikely to work well.
+
+Changes likely to be of interest only to people using the API to directly access
+CTF files without going through the library:
+
+API changes, limit constants:
+ - CTF_MAX_TYPE, CTF_MAX_PTYPE, CTF_MAX_VLEN, CTF_MAX_SIZE,
+   CTF_MAX_LSIZE_SENT, CTF_LSTRUCT_THRESH now relate to v2 limits, not v1
+ - CTF_MAX_TYPE_V1, CTF_MAX_PTYPE_V1, CTF_MAX_VLEN_V1, CTF_MAX_SIZE_V1,
+   CTF_MAX_LSIZE_SENT_V1, CTF_LSTRUCT_THRESH_V1: New.
+ - CTF_MAX_LSIZE, CTF_MAX_INTOFF, CTF_MAX_INTBITS: Removed (unused).
+ - CTF_K_MAX is boosted to 63 from 31.
+
+API changes, file format accessors:
+ - CTF_INFO_KIND, CTF_INFO_ISROOT, CTF_INFO_VLEN: Replaced with
+   CTF_V1_INFO_* and CTF_V2_INFO_*.
+ - CTF_TYPE_TO_INDEX / CTF_INDEX_TO_TYPE: Replaced with CTF_V1_* and CTF_V2_*.
+ - CTF_TYPE_INFO: relates to v2 now.  No v1 equivalent.
+ - CTF_TYPE_ISPARENT / CTF_TYPE_ISCHILD: replaced with ctf_type_isparent() /
+   ctf_type_ischild() functions.
+
+API changes, structure changes:
+  - struct ctf_stype, ctf_stype, ctf_array now relate to v2, not v1
+  - struct ctf_stype_v1, ctf_type_v1, ctf_array_v1: New.
+  - struct ctf_lmember, ctf_member: Removed, replaced with _v1 and _v2
+    variants: the typedef persists, now relating to v2, not v1.
+  - The vlen for CTF_K_FUNCTION, CTF_K_ARRAY, CTF_K_STRUCT and CTF_K_UNION
+    has changed.
+  - Threshold changes mean that some types will be placed into ctf_stype
+    and some members into ctf_member where previously ctf_type and
+    ctf_lmember were needed.
+
 0.8.1
 -----
 

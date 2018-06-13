@@ -8,29 +8,24 @@
  * COPYING in the top level of this tree.
  */
 
+#include <sys/compiler.h>
 #include <ctf_impl.h>
 #include <string.h>
 
-ssize_t
-ctf_get_ctt_size(const ctf_file_t *fp, const ctf_type_t *tp, ssize_t *sizep,
-    ssize_t *incrementp)
+/*
+ * Determine whether a type is a parent or a child.  As of v2 this requires
+ * access to libctf-private state, so must move into the library.
+ */
+int
+ctf_type_isparent(ctf_file_t *fp, ctf_id_t id)
 {
-	ssize_t size, increment;
+	return LCTF_TYPE_ISPARENT(fp, id);
+}
 
-	if (tp->ctt_size == CTF_LSIZE_SENT) {
-		size = CTF_TYPE_LSIZE(tp);
-		increment = sizeof (ctf_type_t);
-	} else {
-		size = tp->ctt_size;
-		increment = sizeof (ctf_stype_t);
-	}
-
-	if (sizep)
-		*sizep = size;
-	if (incrementp)
-		*incrementp = increment;
-
-	return (size);
+int
+ctf_type_ischild(ctf_file_t *fp, ctf_id_t id)
+{
+	return LCTF_TYPE_ISCHILD(fp, id);
 }
 
 /*
@@ -132,8 +127,8 @@ ctf_type_iter(ctf_file_t *fp, ctf_type_f *func, void *arg)
 
 	for (id = 1; id <= max; id++) {
 		const ctf_type_t *tp = LCTF_INDEX_TO_TYPEPTR(fp, id);
-		if (CTF_INFO_ISROOT(tp->ctt_info) &&
-		    (rc = func(CTF_INDEX_TO_TYPE(id, child), arg)) != 0)
+		if (LCTF_INFO_ISROOT(fp, tp->ctt_info) &&
+		    (rc = func(LCTF_INDEX_TO_TYPE(fp, id, child), arg)) != 0)
 			return (rc);
 	}
 
@@ -343,11 +338,11 @@ ctf_type_size(ctf_file_t *fp, ctf_id_t type)
 
 	case CTF_K_ARRAY:
 		/*
-		 * Array size is not directly returned by stabs data.  Instead,
-		 * it defines the element type and requires the user to perform
-		 * the multiplication.  If ctf_get_ctt_size() returns zero, the
-		 * current version of ctfconvert does not compute member sizes
-		 * and we compute the size here on its behalf.
+		 * ctf_add_array() does not directly encode the element size, but
+		 * requires the user to multiply to determine the element size.
+		 *
+		 * If ctf_get_ctt_size() returns nonzero, then use the recorded
+		 * size instead.
 		 */
 		if ((size = ctf_get_ctt_size(fp, tp, NULL, NULL)) > 0)
 			return (size);
@@ -482,8 +477,9 @@ ctf_type_pointer(ctf_file_t *fp, ctf_id_t type)
 	if (ctf_lookup_by_id(&fp, type) == NULL)
 		return (CTF_ERR); /* errno is set for us */
 
-	if ((ntype = fp->ctf_ptrtab[CTF_TYPE_TO_INDEX(type)]) != 0)
-		return (CTF_INDEX_TO_TYPE(ntype, (fp->ctf_flags & LCTF_CHILD)));
+	if ((ntype = fp->ctf_ptrtab[LCTF_TYPE_TO_INDEX(fp, type)]) != 0)
+		return (LCTF_INDEX_TO_TYPE(fp, ntype,
+			(fp->ctf_flags & LCTF_CHILD)));
 
 	if ((type = ctf_type_resolve(fp, type)) == CTF_ERR)
 		return (ctf_set_errno(ofp, ECTF_NOTYPE));
@@ -491,8 +487,9 @@ ctf_type_pointer(ctf_file_t *fp, ctf_id_t type)
 	if (ctf_lookup_by_id(&fp, type) == NULL)
 		return (ctf_set_errno(ofp, ECTF_NOTYPE));
 
-	if ((ntype = fp->ctf_ptrtab[CTF_TYPE_TO_INDEX(type)]) != 0)
-		return (CTF_INDEX_TO_TYPE(ntype, (fp->ctf_flags & LCTF_CHILD)));
+	if ((ntype = fp->ctf_ptrtab[LCTF_TYPE_TO_INDEX(fp, type)]) != 0)
+		return (LCTF_INDEX_TO_TYPE(fp, ntype,
+			(fp->ctf_flags & LCTF_CHILD)));
 
 	return (ctf_set_errno(ofp, ECTF_NOTYPE));
 }
@@ -548,10 +545,10 @@ ctf_type_cmp(ctf_file_t *lfp, ctf_id_t ltype, ctf_file_t *rfp, ctf_id_t rtype)
 	if (lfp == rfp)
 		return (rval);
 
-	if (CTF_TYPE_ISPARENT(ltype) && lfp->ctf_parent != NULL)
+	if (LCTF_TYPE_ISPARENT(lfp, ltype) && lfp->ctf_parent != NULL)
 		lfp = lfp->ctf_parent;
 
-	if (CTF_TYPE_ISPARENT(rtype) && rfp->ctf_parent != NULL)
+	if (LCTF_TYPE_ISPARENT(rfp, rtype) && rfp->ctf_parent != NULL)
 		rfp = rfp->ctf_parent;
 
 	if (lfp < rfp)

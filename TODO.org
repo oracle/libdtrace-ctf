@@ -41,3 +41,7 @@ are ready for such changes in a fine-grained manner.
 * Features
 ** TODO Add function-signature mapping
 Required for typed args in FBT and systrace.
+
+* Minor
+** Refactor second init_types() loop
+Most of the entries can be collapsed to one.
