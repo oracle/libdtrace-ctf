@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -79,7 +79,7 @@ ctf_list_delete(ctf_list_t *lp, void *existing)
  * up the appropriate string table buffer and then adding the offset.
  */
 const char *
-ctf_strraw(ctf_file_t *fp, uint_t name)
+ctf_strraw(ctf_file_t *fp, uint32_t name)
 {
 	ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID(name)];
 
@@ -91,7 +91,7 @@ ctf_strraw(ctf_file_t *fp, uint_t name)
 }
 
 const char *
-ctf_strptr(ctf_file_t *fp, uint_t name)
+ctf_strptr(ctf_file_t *fp, uint32_t name)
 {
 	const char *s = ctf_strraw(fp, name);
 	return (s != NULL ? s : "(?)");

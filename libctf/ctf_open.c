@@ -126,7 +126,7 @@ static ssize_t get_vbytes_common(ushort_t kind, ssize_t size, size_t vlen)
 {
 	switch (kind) {
 	case CTF_K_INTEGER: case CTF_K_FLOAT:
-		return (sizeof (uint_t));
+		return (sizeof (uint32_t));
 	case CTF_K_ENUM:
 		return (sizeof (ctf_enum_t) * vlen);
 	case CTF_K_FORWARD: case CTF_K_UNKNOWN: case CTF_K_POINTER:
@@ -210,8 +210,8 @@ init_symtab(ctf_file_t *fp, const ctf_header_t *hp,
 	uint32_t *xp = fp->ctf_sxlate;
 	uint32_t *xend = xp + fp->ctf_nsyms;
 
-	uint_t objtoff = hp->cth_objtoff;
-	uint_t funcoff = hp->cth_funcoff;
+	uint32_t objtoff = hp->cth_objtoff;
+	uint32_t funcoff = hp->cth_funcoff;
 
 	ushort_t info, vlen;
 	Elf64_Sym sym, *gsp;
@@ -593,7 +593,7 @@ init_types(ctf_file_t *fp, ctf_header_t *cth)
 	const ctf_type_t *tp;
 	ctf_hash_t *hp;
 	uint32_t id, dst;
-	uint_t *xp;
+	uint32_t *xp;
 
 	/*
 	 * We determine whether the container is a child or a parent based on
@@ -668,8 +668,8 @@ init_types(ctf_file_t *fp, ctf_header_t *cth)
 	    pop[CTF_K_CONST] + pop[CTF_K_RESTRICT])) != 0)
 		return (err);
 
-	fp->ctf_txlate = ctf_alloc(sizeof (uint_t) * (fp->ctf_typemax + 1));
-	fp->ctf_ptrtab = ctf_alloc(sizeof (ushort_t) * (fp->ctf_typemax + 1));
+	fp->ctf_txlate = ctf_alloc(sizeof (uint32_t) * (fp->ctf_typemax + 1));
+	fp->ctf_ptrtab = ctf_alloc(sizeof (uint32_t) * (fp->ctf_typemax + 1));
 
 	if (fp->ctf_txlate == NULL || fp->ctf_ptrtab == NULL)
 		return (ENOMEM); /* memory allocation failed */
@@ -677,8 +677,8 @@ init_types(ctf_file_t *fp, ctf_header_t *cth)
 	xp = fp->ctf_txlate;
 	*xp++ = 0; /* type id 0 is used as a sentinel value */
 
-	bzero(fp->ctf_txlate, sizeof (uint_t) * (fp->ctf_typemax + 1));
-	bzero(fp->ctf_ptrtab, sizeof (ushort_t) * (fp->ctf_typemax + 1));
+	bzero(fp->ctf_txlate, sizeof (uint32_t) * (fp->ctf_typemax + 1));
+	bzero(fp->ctf_ptrtab, sizeof (uint32_t) * (fp->ctf_typemax + 1));
 
 	/*
 	 * In the second pass through the types, we fill in each entry of the
@@ -818,7 +818,7 @@ init_types(ctf_file_t *fp, ctf_header_t *cth)
 			break;
 		}
 
-		*xp = (uint_t)((uintptr_t)tp - (uintptr_t)fp->ctf_buf);
+		*xp = (uint32_t)((uintptr_t)tp - (uintptr_t)fp->ctf_buf);
 		tp = (ctf_type_t *)((uintptr_t)tp + increment + vbytes);
 	}
 
@@ -1178,12 +1178,12 @@ ctf_close(ctf_file_t *fp)
 
 	if (fp->ctf_txlate != NULL) {
 		ctf_free(fp->ctf_txlate,
-		    sizeof (uint_t) * (fp->ctf_typemax + 1));
+		    sizeof (uint32_t) * (fp->ctf_typemax + 1));
 	}
 
 	if (fp->ctf_ptrtab != NULL) {
 		ctf_free(fp->ctf_ptrtab,
-		    sizeof (ushort_t) * (fp->ctf_typemax + 1));
+		    sizeof (uint32_t) * (fp->ctf_typemax + 1));
 	}
 
 	ctf_hash_destroy(&fp->ctf_structs);

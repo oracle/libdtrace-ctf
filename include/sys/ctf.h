@@ -20,11 +20,6 @@
 extern "C" {
 #endif
 
-#ifdef static_assert
-static_assert(sizeof(uint_t) == sizeof(uint32_t),
-    "uint_t and uint32_t are different sizes: audit needed");
-#endif
-
 /*
  * CTF - Compact ANSI-C Type Format
  *
@@ -117,15 +112,15 @@ typedef struct ctf_preamble {
 
 typedef struct ctf_header {
 	ctf_preamble_t cth_preamble;
-	uint_t cth_parlabel;	/* ref to name of parent lbl uniq'd against */
-	uint_t cth_parname;	/* ref to basename of parent */
-	uint_t cth_lbloff;	/* offset of label section */
-	uint_t cth_objtoff;	/* offset of object section */
-	uint_t cth_funcoff;	/* offset of function section */
-	uint_t cth_varoff;	/* offset of variable section */
-	uint_t cth_typeoff;	/* offset of type section */
-	uint_t cth_stroff;	/* offset of string section */
-	uint_t cth_strlen;	/* length of string section in bytes */
+	uint32_t cth_parlabel;	/* ref to name of parent lbl uniq'd against */
+	uint32_t cth_parname;	/* ref to basename of parent */
+	uint32_t cth_lbloff;	/* offset of label section */
+	uint32_t cth_objtoff;	/* offset of object section */
+	uint32_t cth_funcoff;	/* offset of function section */
+	uint32_t cth_varoff;	/* offset of variable section */
+	uint32_t cth_typeoff;	/* offset of type section */
+	uint32_t cth_stroff;	/* offset of string section */
+	uint32_t cth_strlen;	/* length of string section in bytes */
 } ctf_header_t;
 
 #define	cth_magic   cth_preamble.ctp_magic
@@ -142,13 +137,13 @@ typedef struct ctf_header {
 #define	CTF_F_COMPRESS	0x1	/* data buffer is compressed */
 
 typedef struct ctf_lblent {
-	uint_t ctl_label;	/* ref to name of label */
-	uint_t ctl_typeidx;	/* last type associated with this label */
+	uint32_t ctl_label;	/* ref to name of label */
+	uint32_t ctl_typeidx;	/* last type associated with this label */
 } ctf_lblent_t;
 
 typedef struct ctf_varent {
-	uint_t ctv_name;	/* reference to name in string table */
-	uint_t ctv_typeidx;	/* index of type of this variable */
+	uint32_t ctv_name;	/* reference to name in string table */
+	uint32_t ctv_typeidx;	/* index of type of this variable */
 } ctf_varent_t;
 
 /*
@@ -163,7 +158,7 @@ typedef struct ctf_varent {
  * CTF_MAX_SIZE, and CTF_LSIZE_SENT is the sentinel.
  */
 typedef struct ctf_stype_v1 {
-	uint_t ctt_name;	/* reference to name in string table */
+	uint32_t ctt_name;	/* reference to name in string table */
 	ushort_t ctt_info;	/* encoded kind, variant length (see below) */
 	union {
 		ushort_t _size;	/* size of entire type in bytes */
@@ -172,14 +167,14 @@ typedef struct ctf_stype_v1 {
 } ctf_stype_v1_t;
 
 typedef struct ctf_type_v1 {
-	uint_t ctt_name;	/* reference to name in string table */
+	uint32_t ctt_name;	/* reference to name in string table */
 	ushort_t ctt_info;	/* encoded kind, variant length (see below) */
 	union {
 		ushort_t _size;	/* always CTF_LSIZE_SENT_V1 */
 		ushort_t _type; /* do not use */
 	} _u;
-	uint_t ctt_lsizehi;	/* high 32 bits of type size in bytes */
-	uint_t ctt_lsizelo;	/* low 32 bits of type size in bytes */
+	uint32_t ctt_lsizehi;	/* high 32 bits of type size in bytes */
+	uint32_t ctt_lsizelo;	/* low 32 bits of type size in bytes */
 } ctf_type_v1_t;
 
 typedef struct ctf_stype {
@@ -198,8 +193,8 @@ typedef struct ctf_type {
 		uint32_t _size;	/* always CTF_LSIZE_SENT */
 		uint32_t _type; /* do not use */
 	} _u;
-	uint_t ctt_lsizehi;	/* high 32 bits of type size in bytes */
-	uint_t ctt_lsizelo;	/* low 32 bits of type size in bytes */
+	uint32_t ctt_lsizehi;	/* high 32 bits of type size in bytes */
+	uint32_t ctt_lsizelo;	/* low 32 bits of type size in bytes */
 } ctf_type_t;
 
 #define	ctt_size _u._size	/* for fundamental types that have a size */
@@ -357,13 +352,13 @@ typedef struct ctf_type {
 typedef struct ctf_array_v1 {
 	ushort_t cta_contents;	/* reference to type of array contents */
 	ushort_t cta_index;	/* reference to type of array index */
-	uint_t cta_nelems;	/* number of elements */
+	uint32_t cta_nelems;	/* number of elements */
 } ctf_array_v1_t;
 
 typedef struct ctf_array {
 	uint32_t cta_contents;	/* reference to type of array contents */
 	uint32_t cta_index;	/* reference to type of array index */
-	uint_t cta_nelems;	/* number of elements */
+	uint32_t cta_nelems;	/* number of elements */
 } ctf_array_t;
 
 /*
@@ -382,27 +377,27 @@ typedef struct ctf_array {
 #define	CTF_LSTRUCT_THRESH	536870912
 
 typedef struct ctf_member_v1 {
-	uint_t ctm_name;	/* reference to name in string table */
+	uint32_t ctm_name;	/* reference to name in string table */
 	ushort_t ctm_type;	/* reference to type of member */
 	ushort_t ctm_offset;	/* offset of this member in bits */
 } ctf_member_v1_t;
 
 typedef struct ctf_member_v2 {
-	uint_t ctm_name;	/* reference to name in string table */
+	uint32_t ctm_name;	/* reference to name in string table */
 	uint32_t ctm_offset;	/* offset of this member in bits */
 	uint32_t ctm_type;	/* reference to type of member */
 } ctf_member_t;
 
 typedef struct ctf_lmember_v1 {
-	uint_t ctlm_name;	/* reference to name in string table */
+	uint32_t ctlm_name;	/* reference to name in string table */
 	ushort_t ctlm_type;	/* reference to type of member */
 	ushort_t ctlm_pad;	/* padding */
-	uint_t ctlm_offsethi;	/* high 32 bits of member offset in bits */
-	uint_t ctlm_offsetlo;	/* low 32 bits of member offset in bits */
+	uint32_t ctlm_offsethi;	/* high 32 bits of member offset in bits */
+	uint32_t ctlm_offsetlo;	/* low 32 bits of member offset in bits */
 } ctf_lmember_v1_t;
 
 typedef struct ctf_lmember_v2 {
-	uint_t ctlm_name;	/* reference to name in string table */
+	uint32_t ctlm_name;	/* reference to name in string table */
 	uint32_t ctlm_offsethi;	/* high 32 bits of member offset in bits */
 	uint32_t ctlm_type;	/* reference to type of member */
 	uint32_t ctlm_offsetlo;	/* low 32 bits of member offset in bits */
@@ -415,7 +410,7 @@ typedef struct ctf_lmember_v2 {
 #define	CTF_OFFSET_TO_LMEMLO(offset)	((uint32_t)(offset))
 
 typedef struct ctf_enum {
-	uint_t cte_name;	/* reference to name in string table */
+	uint32_t cte_name;	/* reference to name in string table */
 	int cte_value;		/* value associated with this name */
 } ctf_enum_t;
 

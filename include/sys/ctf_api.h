@@ -58,9 +58,9 @@ typedef struct ctf_sect {
  * field will contain values appropriate for the type defined in <sys/ctf.h>.
  */
 typedef struct ctf_encoding {
-	uint_t cte_format;	/* data format (CTF_INT_* or CTF_FP_* flags) */
-	uint_t cte_offset;	/* offset of value in bits */
-	uint_t cte_bits;	/* size of storage in bits */
+	uint32_t cte_format;	/* data format (CTF_INT_* or CTF_FP_* flags) */
+	uint32_t cte_offset;	/* offset of value in bits */
+	uint32_t cte_bits;	/* size of storage in bits */
 } ctf_encoding_t;
 
 typedef struct ctf_membinfo {
@@ -71,13 +71,13 @@ typedef struct ctf_membinfo {
 typedef struct ctf_arinfo {
 	ctf_id_t ctr_contents;	/* type of array contents */
 	ctf_id_t ctr_index;	/* type of array index */
-	uint_t ctr_nelems;	/* number of elements */
+	uint32_t ctr_nelems;	/* number of elements */
 } ctf_arinfo_t;
 
 typedef struct ctf_funcinfo {
 	ctf_id_t ctc_return;	/* function return type */
-	uint_t ctc_argc;	/* number of typed arguments to function */
-	uint_t ctc_flags;	/* function attributes (see below) */
+	uint32_t ctc_argc;	/* number of typed arguments to function */
+	uint32_t ctc_flags;	/* function attributes (see below) */
 } ctf_funcinfo_t;
 
 typedef struct ctf_lblinfo {
@@ -212,7 +212,7 @@ extern const char *ctf_errmsg(int);
 extern int ctf_version(int);
 
 extern int ctf_func_info(ctf_file_t *, ulong_t, ctf_funcinfo_t *);
-extern int ctf_func_args(ctf_file_t *, ulong_t, uint_t, ctf_id_t *);
+extern int ctf_func_args(ctf_file_t *, ulong_t, uint32_t, ctf_id_t *);
 
 extern ctf_id_t ctf_lookup_by_name(ctf_file_t *, const char *);
 extern ctf_id_t ctf_lookup_by_symbol(ctf_file_t *, ulong_t);
@@ -251,23 +251,23 @@ extern int ctf_label_iter(ctf_file_t *, ctf_label_f *, void *);
 extern int ctf_variable_iter(ctf_file_t *, ctf_variable_f *, void *);
 extern int ctf_archive_iter(const ctf_archive_t *, ctf_archive_member_f *, void *);
 
-extern ctf_id_t ctf_add_array(ctf_file_t *, uint_t, const ctf_arinfo_t *);
-extern ctf_id_t ctf_add_const(ctf_file_t *, uint_t, ctf_id_t);
-extern ctf_id_t ctf_add_enum(ctf_file_t *, uint_t, const char *);
-extern ctf_id_t ctf_add_float(ctf_file_t *, uint_t,
+extern ctf_id_t ctf_add_array(ctf_file_t *, uint32_t, const ctf_arinfo_t *);
+extern ctf_id_t ctf_add_const(ctf_file_t *, uint32_t, ctf_id_t);
+extern ctf_id_t ctf_add_enum(ctf_file_t *, uint32_t, const char *);
+extern ctf_id_t ctf_add_float(ctf_file_t *, uint32_t,
     const char *, const ctf_encoding_t *);
-extern ctf_id_t ctf_add_forward(ctf_file_t *, uint_t, const char *, uint_t);
-extern ctf_id_t ctf_add_function(ctf_file_t *, uint_t,
+extern ctf_id_t ctf_add_forward(ctf_file_t *, uint32_t, const char *, uint32_t);
+extern ctf_id_t ctf_add_function(ctf_file_t *, uint32_t,
     const ctf_funcinfo_t *, const ctf_id_t *);
-extern ctf_id_t ctf_add_integer(ctf_file_t *, uint_t,
+extern ctf_id_t ctf_add_integer(ctf_file_t *, uint32_t,
     const char *, const ctf_encoding_t *);
-extern ctf_id_t ctf_add_pointer(ctf_file_t *, uint_t, ctf_id_t);
+extern ctf_id_t ctf_add_pointer(ctf_file_t *, uint32_t, ctf_id_t);
 extern ctf_id_t ctf_add_type(ctf_file_t *, ctf_file_t *, ctf_id_t);
-extern ctf_id_t ctf_add_typedef(ctf_file_t *, uint_t, const char *, ctf_id_t);
-extern ctf_id_t ctf_add_restrict(ctf_file_t *, uint_t, ctf_id_t);
-extern ctf_id_t ctf_add_struct(ctf_file_t *, uint_t, const char *);
-extern ctf_id_t ctf_add_union(ctf_file_t *, uint_t, const char *);
-extern ctf_id_t ctf_add_volatile(ctf_file_t *, uint_t, ctf_id_t);
+extern ctf_id_t ctf_add_typedef(ctf_file_t *, uint32_t, const char *, ctf_id_t);
+extern ctf_id_t ctf_add_restrict(ctf_file_t *, uint32_t, ctf_id_t);
+extern ctf_id_t ctf_add_struct(ctf_file_t *, uint32_t, const char *);
+extern ctf_id_t ctf_add_union(ctf_file_t *, uint32_t, const char *);
+extern ctf_id_t ctf_add_volatile(ctf_file_t *, uint32_t, ctf_id_t);
 
 extern int ctf_add_enumerator(ctf_file_t *, ctf_id_t, const char *, int);
 extern int ctf_add_member(ctf_file_t *, ctf_id_t, const char *, ctf_id_t);

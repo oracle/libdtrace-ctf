@@ -16,7 +16,7 @@ static const ushort_t _CTF_EMPTY[1] = { 0 };
 int
 ctf_hash_create(ctf_hash_t *hp, ulong_t nelems)
 {
-	if (nelems > USHRT_MAX)
+	if (nelems > UINT32_MAX)
 		return (EOVERFLOW);
 
 	/*
@@ -48,7 +48,7 @@ ctf_hash_create(ctf_hash_t *hp, ulong_t nelems)
 	return (0);
 }
 
-uint_t
+uint32_t
 ctf_hash_size(const ctf_hash_t *hp)
 {
 	return (hp->h_nelems ? hp->h_nelems - 1 : 0);
@@ -74,7 +74,7 @@ ctf_hash_compute(const char *key, size_t len)
 }
 
 int
-ctf_hash_insert(ctf_hash_t *hp, ctf_file_t *fp, uint32_t type, uint_t name)
+ctf_hash_insert(ctf_hash_t *hp, ctf_file_t *fp, uint32_t type, uint32_t name)
 {
 	ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID(name)];
 	const char *str = ctsp->cts_strs + CTF_NAME_OFFSET(name);
@@ -111,7 +111,7 @@ ctf_hash_insert(ctf_hash_t *hp, ctf_file_t *fp, uint32_t type, uint_t name)
  * If the key is not present, then call ctf_hash_insert() and hash it in.
  */
 int
-ctf_hash_define(ctf_hash_t *hp, ctf_file_t *fp, uint32_t type, uint_t name)
+ctf_hash_define(ctf_hash_t *hp, ctf_file_t *fp, uint32_t type, uint32_t name)
 {
 	const char *str = ctf_strptr(fp, name);
 	ctf_helem_t *hep = ctf_hash_lookup(hp, fp, str, strlen(str));

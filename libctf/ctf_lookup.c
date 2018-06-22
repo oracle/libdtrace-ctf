@@ -271,7 +271,7 @@ ctf_func_info(ctf_file_t *fp, ulong_t symidx, ctf_funcinfo_t *fip)
 {
 	const ctf_sect_t *sp = &fp->ctf_symtab;
 	const uint32_t *dp;
-	uint_t info, kind, n;
+	uint32_t info, kind, n;
 
 	if (sp->cts_data == NULL)
 		return (ctf_set_errno(fp, ECTF_NOSYMTAB));
@@ -321,7 +321,7 @@ ctf_func_info(ctf_file_t *fp, ulong_t symidx, ctf_funcinfo_t *fip)
  * by the corresponding entry in the symbol table.
  */
 int
-ctf_func_args(ctf_file_t *fp, ulong_t symidx, uint_t argc, ctf_id_t *argv)
+ctf_func_args(ctf_file_t *fp, ulong_t symidx, uint32_t argc, ctf_id_t *argv)
 {
 	const uint32_t *dp;
 	ctf_funcinfo_t f;

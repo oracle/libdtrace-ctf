@@ -56,7 +56,7 @@ static int compute_colsize(ctf_file_t *fp, const char *name, void *data)
 	return(0);
 }
 const char *
-ctf_strraw(ctf_file_t *fp, uint_t name)
+ctf_strraw(ctf_file_t *fp, uint32_t name)
 {
 	ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID(name)];
 
@@ -68,7 +68,7 @@ ctf_strraw(ctf_file_t *fp, uint_t name)
 }
 
 const char *
-ctf_strptr(ctf_file_t *fp, uint_t name)
+ctf_strptr(ctf_file_t *fp, uint32_t name)
 {
 	const char *s = ctf_strraw(fp, name);
 	return (s != NULL ? s : "(?)");

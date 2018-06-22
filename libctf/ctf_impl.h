@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 typedef struct ctf_helem {
-	uint_t h_name;		/* reference to name in string table */
+	uint32_t h_name;	/* reference to name in string table */
 	uint32_t h_type;	/* corresponding type ID number */
 	uint32_t h_next;	/* index of next element in hash chain */
 } ctf_helem_t;
@@ -87,8 +87,8 @@ typedef enum {
 typedef struct ctf_decl_node {
 	ctf_list_t cd_list;			/* linked list pointers */
 	ctf_id_t cd_type;			/* type identifier */
-	uint_t cd_kind;				/* type kind */
-	uint_t cd_n;				/* type dimension if array */
+	uint32_t cd_kind;			/* type kind */
+	uint32_t cd_n;				/* type dimension if array */
 } ctf_decl_node_t;
 
 typedef struct ctf_decl {
@@ -165,10 +165,10 @@ struct ctf_file {
 	const uchar_t *ctf_base; /* base of CTF header + uncompressed buffer */
 	const uchar_t *ctf_buf;	/* uncompressed CTF data buffer */
 	size_t ctf_size;	/* size of CTF header + uncompressed data */
-	uint_t *ctf_sxlate;	/* translation table for symtab entries */
+	uint32_t *ctf_sxlate;	/* translation table for symtab entries */
 	ulong_t ctf_nsyms;	/* number of entries in symtab xlate table */
-	uint_t *ctf_txlate;	/* translation table for type IDs */
-	ushort_t *ctf_ptrtab;	/* translation table for pointer-to lookups */
+	uint32_t *ctf_txlate;	/* translation table for type IDs */
+	uint32_t *ctf_ptrtab;	/* translation table for pointer-to lookups */
 	struct ctf_varent *ctf_vars;	/* sorted variable->type mapping */
 	ulong_t ctf_nvars;		/* number of variables in ctf_vars */
 	ulong_t ctf_typemax;	/* maximum valid type ID number */
@@ -178,8 +178,8 @@ struct ctf_file {
 	const char *ctf_parname;	/* basename of parent (if any) */
 	char *ctf_dynparname;	/* dynamically allocated name of parent */
 	uint32_t ctf_parmax;	/* Highest type ID of a parent type */
-	uint_t ctf_refcnt;	/* reference count (for parent links) */
-	uint_t ctf_flags;	/* libctf flags (see below) */
+	uint32_t ctf_refcnt;	/* reference count (for parent links) */
+	uint32_t ctf_flags;	/* libctf flags (see below) */
 	int ctf_errno;		/* error code for most recent error */
 	int ctf_version;	/* CTF data version */
 	ctf_dtdef_t **ctf_dthash; /* hash of dynamic type definitions */
@@ -280,11 +280,11 @@ static inline ssize_t ctf_get_ctt_size(const ctf_file_t *fp,
 extern const ctf_type_t *ctf_lookup_by_id(ctf_file_t **, ctf_id_t);
 
 extern int ctf_hash_create(ctf_hash_t *, ulong_t);
-extern int ctf_hash_insert(ctf_hash_t *, ctf_file_t *, uint32_t, uint_t);
-extern int ctf_hash_define(ctf_hash_t *, ctf_file_t *, uint32_t, uint_t);
+extern int ctf_hash_insert(ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
+extern int ctf_hash_define(ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
 extern ctf_helem_t *ctf_hash_lookup(ctf_hash_t *, ctf_file_t *,
     const char *, size_t);
-extern uint_t ctf_hash_size(const ctf_hash_t *);
+extern uint32_t ctf_hash_size(const ctf_hash_t *);
 extern ulong_t ctf_hash_compute(const char *key, size_t len);
 extern void ctf_hash_destroy(ctf_hash_t *);
 
@@ -310,8 +310,8 @@ extern void ctf_decl_push(ctf_decl_t *, ctf_file_t *, ctf_id_t);
 _dt_printflike_(2,3)
 extern void ctf_decl_sprintf(ctf_decl_t *, const char *, ...);
 
-extern const char *ctf_strraw(ctf_file_t *, uint_t);
-extern const char *ctf_strptr(ctf_file_t *, uint_t);
+extern const char *ctf_strraw(ctf_file_t *, uint32_t);
+extern const char *ctf_strptr(ctf_file_t *, uint32_t);
 
 extern ctf_file_t *ctf_set_open_errno(int *, int);
 extern long ctf_set_errno(ctf_file_t *, int);

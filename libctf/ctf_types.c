@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -38,7 +38,7 @@ ctf_member_iter(ctf_file_t *fp, ctf_id_t type, ctf_member_f *func, void *arg)
 	ctf_file_t *ofp = fp;
 	const ctf_type_t *tp;
 	ssize_t size, increment;
-	uint_t kind, n;
+	uint32_t kind, n;
 	int rc;
 
 	if ((type = ctf_type_resolve(fp, type)) == CTF_ERR)
@@ -90,7 +90,7 @@ ctf_enum_iter(ctf_file_t *fp, ctf_id_t type, ctf_enum_f *func, void *arg)
 	const ctf_type_t *tp;
 	const ctf_enum_t *ep;
 	ssize_t increment;
-	uint_t n;
+	uint32_t n;
 	int rc;
 
 	if ((type = ctf_type_resolve(fp, type)) == CTF_ERR)
@@ -203,7 +203,7 @@ ctf_type_lname(ctf_file_t *fp, ctf_id_t type, char *buf, size_t len)
 	ctf_decl_node_t *cdp;
 	ctf_decl_prec_t prec, lp, rp;
 	int ptr, arr;
-	uint_t k;
+	uint32_t k;
 
 	if (fp == NULL && type == CTF_ERR)
 		return (-1); /* simplify caller code by permitting CTF_ERR */
@@ -386,7 +386,7 @@ ctf_type_align(ctf_file_t *fp, ctf_id_t type)
 
 	case CTF_K_STRUCT:
 	case CTF_K_UNION: {
-		uint_t n = LCTF_INFO_VLEN(fp, tp->ctt_info);
+		uint32_t n = LCTF_INFO_VLEN(fp, tp->ctt_info);
 		ssize_t size, increment;
 		size_t align = 0;
 		const void *vmp;
@@ -503,7 +503,7 @@ ctf_type_encoding(ctf_file_t *fp, ctf_id_t type, ctf_encoding_t *ep)
 	ctf_file_t *ofp = fp;
 	const ctf_type_t *tp;
 	ssize_t increment;
-	uint_t data;
+	uint32_t data;
 
 	if ((tp = ctf_lookup_by_id(&fp, type)) == NULL)
 		return (CTF_ERR); /* errno is set for us */
@@ -512,13 +512,13 @@ ctf_type_encoding(ctf_file_t *fp, ctf_id_t type, ctf_encoding_t *ep)
 
 	switch (LCTF_INFO_KIND(fp, tp->ctt_info)) {
 	case CTF_K_INTEGER:
-		data = *(const uint_t *)((uintptr_t)tp + increment);
+		data = *(const uint32_t *)((uintptr_t)tp + increment);
 		ep->cte_format = CTF_INT_ENCODING(data);
 		ep->cte_offset = CTF_INT_OFFSET(data);
 		ep->cte_bits = CTF_INT_BITS(data);
 		break;
 	case CTF_K_FLOAT:
-		data = *(const uint_t *)((uintptr_t)tp + increment);
+		data = *(const uint32_t *)((uintptr_t)tp + increment);
 		ep->cte_format = CTF_FP_ENCODING(data);
 		ep->cte_offset = CTF_FP_OFFSET(data);
 		ep->cte_bits = CTF_FP_BITS(data);
@@ -574,7 +574,7 @@ ctf_type_compat(ctf_file_t *lfp, ctf_id_t ltype,
 	const ctf_type_t *ltp, *rtp;
 	ctf_encoding_t le, re;
 	ctf_arinfo_t la, ra;
-	uint_t lkind, rkind;
+	uint32_t lkind, rkind;
 	int same_names = 0;
 
 	if (ctf_type_cmp(lfp, ltype, rfp, rtype) == 0)
@@ -635,7 +635,7 @@ ctf_member_info(ctf_file_t *fp, ctf_id_t type, const char *name,
 	ctf_file_t *ofp = fp;
 	const ctf_type_t *tp;
 	ssize_t size, increment;
-	uint_t kind, n;
+	uint32_t kind, n;
 
 	if ((type = ctf_type_resolve(fp, type)) == CTF_ERR)
 		return (CTF_ERR); /* errno is set for us */
@@ -714,7 +714,7 @@ ctf_enum_name(ctf_file_t *fp, ctf_id_t type, int value)
 	const ctf_type_t *tp;
 	const ctf_enum_t *ep;
 	ssize_t increment;
-	uint_t n;
+	uint32_t n;
 
 	if ((type = ctf_type_resolve(fp, type)) == CTF_ERR)
 		return (NULL); /* errno is set for us */
@@ -751,7 +751,7 @@ ctf_enum_value(ctf_file_t *fp, ctf_id_t type, const char *name, int *valp)
 	const ctf_type_t *tp;
 	const ctf_enum_t *ep;
 	ssize_t size, increment;
-	uint_t n;
+	uint32_t n;
 
 	if ((type = ctf_type_resolve(fp, type)) == CTF_ERR)
 		return (CTF_ERR); /* errno is set for us */
@@ -794,7 +794,7 @@ ctf_type_rvisit(ctf_file_t *fp, ctf_id_t type, ctf_visit_f *func, void *arg,
 	ctf_id_t otype = type;
 	const ctf_type_t *tp;
 	ssize_t size, increment;
-	uint_t kind, n;
+	uint32_t kind, n;
 	int rc;
 
 	if ((type = ctf_type_resolve(fp, type)) == CTF_ERR)

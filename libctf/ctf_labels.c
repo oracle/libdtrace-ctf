@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -12,7 +12,7 @@
 #include <string.h>
 
 static int
-extract_label_info(ctf_file_t *fp, const ctf_lblent_t **ctl, uint_t *num_labels)
+extract_label_info(ctf_file_t *fp, const ctf_lblent_t **ctl, uint32_t *num_labels)
 {
 	const ctf_header_t *h;
 
@@ -33,7 +33,7 @@ ctf_label_topmost(ctf_file_t *fp)
 {
 	const ctf_lblent_t *ctlp = NULL;
 	const char *s;
-	uint_t num_labels = 0;
+	uint32_t num_labels = 0;
 
 	if (extract_label_info(fp, &ctlp, &num_labels) == CTF_ERR)
 		return (NULL); /* errno is set */
@@ -57,8 +57,8 @@ int
 ctf_label_iter(ctf_file_t *fp, ctf_label_f *func, void *arg)
 {
 	const ctf_lblent_t *ctlp = NULL;
-	uint_t i;
-	uint_t num_labels = 0;
+	uint32_t i;
+	uint32_t num_labels = 0;
 	ctf_lblinfo_t linfo;
 	const char *lname;
 	int rc;
