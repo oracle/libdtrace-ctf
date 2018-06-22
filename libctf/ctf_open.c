@@ -1195,6 +1195,18 @@ ctf_close(ctf_file_t *fp)
 }
 
 /*
+ * Return the ctfsect out of the core ctf_impl.  Useful for freeing the
+ * ctfsect's data * after ctf_close(), which is why we return the actual
+ * structure, not a pointer to it, since that is likely to become a pointer to
+ * freed data before the return value is used under the expected use case of
+ * ctf_getsect()/ ctf_close()/free().
+ */
+extern ctf_sect_t ctf_getdatasect(const ctf_file_t *fp)
+{
+	return (fp->ctf_data);
+}
+
+/*
  * Return the CTF handle for the parent CTF container, if one exists.
  * Otherwise return NULL to indicate this container has no imported parent.
  */

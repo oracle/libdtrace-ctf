@@ -123,4 +123,5 @@ LIBDTRACE_CTF_1.4 {
     global:
         ctf_type_isparent;
         ctf_type_ischild;
+        ctf_getdatasect;
 } LIBDTRACE_CTF_1.3;

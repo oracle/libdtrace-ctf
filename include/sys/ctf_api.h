@@ -187,6 +187,7 @@ extern ctf_file_t *ctf_fdopen(int, int *);
 extern ctf_file_t *ctf_open(const char *, int *);
 extern ctf_file_t *ctf_create(int *);
 extern void ctf_close(ctf_file_t *);
+extern ctf_sect_t ctf_getdatasect(const ctf_file_t *);
 
 extern int ctf_arc_write(const char *, ctf_file_t **, size_t, const char **, size_t);
 extern ctf_archive_t *ctf_arc_open(const char *, int *);
