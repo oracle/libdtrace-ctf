@@ -72,7 +72,7 @@ ctf_member_print(const char *name, ctf_id_t id, ulong_t offset, int depth,
 	char buf[512];
 	int i;
 
-	printf("           ");
+	printf("	   ");
 	for (i = 1; i < depth; i++)
 		printf("    ");
 
@@ -119,14 +119,14 @@ ctf_var_print(const char *name, ctf_id_t id, void *state)
 static ctf_file_t *
 read_ctf(const char *file)
 {
-        ctf_sect_t sect = ctf_uncompress(file);
-        ctf_file_t *ctfp;
-        int err = 0;
+	ctf_sect_t sect = ctf_uncompress(file);
+	ctf_file_t *ctfp;
+	int err = 0;
 
-        if (sect.cts_data == NULL) {
-                fprintf(stderr, "%s open failure\n", file);
-                exit(1);
-        }
+	if (sect.cts_data == NULL) {
+		fprintf(stderr, "%s open failure\n", file);
+		exit(1);
+	}
 
 	/*
 	 * Skip 'CTF' files with no CTF data in them (there to placate the
@@ -135,49 +135,49 @@ read_ctf(const char *file)
 	if ((sect.cts_size == 0) || (sect.cts_size == 1))
 		return (NULL);
 
-        ctfp = ctf_bufopen(&sect, NULL, NULL, &err);
+	ctfp = ctf_bufopen(&sect, NULL, NULL, &err);
 
-        if (err != 0) {
-                fprintf(stderr, "%s bufopen failure: %s\n",
-                    file, ctf_errmsg(err));
-                exit(1);
-        }
+	if (err != 0) {
+		fprintf(stderr, "%s bufopen failure: %s\n",
+		    file, ctf_errmsg(err));
+		exit(1);
+	}
 
-        return (ctfp);
+	return (ctfp);
 }
 
 static void
 dump_ctf(const char *file, ctf_file_t *fp, int quiet)
 {
-        const char *errmsg;
-        int err;
+	const char *errmsg;
+	int err;
 
 	if (!quiet)
 		printf("\nCTF file: %s\n", file);
 
-        printf ("\n  Types: \n");
-        err = ctf_type_iter(fp, ctf_type_print, &fp);
+	printf ("\n  Types: \n");
+	err = ctf_type_iter(fp, ctf_type_print, &fp);
 
-        if (err != 0) {
-                errmsg = "type";
-                goto err;
-        }
+	if (err != 0) {
+		errmsg = "type";
+		goto err;
+	}
 
-        printf ("\n  Variables: \n");
-        err = ctf_variable_iter(fp, ctf_var_print, &fp);
+	printf ("\n  Variables: \n");
+	err = ctf_variable_iter(fp, ctf_var_print, &fp);
 
-        if (err != 0) {
-                errmsg = "variable";
-                goto err;
-        }
+	if (err != 0) {
+		errmsg = "variable";
+		goto err;
+	}
 
-        return;
+	return;
 
 err:
-        fflush(stdout);
-        fprintf(stderr, "%s %s iteration failed: %s\n", file, errmsg,
-            ctf_errmsg(err));
-        exit(1);
+	fflush(stdout);
+	fprintf(stderr, "%s %s iteration failed: %s\n", file, errmsg,
+	    ctf_errmsg(err));
+	exit(1);
 }
 
 static void
@@ -194,20 +194,20 @@ usage(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-        const char *parent = NULL;
-        ctf_file_t *pfp = NULL;
-        int opt;
+	const char *parent = NULL;
+	ctf_file_t *pfp = NULL;
+	int opt;
 	int skip_parent = 0;
 	int quiet = 0;
 
-        while ((opt = getopt(argc, argv, "hnqp:")) != -1) {
-                switch (opt) {
-                case 'h':
-                        usage(argc, argv);
-                        exit(1);
-                case 'p':
-                        parent = optarg;
-                        pfp = read_ctf(parent);
+	while ((opt = getopt(argc, argv, "hnqp:")) != -1) {
+		switch (opt) {
+		case 'h':
+			usage(argc, argv);
+			exit(1);
+		case 'p':
+			parent = optarg;
+			pfp = read_ctf(parent);
 			break;
 		case 'q':
 			quiet = 1;
@@ -215,37 +215,37 @@ main(int argc, char *argv[])
 		case 'n':
 			skip_parent = 1;
 			break;
-                }
-        }
+		}
+	}
 
 	char **name;
 
-        if (pfp && !skip_parent)
-                dump_ctf(parent, pfp, quiet);
+	if (pfp && !skip_parent)
+		dump_ctf(parent, pfp, quiet);
 
-        for (name = &argv[optind]; *name; name++) {
+	for (name = &argv[optind]; *name; name++) {
 		ctf_file_t *fp = read_ctf(*name);
 		ctf_sect_t sect;
 
 		if (!fp)
 		    continue;
 
-                if (parent)
-                        ctf_import(fp, pfp);
+		if (parent)
+			ctf_import(fp, pfp);
 
-                dump_ctf(*name, fp, quiet);
+		dump_ctf(*name, fp, quiet);
 
 		sect = ctf_getdatasect(fp);
 		ctf_close(fp);
 		free((void *) sect.cts_data);
 	}
 
-        if (pfp) {
+	if (pfp) {
 		ctf_sect_t sect;
 		sect = ctf_getdatasect(pfp);
-                ctf_close(pfp);
+		ctf_close(pfp);
 		free((void *) sect.cts_data);
 	}
 
-        return 0;
+	return 0;
 }
