@@ -77,8 +77,8 @@ ctf_member_print(const char *name, ctf_id_t id, ulong_t offset, int depth,
 		printf("    ");
 
 	ctf_type_lname(*fp, id, buf, sizeof (buf));
-	printf("    [0x%lx] (ID 0x%lx) %s %s (aligned at 0x%lx", offset, id, buf,
-	    name, ctf_type_align(*fp, id));
+	printf("    [0x%lx] (ID 0x%lx) (kind %i) %s %s (aligned at 0x%lx",
+	    offset, id, ctf_type_kind(*fp, id), buf, name, ctf_type_align(*fp, id));
 	if ((ctf_type_kind(*fp, id) == CTF_K_INTEGER) ||
 	    (ctf_type_kind(*fp, id) == CTF_K_FLOAT)) {
 		ctf_encoding_t ep;
@@ -95,12 +95,24 @@ static int
 ctf_type_print(ctf_id_t id, void *state)
 {
 	ctf_file_t **fp = state;
+	ctf_id_t ref, newref;
 	char buf[512];
 
 	ctf_type_lname(*fp, id, buf, sizeof (buf));
-	printf("    ID %lx: %s\n", id, buf);
+	printf("    ID %lx", id);
+	ref = id;
+	while ((newref = ctf_type_reference(*fp, ref)) != CTF_ERR) {
+		ref = newref;
+		printf(" -> %lx", ref);
+	}
+	if (ctf_errno(*fp) != ECTF_NOTREF) {
+		printf("%p: reference lookup error: %s\n",
+		    (void *) *fp, ctf_errmsg(ctf_errno(*fp)));
+		return 0;
+	}
+	printf(": %s\n", buf);
 
-	ctf_type_visit(*fp, id, ctf_member_print, state);
+	ctf_type_visit(*fp, ref, ctf_member_print, state);
 
 	return 0;
 }
