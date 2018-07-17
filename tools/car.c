@@ -26,15 +26,20 @@
 static void
 usage(int argc, char *argv[])
 {
-	fprintf(stderr, "Syntax: %s {-x|-t} [-v] -i parent-ctf] archive...\n\n", argv[0]);
+	fprintf(stderr, "Syntax: %s {-x|-t} [-vu] -i parent-ctf] "
+	    "archive...\n\n", argv[0]);
 	fprintf(stderr, "-x: Extract archive contents.\n");
-	fprintf(stderr, "-t: List archive contents without extraction (default).\n");
+	fprintf(stderr, "-t: List archive contents without extraction "
+	    "(default).\n");
+	fprintf(stderr, "-u: Upgrade the archive to the latest version while "
+	    "extracting.\n");
 	fprintf(stderr, "-v: List archive contents while extracting.\n");
 }
 
 static int extraction = 0;
 static int listing_explicit = 0;
 static int quiet = 0;
+static int upgrade = 0;
 
 struct visit_data {
 	const char *name;
@@ -77,7 +82,6 @@ ctf_strptr(ctf_file_t *fp, uint32_t name)
 static int print_extract_ctf(ctf_file_t *fp, const char *name, void *data)
 {
 	struct visit_data *d = data;
-	char fn[PATH_MAX];
 
 	if (!quiet) {
 		if (!d->printed_header) {
@@ -89,11 +93,12 @@ static int print_extract_ctf(ctf_file_t *fp, const char *name, void *data)
 		printf("%-*s %-10zi %-8zi %-8zi\n", d->colsize, name, fp->ctf_size,
 		    fp->ctf_typemax, fp->ctf_nvars);
 	}
-	snprintf(fn, sizeof(fn), "%s.ctf", name);
 
-	if (extraction) {
+	if (extraction && upgrade) {
+		char fn[PATH_MAX];
 		int fd;
 
+		snprintf(fn, sizeof(fn), "%s.ctf", name);
 		if ((fd = open(fn, O_WRONLY | O_CREAT | O_TRUNC |
 			    O_CLOEXEC, 0666)) < 0) {
 			fprintf(stderr, "Cannot open %s: %s\n", fn,
@@ -110,13 +115,43 @@ static int print_extract_ctf(ctf_file_t *fp, const char *name, void *data)
 	return(0);
 }
 
+static int extract_raw_ctf(const char *name, const void *content, size_t size,
+	void *unused)
+{
+	char fn[PATH_MAX];
+	const uchar_t *buf = (const uchar_t *) content;
+	ssize_t len;
+	int fd;
+
+	snprintf(fn, sizeof(fn), "%s.ctf", name);
+	if ((fd = open(fn, O_WRONLY | O_CREAT | O_TRUNC |
+		    O_CLOEXEC, 0666)) < 0) {
+		fprintf(stderr, "Cannot open %s: %s\n", fn,
+		    strerror(errno));
+		exit(1);
+	}
+
+	while (size != 0) {
+		if ((len = write(fd, buf, size)) < 0) {
+			fprintf(stderr, "Cannot write to %s: %s\n",
+			    fn, strerror(errno));
+			close(fd);
+			exit(1);
+		}
+		size -= len;
+		buf += len;
+	}
+	close(fd);
+	return(0);
+}
+
 int
 main(int argc, char *argv[])
 {
 	char **name;
 	int opt;
 
-	while ((opt = getopt(argc, argv, "hxtvi:")) != -1) {
+	while ((opt = getopt(argc, argv, "hxtuvi:")) != -1) {
 		switch (opt) {
 		case 'h':
 			usage(argc, argv);
@@ -138,6 +173,10 @@ main(int argc, char *argv[])
 			break;
 		case 'v':
 			quiet = 0;
+			break;
+		case 'u':
+			upgrade = 1;
+			break;
 		}
 	}
 
@@ -156,14 +195,22 @@ main(int argc, char *argv[])
 			    ctf_errmsg(err));
 			continue;
 		}
-		if ((err = ctf_archive_iter(arc, compute_colsize, &visit_data)) < 0) {
+		if (!quiet &&
+		    (err = ctf_archive_iter(arc, compute_colsize, &visit_data)) < 0) {
 			fprintf(stderr, "Error reading archive %s for colsize "
 			    "computation: %s\n", *name, ctf_errmsg(err));
 			exit(1);
 		}
 		visit_data.colsize += 2;
 
-		if ((err = ctf_archive_iter(arc, print_extract_ctf, &visit_data)) < 0) {
+		if ((!quiet || upgrade) &&
+		    (err = ctf_archive_iter(arc, print_extract_ctf, &visit_data)) < 0) {
+			fprintf(stderr, "Error reading archive %s: %s\n", *name,
+			    ctf_errmsg(err));
+			exit(1);
+		}
+		if (!upgrade &&
+		    (err = ctf_archive_raw_iter(arc, extract_raw_ctf, &visit_data)) < 0) {
 			fprintf(stderr, "Error reading archive %s: %s\n", *name,
 			    ctf_errmsg(err));
 			exit(1);

@@ -441,6 +441,38 @@ ctf_arc_open_by_offset(const ctf_archive_t *arc, size_t offset, int *errp)
 }
 
 /*
+ * Iterate over all CTF files in an archive.  We pass the raw data for all CTF
+ * files in turn to the specified callback function.
+ */
+int
+ctf_archive_raw_iter(const ctf_archive_t *arc, ctf_archive_raw_member_f *func,
+    void *data)
+{
+	int rc;
+	size_t i;
+	struct ctf_archive_modent *modent;
+	const char *nametbl;
+
+	modent = (ctf_archive_modent_t *) ((char *) arc +
+	    sizeof (struct ctf_archive));
+	nametbl = (((const char *) arc) + le64toh(arc->ctfa_names));
+
+	for (i = 0; i < le64toh(arc->ctfa_nfiles); i++) {
+		const char *name;
+		char *fp;
+
+		name = &nametbl[le64toh(modent[i].name_offset)];
+		fp = ((char *)arc + le64toh(arc->ctfa_ctfs) +
+		    le64toh(modent[i].ctf_offset));
+
+		if ((rc = func(name, (void *) (fp + sizeof (uint64_t)),
+			    le64toh(*((uint64_t *) fp)), data)) != 0)
+			return rc;
+	}
+	return(0);
+}
+
+/*
  * Iterate over all CTF files in an archive.  We pass all CTF files in turn to
  * the specified callback function.
  */

@@ -180,6 +180,8 @@ typedef int ctf_variable_f(const char *, ctf_id_t, void *);
 typedef int ctf_type_f(ctf_id_t, void *);
 typedef int ctf_label_f(const char *, const ctf_lblinfo_t *, void *);
 typedef int ctf_archive_member_f(ctf_file_t *, const char *name, void *); 
+typedef int ctf_archive_raw_member_f(const char *name, const void *content,
+    size_t len, void *);
 
 extern ctf_file_t *ctf_bufopen(const ctf_sect_t *, const ctf_sect_t *,
     const ctf_sect_t *, int *);
@@ -250,6 +252,7 @@ extern int ctf_type_iter(ctf_file_t *, ctf_type_f *, void *);
 extern int ctf_label_iter(ctf_file_t *, ctf_label_f *, void *);
 extern int ctf_variable_iter(ctf_file_t *, ctf_variable_f *, void *);
 extern int ctf_archive_iter(const ctf_archive_t *, ctf_archive_member_f *, void *);
+extern int ctf_archive_raw_iter(const ctf_archive_t *, ctf_archive_raw_member_f *, void *);
 
 extern ctf_id_t ctf_add_array(ctf_file_t *, uint32_t, const ctf_arinfo_t *);
 extern ctf_id_t ctf_add_const(ctf_file_t *, uint32_t, ctf_id_t);

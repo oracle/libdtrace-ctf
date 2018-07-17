@@ -43,6 +43,10 @@ API changes, structure changes:
     and some members into ctf_member where previously ctf_type and
     ctf_lmember were needed.
 
+ctf_ar now extracts CTF data from CTF archives without recompressing or changing
+it.  It supports a -u option to force opening and recompressing: note that this
+will upgrade CTFv1 data to v2 in the process.
+
 0.8.1
 -----
 

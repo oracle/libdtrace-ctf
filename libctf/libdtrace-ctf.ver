@@ -124,4 +124,5 @@ LIBDTRACE_CTF_1.4 {
         ctf_type_isparent;
         ctf_type_ischild;
         ctf_getdatasect;
+        ctf_archive_raw_iter;
 } LIBDTRACE_CTF_1.3;
