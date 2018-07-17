@@ -177,7 +177,11 @@ get_vbytes_v2(ushort_t kind, ssize_t size, size_t vlen)
 
 static const ctf_fileops_t ctf_fileops[] = {
 	{ NULL, NULL, NULL },
+	/* CTF_VERSION_1 */
 	{ get_kind_v1, get_root_v1, get_vlen_v1, get_ctt_size_v1, get_vbytes_v1 },
+	/* CTF_VERSION_1_UPGRADED_2 */
+	{ get_kind_v2, get_root_v2, get_vlen_v2, get_ctt_size_v2, get_vbytes_v2 },
+	/* CTF_VERSION_2 */
 	{ get_kind_v2, get_root_v2, get_vlen_v2, get_ctt_size_v2, get_vbytes_v2 },
 };
 
@@ -350,14 +354,15 @@ ctf_free_base(ctf_file_t *fp, uchar_t *ctf_base, size_t ctf_size)
  * tracked on a per-type basis via bit vectors such as ctf_v1 in the fp.
  */
 static void
-ctf_set_version(ctf_file_t *fp, int ctf_version)
+ctf_set_version(ctf_file_t *fp, ctf_header_t *cth, int ctf_version)
 {
 	fp->ctf_version = ctf_version;
+	cth->cth_version = ctf_version;
 	fp->ctf_fileops = &ctf_fileops[ctf_version];
 }
 
 /*
- * Upgrade the type table to CTF_VERSION_2.
+ * Upgrade the type table to CTF_VERSION_2 (really CTF_VERSION_1_UPGRADED_2).
  *
  * The upgrade is not done in-place: the ctf_base is moved.  ctf_strptr() must
  * not be called before reallocation is complete.
@@ -374,6 +379,7 @@ upgrade_types(ctf_file_t *fp, ctf_header_t *cth)
 	ssize_t increase = 0, size, increment, v2increment, vbytes, v2bytes;
 	const ctf_type_v1_t *tp;
 	ctf_type_t *t2p;
+	ctf_header_t *new_cth;
 
 	tbuf = (ctf_type_v1_t *)(fp->ctf_buf + cth->cth_typeoff);
 	tend = (ctf_type_v1_t *)(fp->ctf_buf + cth->cth_stroff);
@@ -427,11 +433,21 @@ upgrade_types(ctf_file_t *fp, ctf_header_t *cth)
 	bzero(ctf_base + sizeof (ctf_header_t) + cth->cth_typeoff,
 	    cth->cth_stroff - cth->cth_typeoff + increase);
 
-	cth->cth_stroff += increase;
-	assert(cth->cth_stroff >= cth->cth_typeoff);
-	ctf_set_base(fp, cth, ctf_base);
+	/*
+	 * The cth here is an automatic variable in ctf_bufopen(), and transient
+	 * (a copy maintained because at that stage the header read out of the
+	 * ctf file may be read-only). We make all modifications in the
+	 * canonical copy at ctf_base (by now, writable), then copy it back into
+	 * cth at the end.
+	 */
 
-	t2buf = (ctf_type_t *)(fp->ctf_buf + cth->cth_typeoff);
+	new_cth = (ctf_header_t *) ctf_base;
+	new_cth->cth_stroff += increase;
+	fp->ctf_size += increase;
+	assert(new_cth->cth_stroff >= new_cth->cth_typeoff);
+	ctf_set_base(fp, new_cth, ctf_base);
+
+	t2buf = (ctf_type_t *)(fp->ctf_buf + new_cth->cth_typeoff);
 
 	/*
 	 * Iterate through all the types again, upgrading them.
@@ -570,10 +586,12 @@ upgrade_types(ctf_file_t *fp, ctf_header_t *cth)
 	 * we are either converting too much, or too little (leading to a buffer
 	 * overrun either here or at read time, in init_types().)
 	 */
-	assert((size_t) t2p - (size_t) fp->ctf_buf == cth->cth_stroff);
+	assert((size_t) t2p - (size_t) fp->ctf_buf == new_cth->cth_stroff);
 
-	ctf_set_version(fp, CTF_VERSION_2);
+	ctf_set_version(fp, (ctf_header_t *) ctf_base,
+	    CTF_VERSION_1_UPGRADED_2);
 	ctf_free_base(fp, old_ctf_base, old_ctf_size);
+	bcopy(new_cth, cth, sizeof (ctf_header_t));
 
 	return (0);
 }
@@ -603,7 +621,7 @@ init_types(ctf_file_t *fp, ctf_header_t *cth)
 	int nlstructs = 0, nlunions = 0;
 	int err;
 
-	if (fp->ctf_version == CTF_VERSION_1) {
+	if (_dt_unlikely_(fp->ctf_version == CTF_VERSION_1)) {
 		int err;
 		if ((err = upgrade_types(fp, cth)) != 0)
 			return (err); 	/* upgrade failed */
@@ -900,8 +918,8 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	if (pp->ctp_magic != CTF_MAGIC)
 		return (ctf_set_open_errno(errp, ECTF_NOCTFBUF));
 
-	if ((pp->ctp_version < CTF_VERSION_1) ||
-	    (pp->ctp_version > CTF_VERSION_2))
+	if (_dt_unlikely_((pp->ctp_version < CTF_VERSION_1) ||
+		(pp->ctp_version > CTF_VERSION_2)))
 		return (ctf_set_open_errno(errp, ECTF_CTFVERS));
 
 	if ((symsect != NULL) && (pp->ctp_version != CTF_VERSION_2)) {
@@ -999,9 +1017,9 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 		return (ctf_set_open_errno(errp, ENOMEM));
 
 	bzero(fp, sizeof (ctf_file_t));
-	ctf_set_version(fp, hp.cth_version);
+	ctf_set_version(fp, &hp, hp.cth_version);
 
-	if (_dt_unlikely_(hp.cth_version == CTF_VERSION_1))
+	if (_dt_unlikely_(hp.cth_version < CTF_VERSION_2))
 		fp->ctf_parmax = CTF_MAX_PTYPE_V1;
 	else
 		fp->ctf_parmax = CTF_MAX_PTYPE;

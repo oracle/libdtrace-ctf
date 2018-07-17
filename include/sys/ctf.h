@@ -129,10 +129,21 @@ typedef struct ctf_header {
 
 #define	CTF_MAGIC	0xdff2	/* magic number identifying header */
 
-/* data format version number */
-#define	CTF_VERSION_1	1
-#define	CTF_VERSION_2	3
-#define	CTF_VERSION	CTF_VERSION_2	/* current version */
+/*
+ * Data format version number.  v1 upgraded to v2 is not quite the same as
+ * native v2 (the boundary between parent and child types is different), and you
+ * can write it out again via ctf_compress_write(), so we must track whether the
+ * thing was originally v1 or not.  If we were writing the header from scratch,
+ * we would add a *pair* of version number fields to allow for this, but this
+ * will do for now.  (A flag will not do, because we need to encode both the
+ * version we came from and the version we went to, not just "we were
+ * upgraded".)
+ */
+
+#define	CTF_VERSION_1			1
+#define CTF_VERSION_1_UPGRADED_2	2
+#define	CTF_VERSION_2			3
+#define	CTF_VERSION			CTF_VERSION_2	/* current version */
 
 #define	CTF_F_COMPRESS	0x1	/* data buffer is compressed */
 
