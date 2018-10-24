@@ -77,10 +77,11 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
-* Thu Jun 13 2018 - nick.alcock@oracle.com - 1.0.0-1
+* Wed Oct 24 2018 - nick.alcock@oracle.com - 1.0.0-1
 - Format v2, supporting many more types and enum/struct/union members.
 v1 CTF files are transparently updated to v2. No soname change, but
 some API for users directly accessing CTF files is broken.
+[Orabug: 28150489]
 * Fri May 04 2018 - nick.alcock@oracle.com - 0.8.1-1
 - Fix ctf_rollback() in client containers to delete only the types
 added since the last snapshot, rather than all of them.
