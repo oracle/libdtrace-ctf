@@ -270,6 +270,8 @@ extern ctf_id_t ctf_add_typedef(ctf_file_t *, uint32_t, const char *, ctf_id_t);
 extern ctf_id_t ctf_add_restrict(ctf_file_t *, uint32_t, ctf_id_t);
 extern ctf_id_t ctf_add_struct(ctf_file_t *, uint32_t, const char *);
 extern ctf_id_t ctf_add_union(ctf_file_t *, uint32_t, const char *);
+extern ctf_id_t ctf_add_struct_sized(ctf_file_t *, uint32_t, const char *, size_t);
+extern ctf_id_t ctf_add_union_sized(ctf_file_t *, uint32_t, const char *, size_t);
 extern ctf_id_t ctf_add_volatile(ctf_file_t *, uint32_t, ctf_id_t);
 
 extern int ctf_add_enumerator(ctf_file_t *, ctf_id_t, const char *, int);

@@ -15,7 +15,7 @@ libdtrace-ctf_SOURCES = ctf_open.c ctf_archive.c ctf_create.c ctf_error.c \
                         ctf_hash.c ctf_labels.c ctf_lib.c ctf_lookup.c \
                         ctf_decl.c ctf_types.c ctf_subr.c ctf_util.c
 libdtrace-ctf_LIBS := -lz
-libdtrace-ctf_VERSION := 1.4.0
+libdtrace-ctf_VERSION := 1.5.0
 libdtrace-ctf_SONAME := libdtrace-ctf.so.1
 libdtrace-ctf_VERSCRIPT := $(libdtrace-ctf_DIR)libdtrace-ctf.ver
 libdtrace-ctf_LIBSOURCES := libdtrace-ctf

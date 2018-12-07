@@ -126,3 +126,9 @@ LIBDTRACE_CTF_1.4 {
         ctf_getdatasect;
         ctf_archive_raw_iter;
 } LIBDTRACE_CTF_1.3;
+
+LIBDTRACE_CTF_1.5 {
+    global:
+        ctf_add_struct_sized;
+        ctf_add_union_sized;
+} LIBDTRACE_CTF_1.4;

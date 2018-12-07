@@ -874,7 +874,7 @@ ctf_add_function(ctf_file_t *fp, uint32_t flag,
 }
 
 ctf_id_t
-ctf_add_struct(ctf_file_t *fp, uint32_t flag, const char *name)
+ctf_add_struct_sized(ctf_file_t *fp, uint32_t flag, const char *name, size_t size)
 {
 	ctf_hash_t *hp = &fp->ctf_structs;
 	ctf_helem_t *hep = NULL;
@@ -890,13 +890,25 @@ ctf_add_struct(ctf_file_t *fp, uint32_t flag, const char *name)
 		return (CTF_ERR); /* errno is set for us */
 
 	dtd->dtd_data.ctt_info = CTF_TYPE_INFO(CTF_K_STRUCT, flag, 0);
-	dtd->dtd_data.ctt_size = 0;
+
+	if (size > CTF_MAX_SIZE) {
+		dtd->dtd_data.ctt_size = CTF_LSIZE_SENT;
+		dtd->dtd_data.ctt_lsizehi = CTF_SIZE_TO_LSIZE_HI(size);
+		dtd->dtd_data.ctt_lsizelo = CTF_SIZE_TO_LSIZE_LO(size);
+	} else
+		dtd->dtd_data.ctt_size = (uint32_t)size;
 
 	return (type);
 }
 
 ctf_id_t
-ctf_add_union(ctf_file_t *fp, uint32_t flag, const char *name)
+ctf_add_struct(ctf_file_t *fp, uint32_t flag, const char *name)
+{
+	return (ctf_add_struct_sized(fp, flag, name, 0));
+}
+
+ctf_id_t
+ctf_add_union_sized(ctf_file_t *fp, uint32_t flag, const char *name, size_t size)
 {
 	ctf_hash_t *hp = &fp->ctf_unions;
 	ctf_helem_t *hep = NULL;
@@ -912,9 +924,21 @@ ctf_add_union(ctf_file_t *fp, uint32_t flag, const char *name)
 		return (CTF_ERR); /* errno is set for us */
 
 	dtd->dtd_data.ctt_info = CTF_TYPE_INFO(CTF_K_UNION, flag, 0);
-	dtd->dtd_data.ctt_size = 0;
+
+	if (size > CTF_MAX_SIZE) {
+		dtd->dtd_data.ctt_size = CTF_LSIZE_SENT;
+		dtd->dtd_data.ctt_lsizehi = CTF_SIZE_TO_LSIZE_HI(size);
+		dtd->dtd_data.ctt_lsizelo = CTF_SIZE_TO_LSIZE_LO(size);
+	} else
+		dtd->dtd_data.ctt_size = (uint32_t)size;
 
 	return (type);
+}
+
+ctf_id_t
+ctf_add_union(ctf_file_t *fp, uint32_t flag, const char *name)
+{
+	return (ctf_add_union_sized(fp, flag, name, 0));
 }
 
 ctf_id_t
