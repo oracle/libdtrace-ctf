@@ -110,7 +110,7 @@ ctf_type_print(ctf_id_t id, void *state)
 		    (void *) *fp, ctf_errmsg(ctf_errno(*fp)));
 		return 0;
 	}
-	printf(": %s\n", buf);
+	printf(": %s (size: %lx)\n", buf, ctf_type_size(*fp, id));
 
 	ctf_type_visit(*fp, ref, ctf_member_print, state);
 
