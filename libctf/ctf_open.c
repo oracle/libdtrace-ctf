@@ -1060,9 +1060,12 @@ ctf_bufopen(const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 
 	/*
 	 * The ctf region may have been reallocated by init_types(), but now
-	 * that is done, it will not move again, so we can protect it.
+	 * that is done, it will not move again, so we can protect it, as long
+	 * as it didn't come from the ctfsect, wihcih might have been allocated
+	 * with malloc().
 	 */
-	ctf_data_protect((void *) fp->ctf_base, fp->ctf_size);
+	if (fp->ctf_base != (void *)ctfsect->cts_data)
+		ctf_data_protect((void *) fp->ctf_base, fp->ctf_size);
 
 	/*
 	 * If we have a symbol table section, allocate and initialize
