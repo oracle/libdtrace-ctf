@@ -15,7 +15,7 @@ Group:        Development/Libraries
 Requires:     gcc elfutils-libelf zlib
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
 Summary:      Compact Type Format library.
-Version:      1.0.0
+Version:      1.1.0
 Release:      1%{?dist}
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
@@ -77,6 +77,14 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Fri Dec 14 2018 - nick.alcock@oracle.com - 1.1.0-1
+- Add ctf_add_{struct,union}_sized(). [Orabug: 29054972]
+- Work around some very minor CTF-generation bugs seen in the wild
+  in old UEK kernels. [Orabug: 28952429]
+- Do not mprotect() the heap by mistake when reading CTF from a
+  user-provided buffer. [Orabug: 28952429]
+* Thu Nov 22 2018 - nick.alcock@oracle.com - 1.0.1-0.2
+- Work around some CTF-generation bugs, narrower hack.
 * Wed Oct 24 2018 - nick.alcock@oracle.com - 1.0.0-1
 - Format v2, supporting many more types and enum/struct/union members.
 v1 CTF files are transparently updated to v2. No soname change, but
