@@ -1,81 +1,81 @@
-/*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- *
- * Licensed under the Universal Permissive License v 1.0 as shown at
- * http://oss.oracle.com/licenses/upl.
- *
- * Licensed under the GNU General Public License (GPL), version 2. See the file
- * COPYING in the top level of this tree.
- */
+/* Error table.
+
+   Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+
+   Licensed under the Universal Permissive License v 1.0 as shown at
+   http://oss.oracle.com/licenses/upl.
+
+   Licensed under the GNU General Public License (GPL), version 2. See the file
+   COPYING in the top level of this tree.  */
 
 #include <ctf_impl.h>
 
 static const char *const _ctf_errlist[] = {
-	"File is not in CTF or ELF format",		 /* ECTF_FMT */
-	"File uses more recent ELF version than libctf", /* ECTF_ELFVERS */
-	"File uses more recent CTF version than libctf", /* ECTF_CTFVERS */
-	"File is a different endian-ness than libctf",	 /* ECTF_ENDIAN */
-	"Symbol table uses invalid entry size",		 /* ECTF_SYMTAB */
-	"Symbol table data buffer is not valid",	 /* ECTF_SYMBAD */
-	"String table data buffer is not valid",	 /* ECTF_STRBAD */
-	"File data structure corruption detected",	 /* ECTF_CORRUPT */
-	"File does not contain CTF data",		 /* ECTF_NOCTFDATA */
-	"Buffer does not contain CTF data",		 /* ECTF_NOCTFBUF */
-	"Symbol table information is not available",	 /* ECTF_NOSYMTAB */
-	"Type information is in parent and unavailable", /* ECTF_NOPARENT */
-	"Cannot import types with different data model", /* ECTF_DMODEL */
-	"Failed to mmap a needed data section",		 /* ECTF_MMAP */
-	"Failed to allocate (de)compression buffer",	 /* ECTF_ZALLOC */
-	"Failed to decompress CTF data",		 /* ECTF_DECOMPRESS */
-	"External string table is not available",	 /* ECTF_STRTAB */
-	"String name offset is corrupt",		 /* ECTF_BADNAME */
-	"Invalid type identifier",			 /* ECTF_BADID */
-	"Type is not a struct or union",		 /* ECTF_NOTSOU */
-	"Type is not an enum",				 /* ECTF_NOTENUM */
-	"Type is not a struct, union, or enum",		 /* ECTF_NOTSUE */
-	"Type is not an integer or float",		 /* ECTF_NOTINTFP */
-	"Type is not an array",				 /* ECTF_NOTARRAY */
-	"Type does not reference another type",		 /* ECTF_NOTREF */
-	"Input buffer is too small for type name",	 /* ECTF_NAMELEN */
-	"No type information available for that name",	 /* ECTF_NOTYPE */
-	"Syntax error in type name",			 /* ECTF_SYNTAX */
-	"Symbol table entry is not a function",		 /* ECTF_NOTFUNC */
-	"No function information available for symbol",	 /* ECTF_NOFUNCDAT */
-	"Symbol table entry is not a data object",	 /* ECTF_NOTDATA */
-	"No type information available for symbol",	 /* ECTF_NOTYPEDAT */
-	"No label information available for that name",	 /* ECTF_NOLABEL */
-	"File does not contain any labels",		 /* ECTF_NOLABELDATA */
-	"Feature not supported",			 /* ECTF_NOTSUP */
-	"Invalid enum element name",			 /* ECTF_NOENUMNAM */
-	"Invalid member name",				 /* ECTF_NOMEMBNAM */
-	"CTF container is read-only",			 /* ECTF_RDONLY */
-	"Limit on number of dynamic type members reached", /* ECTF_DTFULL */
-	"Limit on number of dynamic types reached",	 /* ECTF_FULL */
-	"Duplicate member or variable name",		 /* ECTF_DUPLICATE */
-	"Conflicting type is already defined",		 /* ECTF_CONFLICT */
-	"Attempt to roll back past a ctf_update",	 /* ECTF_OVERROLLBACK */
-	"Failed to compress CTF data",			 /* ECTF_COMPRESS */
-	"Failed to create CTF archive",			 /* ECTF_ARCREATE */
-	"Name not found in CTF archive"			 /* ECTF_ARNNAME */
+  "File is not in CTF or ELF format",		     /* ECTF_FMT */
+  "File uses more recent ELF version than libctf",   /* ECTF_ELFVERS */
+  "File uses more recent CTF version than libctf",   /* ECTF_CTFVERS */
+  "File is a different endian-ness than libctf",     /* ECTF_ENDIAN */
+  "Symbol table uses invalid entry size",	     /* ECTF_SYMTAB */
+  "Symbol table data buffer is not valid",	     /* ECTF_SYMBAD */
+  "String table data buffer is not valid",	     /* ECTF_STRBAD */
+  "File data structure corruption detected",	     /* ECTF_CORRUPT */
+  "File does not contain CTF data",		     /* ECTF_NOCTFDATA */
+  "Buffer does not contain CTF data",		     /* ECTF_NOCTFBUF */
+  "Symbol table information is not available",	     /* ECTF_NOSYMTAB */
+  "Type information is in parent and unavailable",   /* ECTF_NOPARENT */
+  "Cannot import types with different data model",   /* ECTF_DMODEL */
+  "Failed to mmap a needed data section",	     /* ECTF_MMAP */
+  "Failed to allocate (de)compression buffer",	     /* ECTF_ZALLOC */
+  "Failed to decompress CTF data",		     /* ECTF_DECOMPRESS */
+  "External string table is not available",	     /* ECTF_STRTAB */
+  "String name offset is corrupt",		     /* ECTF_BADNAME */
+  "Invalid type identifier",			     /* ECTF_BADID */
+  "Type is not a struct or union",		     /* ECTF_NOTSOU */
+  "Type is not an enum",			     /* ECTF_NOTENUM */
+  "Type is not a struct, union, or enum",	     /* ECTF_NOTSUE */
+  "Type is not an integer or float",		     /* ECTF_NOTINTFP */
+  "Type is not an array",			     /* ECTF_NOTARRAY */
+  "Type does not reference another type",	     /* ECTF_NOTREF */
+  "Input buffer is too small for type name",	     /* ECTF_NAMELEN */
+  "No type information available for that name",     /* ECTF_NOTYPE */
+  "Syntax error in type name",			     /* ECTF_SYNTAX */
+  "Symbol table entry is not a function",	     /* ECTF_NOTFUNC */
+  "No function information available for symbol",    /* ECTF_NOFUNCDAT */
+  "Symbol table entry is not a data object",	     /* ECTF_NOTDATA */
+  "No type information available for symbol",	     /* ECTF_NOTYPEDAT */
+  "No label information available for that name",    /* ECTF_NOLABEL */
+  "File does not contain any labels",		     /* ECTF_NOLABELDATA */
+  "Feature not supported",			     /* ECTF_NOTSUP */
+  "Invalid enum element name",			     /* ECTF_NOENUMNAM */
+  "Invalid member name",			     /* ECTF_NOMEMBNAM */
+  "CTF container is read-only",			     /* ECTF_RDONLY */
+  "Limit on number of dynamic type members reached", /* ECTF_DTFULL */
+  "Limit on number of dynamic types reached",	     /* ECTF_FULL */
+  "Duplicate member or variable name",		     /* ECTF_DUPLICATE */
+  "Conflicting type is already defined",	     /* ECTF_CONFLICT */
+  "Attempt to roll back past a ctf_update",	     /* ECTF_OVERROLLBACK */
+  "Failed to compress CTF data",		     /* ECTF_COMPRESS */
+  "Failed to create CTF archive",		     /* ECTF_ARCREATE */
+  "Name not found in CTF archive"		     /* ECTF_ARNNAME */
 };
 
 static const int _ctf_nerr = sizeof (_ctf_errlist) / sizeof (_ctf_errlist[0]);
 
 const char *
-ctf_errmsg(int error)
+ctf_errmsg (int error)
 {
-	const char *str;
+  const char *str;
 
-	if (error >= ECTF_BASE && (error - ECTF_BASE) < _ctf_nerr)
-		str = _ctf_errlist[error - ECTF_BASE];
-	else
-		str = ctf_strerror(error);
+  if (error >= ECTF_BASE && (error - ECTF_BASE) < _ctf_nerr)
+    str = _ctf_errlist[error - ECTF_BASE];
+  else
+    str = ctf_strerror (error);
 
-	return (str ? str : "Unknown error");
+  return (str ? str : "Unknown error");
 }
 
 int
-ctf_errno(ctf_file_t *fp)
+ctf_errno (ctf_file_t * fp)
 {
-	return (fp->ctf_errno);
+  return fp->ctf_errno;
 }
