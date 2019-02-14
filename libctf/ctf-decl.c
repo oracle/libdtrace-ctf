@@ -28,7 +28,7 @@
    The code in ctf_type_name() can then iterate over the levels and nodes in
    lexical precedence order and construct the final C declaration string.  */
 
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 #include <string.h>
 
 void

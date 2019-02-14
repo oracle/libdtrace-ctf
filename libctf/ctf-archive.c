@@ -18,7 +18,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 
 static off_t arc_write_one_ctf (ctf_file_t * f, int fd, size_t threshold);
 static ctf_file_t *ctf_arc_open_by_offset (const ctf_archive_t * arc,

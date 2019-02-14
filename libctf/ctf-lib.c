@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/compiler.h>
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>

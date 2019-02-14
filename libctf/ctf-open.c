@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <assert.h>
 #include <gelf.h>
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 #include <sys/mman.h>
 #include <zlib.h>
 

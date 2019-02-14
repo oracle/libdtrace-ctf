@@ -9,7 +9,7 @@
  */
 
 #include <string.h>
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 
 /* Simple doubly-linked list append routine.  This implementation assumes that
    each list element contains an embedded ctf_list_t as the first member.

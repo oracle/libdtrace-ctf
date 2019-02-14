@@ -12,7 +12,7 @@
 #define	_CTF_IMPL_H
 
 #include <sys/errno.h>
-#include <sys/ctf_api.h>
+#include <sys/ctf-api.h>
 #include <sys/types.h>
 #include <sys/compiler.h>
 #include <stdlib.h>
@@ -157,7 +157,7 @@ typedef struct ctf_bundle
 /* The ctf_file is the structure used to represent a CTF container to library
    clients, who see it only as an opaque pointer.  Modifications can therefore
    be made freely to this structure without regard to client versioning.  The
-   ctf_file_t typedef appears in <sys/ctf_api.h> and declares a forward tag.
+   ctf_file_t typedef appears in <sys/ctf-api.h> and declares a forward tag.
 
    NOTE: ctf_update() requires that everything inside of ctf_file either be an
    immediate value, a pointer to dynamically allocated data *outside* of the

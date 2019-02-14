@@ -10,7 +10,7 @@
    Licensed under the GNU General Public License (GPL), version 2.  */
 
 #define _GNU_SOURCE 1
-#include <sys/ctf_api.h>
+#include <sys/ctf-api.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 
 static void
 usage (int argc, char *argv[])

@@ -8,7 +8,7 @@
    COPYING in the top level of this tree.  */
 
 #include <sys/compiler.h>
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 #include <string.h>
 
 /* Determine whether a type is a parent or a child.  */

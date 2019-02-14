@@ -9,7 +9,7 @@
    COPYING in the top level of this tree.  */
 
 #include <string.h>
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 
 static const unsigned short _CTF_EMPTY[1] = { 0 };
 

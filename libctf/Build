@@ -1,4 +1,4 @@
-# Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
@@ -11,9 +11,9 @@ SHLIBS += libdtrace-ctf
 libdtrace-ctf_CPPFLAGS = -I$(libdtrace-ctf_DIR)
 libdtrace-ctf_TARGET = libdtrace-ctf
 libdtrace-ctf_DIR := $(current-dir)
-libdtrace-ctf_SOURCES = ctf_open.c ctf_archive.c ctf_create.c ctf_error.c \
-                        ctf_hash.c ctf_labels.c ctf_lib.c ctf_lookup.c \
-                        ctf_decl.c ctf_types.c ctf_subr.c ctf_util.c
+libdtrace-ctf_SOURCES = ctf-open.c ctf-archive.c ctf-create.c ctf-error.c \
+                        ctf-hash.c ctf-labels.c ctf-lib.c ctf-lookup.c \
+                        ctf-decl.c ctf-types.c ctf-subr.c ctf-util.c
 libdtrace-ctf_LIBS := -lz
 libdtrace-ctf_VERSION := 1.5.0
 libdtrace-ctf_SONAME := libdtrace-ctf.so.1

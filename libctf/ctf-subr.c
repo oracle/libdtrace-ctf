@@ -7,7 +7,7 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 #include <sys/mman.h>
 #include <stdarg.h>
 #include <string.h>

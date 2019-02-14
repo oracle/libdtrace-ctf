@@ -8,7 +8,7 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
-#include <ctf_impl.h>
+#include <ctf-impl.h>
 
 static const char *const _ctf_errlist[] = {
   "File is not in CTF or ELF format",		     /* ECTF_FMT */

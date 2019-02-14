@@ -1,7 +1,7 @@
 /*
    A simple CTF dumper.
 
-   Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <sys/ctf_api.h>
+#include <sys/ctf-api.h>
 #include <zlib.h>
 
 #define GZCHUNKSIZE (1024*512)	/* gzip uncompression chunk size.  */
