@@ -1,12 +1,11 @@
 /* Miscellaneous utilities.
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
- *
- * Licensed under the Universal Permissive License v 1.0 as shown at
- * http://oss.oracle.com/licenses/upl.
- *
- * Licensed under the GNU General Public License (GPL), version 2. See the file
- * COPYING in the top level of this tree.
- */
+   Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+
+   Licensed under the Universal Permissive License v 1.0 as shown at
+   http://oss.oracle.com/licenses/upl.
+
+   Licensed under the GNU General Public License (GPL), version 2. See the file
+   COPYING in the top level of this tree.  */
 
 #include <string.h>
 #include <ctf-impl.h>
