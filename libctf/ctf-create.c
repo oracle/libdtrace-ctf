@@ -1538,7 +1538,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	      if (match && sroot == droot)
 		return dtd->dtd_type;
 	      else if (!match && sroot && droot)
-#ifdef NO_COMPAT
+#ifndef NO_COMPAT
 		if (!(strcmp (name, "int") == 0 && sroot
 		      && (CTF_INT_BITS (src_tp->ctt_type) == 4 ||
 			  CTF_INT_BITS (src_tp->ctt_type) == 1)))

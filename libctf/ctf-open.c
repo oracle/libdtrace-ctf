@@ -652,12 +652,14 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
   int nlstructs = 0, nlunions = 0;
   int err;
 
+#ifndef NO_COMPAT
   if (_dt_unlikely_ (fp->ctf_version == CTF_VERSION_1))
     {
       int err;
       if ((err = upgrade_types (fp, cth)) != 0)
 	return err;				/* Upgrade failed.  */
     }
+#endif /* !NO_COMPAT */
 
   tbuf = (ctf_type_t *) (fp->ctf_buf + cth->cth_typeoff);
   tend = (ctf_type_t *) (fp->ctf_buf + cth->cth_stroff);
