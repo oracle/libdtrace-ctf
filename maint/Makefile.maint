@@ -7,11 +7,16 @@ topdir := $(shell pwd)
 all:
 	echo 'Targets:' >&2
 	echo "\tgnu GNU_DIR=/cyg/tree/root" >&2
+	echo "\tgnu-warnings" >&2
 
 HEADERS := include/sys/ctf.h include/sys/ctf-api.h
 
 gnu: dir include src
 	git show-ref -s --head HEAD > $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR))
+
+gnu-warnings:
+	$(MAKE) clean
+	$(MAKE) CFLAGS="-O2 -g -Wall -W -Wall -Wno-narrowing -Wwrite-strings -Wmissing-format-attribute -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition -pedantic -Wno-long-long"
 
 dir:
 	[[ -n $(GNU_DIR) ]] || { echo "Please set GNU_DIR." >&2 && false; }
