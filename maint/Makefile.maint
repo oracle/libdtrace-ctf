@@ -6,8 +6,8 @@ topdir := $(shell pwd)
 
 all:
 	echo 'Targets:' >&2
-	echo "\tgnu GNU_DIR=/cyg/tree/root" >&2
-	echo "\tgnu-warnings" >&2
+	printf "\tgnu GNU_DIR=/cyg/tree/root\n" >&2
+	printf "\tgnu-warnings\n" >&2
 
 HEADERS := include/sys/ctf.h include/sys/ctf-api.h
 
