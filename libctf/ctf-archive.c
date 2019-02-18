@@ -1,5 +1,5 @@
 /* CTF archive files.
-   Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -169,7 +169,7 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
   np = nametbl;
   while (namesz > 0)
     {
-      size_t len;
+      ssize_t len;
       if ((len = write (fd, np, namesz)) < 0)
 	{
 	  errmsg = "ctf_arc_write(): Cannot write name table in %s: %s\n";

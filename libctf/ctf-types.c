@@ -1,5 +1,5 @@
 /* Type handling functions.
-   Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -307,7 +307,7 @@ char *
 ctf_type_name (ctf_file_t *fp, ctf_id_t type, char *buf, size_t len)
 {
   ssize_t rv = ctf_type_lname (fp, type, buf, len);
-  return (rv >= 0 && rv < len ? buf : NULL);
+  return (rv >= 0 && (size_t) rv < len ? buf : NULL);
 }
 
 /* Resolve the type down to a base type node, and then return the size

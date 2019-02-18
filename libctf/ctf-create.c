@@ -23,7 +23,7 @@
 ctf_file_t *
 ctf_create (int *errp)
 {
-  static const ctf_header_t hdr = { {CTF_MAGIC, CTF_VERSION, 0} };
+  static const ctf_header_t hdr = { .cth_preamble = {CTF_MAGIC, CTF_VERSION } };
 
   const unsigned long hashlen = 1024;
   ctf_dtdef_t **dthash = ctf_alloc (hashlen * sizeof (ctf_dtdef_t *));

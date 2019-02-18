@@ -1,5 +1,5 @@
 /* Opening CTF files.
-   Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -69,7 +69,8 @@ get_vlen_v2 (uint32_t info)
 }
 
 static inline ssize_t
-get_ctt_size_common (const ctf_file_t *fp, const ctf_type_t *tp,
+get_ctt_size_common (const ctf_file_t *fp _dt_unused_,
+		     const ctf_type_t *tp _dt_unused_,
 		     ssize_t *sizep, ssize_t *incrementp, size_t lsize,
 		     size_t csize, size_t ctf_type_size,
 		     size_t ctf_stype_size, size_t ctf_lsize_sent)
@@ -134,7 +135,7 @@ get_ctt_size_v2 (const ctf_file_t *fp, const ctf_type_t *tp,
 }
 
 static ssize_t
-get_vbytes_common (unsigned short kind, ssize_t size, size_t vlen)
+get_vbytes_common (unsigned short kind, ssize_t size _dt_unused_, size_t vlen)
 {
   switch (kind)
     {
@@ -200,7 +201,7 @@ get_vbytes_v2 (unsigned short kind, ssize_t size, size_t vlen)
 }
 
 static const ctf_fileops_t ctf_fileops[] = {
-  {NULL, NULL, NULL},
+  {NULL, NULL, NULL, NULL, NULL},
 #ifndef NO_COMPAT
   /* CTF_VERSION_1 */
   {get_kind_v1, get_root_v1, get_vlen_v1, get_ctt_size_v1, get_vbytes_v1},
@@ -604,9 +605,11 @@ upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
 	    unsigned long i;
 	    unsigned short *a1 = (unsigned short *) vdata;
 	    uint32_t *a2 = (uint32_t *) v2data;
+
 	    for (i = vlen; i != 0; i--, a1++, a2++)
 	      *a2 = *a1;
 	  }
+	/* FALLTHRU */
 	default:
 	  /* Catch out-of-sync get_vbytes_*().  */
 	  assert (vbytes == v2bytes);

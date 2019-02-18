@@ -23,7 +23,7 @@
 #include <ctf-impl.h>
 
 static void
-usage (int argc, char *argv[])
+usage (int argc _dt_unused_, char *argv[])
 {
   fprintf (stderr, "Syntax: %s {-x|-t} [-vu] -i parent-ctf] "
 	   "archive...\n\n", argv[0]);
@@ -45,14 +45,14 @@ struct visit_data
   const char *name;
   ctf_file_t *fp;
   int printed_header;
-  int colsize;
+  size_t colsize;
 };
 
 /*
  * Compute the size of column needed to print the names of all archive members.
  */
 static int
-compute_colsize (ctf_file_t * fp, const char *name, void *data)
+compute_colsize (ctf_file_t *fp _dt_unused_, const char *name, void *data)
 {
   struct visit_data *d = data;
 
@@ -63,7 +63,7 @@ compute_colsize (ctf_file_t * fp, const char *name, void *data)
 }
 
 const char *
-ctf_strraw (ctf_file_t * fp, uint32_t name)
+ctf_strraw (ctf_file_t *fp, uint32_t name)
 {
   ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID (name)];
 
@@ -75,14 +75,14 @@ ctf_strraw (ctf_file_t * fp, uint32_t name)
 }
 
 const char *
-ctf_strptr (ctf_file_t * fp, uint32_t name)
+ctf_strptr (ctf_file_t *fp, uint32_t name)
 {
   const char *s = ctf_strraw (fp, name);
   return (s != NULL ? s : "(?)");
 }
 
 static int
-print_extract_ctf (ctf_file_t * fp, const char *name, void *data)
+print_extract_ctf (ctf_file_t* fp, const char *name, void *data)
 {
   struct visit_data *d = data;
 
@@ -92,11 +92,11 @@ print_extract_ctf (ctf_file_t * fp, const char *name, void *data)
 	{
 	  printf ("\n%s:\n\n", d->name);
 	  printf ("%-*s %-10s %-8s %-8s\n\n",
-		  d->colsize, "Name", "Size", "Types", "Vars");
+		  (int) d->colsize, "Name", "Size", "Types", "Vars");
 	  d->printed_header = 1;
 	}
-      printf ("%-*s %-10zi %-8zi %-8zi\n", d->colsize, name, fp->ctf_size,
-	      fp->ctf_typemax, fp->ctf_nvars);
+      printf ("%-*s %-10zi %-8zi %-8zi\n", (int) d->colsize, name,
+	      fp->ctf_size, fp->ctf_typemax, fp->ctf_nvars);
     }
 
   if (extraction && upgrade)
@@ -124,7 +124,7 @@ print_extract_ctf (ctf_file_t * fp, const char *name, void *data)
 
 static int
 extract_raw_ctf (const char *name, const void *content, size_t size,
-		 void *unused)
+		 void *unused _dt_unused_)
 {
   char fn[PATH_MAX];
   const unsigned char *buf = (const unsigned char *) content;

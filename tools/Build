@@ -7,14 +7,14 @@
 # COPYING in the top level of this tree.
 
 CMDS += ctf_dump ctf_ar
-ctf_dump_CPPFLAGS = -Iinclude
+CPPFLAGS = -Ilibctf -Iinclude
+
 ctf_dump_TARGET = ctf_dump
 ctf_dump_DIR := $(current-dir)
 ctf_dump_SOURCES = ctf_dump.c
 ctf_dump_DEPS = libdtrace-ctf.so
 ctf_dump_LIBS = -L$(objdir) -ldtrace-ctf -lz
 
-ctf_ar_CPPFLAGS = -Ilibctf -Iinclude
 ctf_ar_TARGET = ctf_ar
 ctf_ar_DIR := $(current-dir)
 ctf_ar_SOURCES = car.c

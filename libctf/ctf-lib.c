@@ -1,5 +1,5 @@
 /* Miscellary.
-   Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -136,7 +136,8 @@ ctf_fdopen (int fd, int *errp)
    * If we have read enough bytes to form a CTF header and the magic
    * string matches, attempt to interpret the file as raw CTF.
    */
-  if (nbytes >= sizeof (ctf_preamble_t) && hdr.ctf.ctp_magic == CTF_MAGIC)
+  if ((size_t) nbytes >= sizeof (ctf_preamble_t) &&
+      hdr.ctf.ctp_magic == CTF_MAGIC)
     {
       if (hdr.ctf.ctp_version > CTF_VERSION)
 	return (ctf_set_open_errno (errp, ECTF_CTFVERS));
@@ -165,7 +166,7 @@ ctf_fdopen (int fd, int *errp)
      do our own largefile ELF processing, and convert everything to
      GElf structures so that clients can operate on any data model.  */
 
-  if (nbytes >= sizeof (Elf32_Ehdr)
+  if ((size_t) nbytes >= sizeof (Elf32_Ehdr)
      && memcmp (&hdr.e32.e_ident[EI_MAG0], ELFMAG, SELFMAG) == 0)
     {
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -189,7 +190,7 @@ ctf_fdopen (int fd, int *errp)
 
       if (hdr.e32.e_ident[EI_CLASS] == ELFCLASS64)
 	{
-	  if (nbytes < sizeof (GElf_Ehdr))
+	  if ((size_t) nbytes < sizeof (GElf_Ehdr))
 	    return (ctf_set_open_errno (errp, ECTF_FMT));
 	}
       else

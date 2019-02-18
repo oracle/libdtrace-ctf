@@ -10,6 +10,7 @@
    COPYING in the top level of this tree.  */
 
 #define _GNU_SOURCE 1
+#include <sys/compiler.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -164,7 +165,7 @@ read_ctf (const char *file)
 }
 
 static void
-dump_ctf (const char *file, ctf_file_t * fp, int quiet)
+dump_ctf (const char *file, ctf_file_t *fp, int quiet)
 {
   const char *errmsg;
   int err;
@@ -200,7 +201,7 @@ err:
 }
 
 static void
-usage (int argc, char *argv[])
+usage (int argc _dt_unused_, char *argv[])
 {
   fprintf (stderr, "Syntax: %s [-p parent-ctf] -n ctf...\n\n", argv[0]);
   fprintf (stderr, "-n: Do not dump parent's contents after loading.\n\n");

@@ -1,5 +1,5 @@
 /* Type lookup.
-   Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -44,8 +44,9 @@ isqualifier (const char *s, size_t len)
   int h = s[len - 1] + (int) len - 105;
   const struct qual *qp = &qhash[h];
 
-  return (h >= 0 && h < sizeof (qhash) / sizeof (qhash[0])
-	  && len == qp->q_len && strncmp (qp->q_name, s, qp->q_len) == 0);
+  return (h >= 0 && (size_t) h < sizeof (qhash) / sizeof (qhash[0])
+	  && (size_t) len == qp->q_len &&
+	  strncmp (qp->q_name, s, qp->q_len) == 0);
 }
 
 /* Attempt to convert the given C type name into the corresponding CTF type ID.
@@ -259,7 +260,7 @@ ctf_lookup_by_id (ctf_file_t **fpp, ctf_id_t type)
     }
 
   type = LCTF_TYPE_TO_INDEX (fp, type);
-  if (type > 0 && type <= fp->ctf_typemax)
+  if (type > 0 && (unsigned long) type <= fp->ctf_typemax)
     {
       *fpp = fp;		/* Function returns ending CTF container.  */
       return (LCTF_INDEX_TO_TYPEPTR (fp, type));
