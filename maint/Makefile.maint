@@ -1,5 +1,6 @@
 
-.PHONY: all gnu dir include src _subst
+.PHONY: all gnu dir include src _subst __one_subst
+.SILENT:
 
 topdir := $(shell pwd)
 
@@ -10,10 +11,11 @@ all:
 HEADERS := include/sys/ctf.h include/sys/ctf-api.h
 
 gnu: dir include src
+	git show-ref -s --head HEAD > $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR))
 
 dir:
-	@[[ -n $(GNU_DIR) ]] || { echo "Please set GNU_DIR." >&2 && false; }
-	@[[ -f $(GNU_DIR)/Makefile.tpl ]] || \
+	[[ -n $(GNU_DIR) ]] || { echo "Please set GNU_DIR." >&2 && false; }
+	[[ -f $(GNU_DIR)/Makefile.tpl ]] || \
 	    { echo "Please set GNU_DIR to the top level of a Cygnus tree." >&2; \
 	      false; }
 
@@ -30,6 +32,23 @@ src:
 	done
 
 _subst:
-	mkdir -p $(GNU_DIR)/$(dir $(FILE)) && \
-	awk -f $(topdir)/maint/comment-change.awk -v topdir=$(topdir) $(FILE) > $(GNU_DIR)/$(FILE)
-	unifdef -m -DNO_COMPAT $(GNU_DIR)/$(FILE)
+	if [[ -f $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR)) ]]; then \
+		git show $(shell cat $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR)) 2>/dev/null):$(FILE) | \
+		$(MAKE) -f $(topdir)/maint/Makefile.maint __one_subst \
+			topdir=$(topdir) OUT=$(topdir)/maint/.old; \
+	fi
+
+	mkdir -p $(GNU_DIR)/$(dir $(FILE))
+	if [[ -e $(topdir)/maint/.old ]] && [[ -e $(GNU_DIR)/$(FILE) ]] && \
+	   ! cmp -s $(topdir)/maint/.old $(GNU_DIR)/$(FILE); then \
+		echo "WARNING: $(GNU_DIR)/$(FILE): changed in GNU tree, needs manual sync" >&2; \
+	else \
+		cat $(FILE) | $(MAKE) -f $(topdir)/maint/Makefile.maint \
+			__one_subst topdir=$(topdir) OUT=$(GNU_DIR)/$(FILE); \
+	fi
+	rm -f $(topdir)/maint/.old
+	printf "SYNC %s\n" "$(FILE)"
+
+__one_subst:
+	awk -f $(topdir)/maint/comment-change.awk -v topdir=$(topdir) > $(OUT);
+	unifdef -x 2 -m -DNO_COMPAT $(OUT)
