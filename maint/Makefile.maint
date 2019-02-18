@@ -1,0 +1,35 @@
+
+.PHONY: all gnu dir include src _subst
+
+topdir := $(shell pwd)
+
+all:
+	echo 'Targets:' >&2
+	echo "\tgnu GNU_DIR=/cyg/tree/root" >&2
+
+HEADERS := include/sys/ctf.h include/sys/ctf-api.h
+
+gnu: dir include src
+
+dir:
+	@[[ -n $(GNU_DIR) ]] || { echo "Please set GNU_DIR." >&2 && false; }
+	@[[ -f $(GNU_DIR)/Makefile.tpl ]] || \
+	    { echo "Please set GNU_DIR to the top level of a Cygnus tree." >&2; \
+	      false; }
+
+include:
+	for name in $(HEADERS); do \
+	   $(MAKE) -f $(topdir)/maint/Makefile.maint _subst topdir=$(topdir) \
+	   	   FILE=$$name; \
+	done
+
+src:
+	for name in libctf/*.c libctf/*.h libctf/sys/*.h; do \
+	   $(MAKE) -f $(topdir)/maint/Makefile.maint _subst topdir=$(topdir) \
+	   	   FILE=$$name; \
+	done
+
+_subst:
+	mkdir -p $(GNU_DIR)/$(dir $(FILE)) && \
+	awk -f $(topdir)/maint/comment-change.awk -v topdir=$(topdir) $(FILE) > $(GNU_DIR)/$(FILE)
+	unifdef -m -DNO_COMPAT $(GNU_DIR)/$(FILE)
