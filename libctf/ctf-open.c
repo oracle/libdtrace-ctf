@@ -69,8 +69,8 @@ get_vlen_v2 (uint32_t info)
 }
 
 static inline ssize_t
-get_ctt_size_common (const ctf_file_t *fp _dt_unused_,
-		     const ctf_type_t *tp _dt_unused_,
+get_ctt_size_common (const ctf_file_t *fp _libctf_unused_,
+		     const ctf_type_t *tp _libctf_unused_,
 		     ssize_t *sizep, ssize_t *incrementp, size_t lsize,
 		     size_t csize, size_t ctf_type_size,
 		     size_t ctf_stype_size, size_t ctf_lsize_sent)
@@ -135,7 +135,8 @@ get_ctt_size_v2 (const ctf_file_t *fp, const ctf_type_t *tp,
 }
 
 static ssize_t
-get_vbytes_common (unsigned short kind, ssize_t size _dt_unused_, size_t vlen)
+get_vbytes_common (unsigned short kind, ssize_t size _libctf_unused_,
+		   size_t vlen)
 {
   switch (kind)
     {
@@ -656,7 +657,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
   int err;
 
 #ifndef NO_COMPAT
-  if (_dt_unlikely_ (fp->ctf_version == CTF_VERSION_1))
+  if (_libctf_unlikely_ (fp->ctf_version == CTF_VERSION_1))
     {
       int err;
       if ((err = upgrade_types (fp, cth)) != 0)
@@ -960,11 +961,11 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     return (ctf_set_open_errno (errp, ECTF_NOCTFBUF));
 
 #ifdef NO_COMPAT
-  if (_dt_unlikely_ (pp->ctp_version != CTF_VERSION_2))
+  if (_libctf_unlikely_ (pp->ctp_version != CTF_VERSION_2))
     return (ctf_set_open_errno (errp, ECTF_CTFVERS));
 #else
-  if (_dt_unlikely_ ((pp->ctp_version < CTF_VERSION_1)
-		     || (pp->ctp_version > CTF_VERSION_2)))
+  if (_libctf_unlikely_ ((pp->ctp_version < CTF_VERSION_1)
+			 || (pp->ctp_version > CTF_VERSION_2)))
     return (ctf_set_open_errno (errp, ECTF_CTFVERS));
 
   if ((symsect != NULL) && (pp->ctp_version != CTF_VERSION_2))
@@ -1067,7 +1068,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   ctf_set_version (fp, &hp, hp.cth_version);
 
 #ifndef NO_COMPAT
-  if (_dt_unlikely_ (hp.cth_version < CTF_VERSION_2))
+  if (_libctf_unlikely_ (hp.cth_version < CTF_VERSION_2))
     fp->ctf_parmax = CTF_MAX_PTYPE_V1;
   else
     fp->ctf_parmax = CTF_MAX_PTYPE;

@@ -1,5 +1,5 @@
 /* C declarator syntax glue.
-   Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -150,7 +150,7 @@ ctf_decl_push (ctf_decl_t *cd, ctf_file_t *fp, ctf_id_t type)
     ctf_list_append (&cd->cd_nodes[prec], cdp);
 }
 
-_dt_printflike_ (2, 3)
+_libctf_printflike_ (2, 3)
 void ctf_decl_sprintf (ctf_decl_t *cd, const char *format, ...)
 {
   size_t len = (size_t) (cd->cd_end - cd->cd_ptr);

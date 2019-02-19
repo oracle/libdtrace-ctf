@@ -31,7 +31,7 @@ include:
 	done
 
 src:
-	for name in libctf/*.c libctf/*.h libctf/sys/*.h; do \
+	for name in libctf/*.c libctf/*.h; do \
 	   $(MAKE) -f $(topdir)/maint/Makefile.maint _subst topdir=$(topdir) \
 	   	   FILE=$$name; \
 	done

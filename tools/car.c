@@ -23,7 +23,7 @@
 #include <ctf-impl.h>
 
 static void
-usage (int argc _dt_unused_, char *argv[])
+usage (int argc _libctf_unused_, char *argv[])
 {
   fprintf (stderr, "Syntax: %s {-x|-t} [-vu] -i parent-ctf] "
 	   "archive...\n\n", argv[0]);
@@ -52,7 +52,7 @@ struct visit_data
  * Compute the size of column needed to print the names of all archive members.
  */
 static int
-compute_colsize (ctf_file_t *fp _dt_unused_, const char *name, void *data)
+compute_colsize (ctf_file_t *fp _libctf_unused_, const char *name, void *data)
 {
   struct visit_data *d = data;
 
@@ -124,7 +124,7 @@ print_extract_ctf (ctf_file_t* fp, const char *name, void *data)
 
 static int
 extract_raw_ctf (const char *name, const void *content, size_t size,
-		 void *unused _dt_unused_)
+		 void *unused _libctf_unused_)
 {
   char fn[PATH_MAX];
   const unsigned char *buf = (const unsigned char *) content;

@@ -38,7 +38,7 @@ ctf_alloc (size_t size)
 }
 
 void
-ctf_free (void *buf, size_t size _dt_unused_)
+ctf_free (void *buf, size_t size _libctf_unused_)
 {
   free (buf);
 }
@@ -49,7 +49,7 @@ ctf_strerror (int err)
   return (const char *) (strerror (err));
 }
 
-_dt_printflike_ (1, 2)
+_libctf_printflike_ (1, 2)
      void ctf_dprintf (const char *format, ...)
 {
   if (_libctf_debug)

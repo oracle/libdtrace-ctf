@@ -1307,7 +1307,7 @@ enumadd (const char *name, int value, void *arg)
 }
 
 static int
-membcmp (const char *name, ctf_id_t type _dt_unused_, unsigned long offset,
+membcmp (const char *name, ctf_id_t type _libctf_unused_, unsigned long offset,
 	 void *arg)
 {
   ctf_bundle_t *ctb = arg;

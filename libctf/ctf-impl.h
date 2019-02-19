@@ -1,5 +1,5 @@
 /* Implementation header.
-   Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -13,7 +13,6 @@
 #include <sys/errno.h>
 #include <sys/ctf-api.h>
 #include <sys/types.h>
-#include <sys/compiler.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -25,6 +24,30 @@
 extern "C"
   {
 #endif
+
+/* Compiler attributes.  */
+
+#if defined (__GNUC__)
+
+/* GCC.  We assume that all compilers claiming to be GCC support sufficiently
+   many GCC attributes that the code below works.  If some non-GCC compilers
+   masquerading as GCC in fact do not implement these attributes, version checks
+   may be required.  */
+
+/* We use the _libctf_*_ pattern to avoid clashes with any future attribute
+   macros glibc may introduce, which have names of the pattern
+   __attribute_blah__.  */
+
+#define _libctf_constructor_(x) __attribute__ ((__constructor__))
+#define _libctf_destructor_(x) __attribute__ ((__destructor__))
+#define _libctf_printflike_(string_index,first_to_check) \
+    __attribute__ ((__format__ (__printf__,(string_index),(first_to_check))))
+#define _libctf_unlikely_(x) __builtin_expect ((x),0)
+#define _libctf_unused_ __attribute__ ((__unused__))
+
+#endif
+
+/* libctf in-memory state.  */
 
 typedef struct ctf_helem
 {
@@ -320,7 +343,7 @@ extern void ctf_decl_init (ctf_decl_t *, char *, size_t);
 extern void ctf_decl_fini (ctf_decl_t *);
 extern void ctf_decl_push (ctf_decl_t *, ctf_file_t *, ctf_id_t);
 
-_dt_printflike_ (2, 3)
+_libctf_printflike_ (2, 3)
 extern void ctf_decl_sprintf (ctf_decl_t *, const char *, ...);
 
 extern const char *ctf_strraw (ctf_file_t *, uint32_t);
@@ -342,8 +365,10 @@ extern void ctf_free (void *, size_t);
 extern char *ctf_strdup (const char *);
 extern const char *ctf_strerror (int);
 
-_dt_printflike_ (1, 2)
+_libctf_printflike_ (1, 2)
 extern void ctf_dprintf (const char *, ...);
+
+/* Variables, all underscore-prepended. */
 
 extern const char _CTF_SECTION[];	/* name of CTF ELF section */
 extern const char _CTF_NULLSTR[];	/* empty string */

@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <sys/compiler.h>
 #include <ctf-impl.h>
 #include <unistd.h>
 #include <string.h>
@@ -24,7 +23,7 @@
 static size_t _PAGESIZE;
 static size_t _PAGEMASK;
 
-_dt_constructor_(_libctf_init)
+_libctf_constructor_(_libctf_init)
 static void _libctf_init (void)
 {
   _libctf_debug = getenv ("LIBCTF_DEBUG") != NULL;
