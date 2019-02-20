@@ -41,8 +41,8 @@ extern "C"
 #define _libctf_constructor_(x) __attribute__ ((__constructor__))
 #define _libctf_destructor_(x) __attribute__ ((__destructor__))
 #define _libctf_printflike_(string_index,first_to_check) \
-    __attribute__ ((__format__ (__printf__,(string_index),(first_to_check))))
-#define _libctf_unlikely_(x) __builtin_expect ((x),0)
+    __attribute__ ((__format__ (__printf__, (string_index), (first_to_check))))
+#define _libctf_unlikely_(x) __builtin_expect ((x), 0)
 #define _libctf_unused_ __attribute__ ((__unused__))
 
 #endif
