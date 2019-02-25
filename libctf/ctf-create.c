@@ -307,7 +307,7 @@ ctf_update (ctf_file_t *fp)
       size_t len = strlen (dvd->dvd_name) + 1;
 
       var->ctv_name = (uint32_t) (s - s0);
-      var->ctv_typeidx = dvd->dvd_type;
+      var->ctv_type = dvd->dvd_type;
       memcpy (s, dvd->dvd_name, len);
       s += len;
     }

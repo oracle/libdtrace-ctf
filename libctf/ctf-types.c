@@ -148,7 +148,7 @@ ctf_variable_iter (ctf_file_t *fp, ctf_variable_f *func, void *arg)
 
   for (i = 0; i < fp->ctf_nvars; i++)
     if ((rc = func (ctf_strptr (fp, fp->ctf_vars[i].ctv_name),
-		    fp->ctf_vars[i].ctv_typeidx, arg)) != 0)
+		    fp->ctf_vars[i].ctv_type, arg)) != 0)
       return rc;
 
   return 0;

@@ -71,11 +71,11 @@ ctf_label_iter (ctf_file_t *fp, ctf_label_f *func, void *arg)
       if ((lname = ctf_strraw (fp, ctlp->ctl_label)) == NULL)
 	{
 	  ctf_dprintf ("failed to decode label %u with "
-		       "typeidx %u\n", ctlp->ctl_label, ctlp->ctl_typeidx);
+		       "type %u\n", ctlp->ctl_label, ctlp->ctl_type);
 	  return (ctf_set_errno (fp, ECTF_CORRUPT));
 	}
 
-      linfo.ctb_typeidx = ctlp->ctl_typeidx;
+      linfo.ctb_type = ctlp->ctl_type;
       if ((rc = func (lname, &linfo, arg)) != 0)
 	return rc;
     }

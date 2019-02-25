@@ -161,13 +161,13 @@ typedef struct ctf_header
 typedef struct ctf_lblent
 {
   uint32_t ctl_label;		/* Ref to name of label.  */
-  uint32_t ctl_typeidx;		/* Last type associated with this label.  */
+  uint32_t ctl_type;		/* Last type associated with this label.  */
 } ctf_lblent_t;
 
 typedef struct ctf_varent
 {
   uint32_t ctv_name;		/* Reference to name in string table.  */
-  uint32_t ctv_typeidx;		/* Index of type of this variable.  */
+  uint32_t ctv_type;		/* Index of type of this variable.  */
 } ctf_varent_t;
 
 /* In format v2, type sizes, measured in bytes, come in type flavours.  Nearly

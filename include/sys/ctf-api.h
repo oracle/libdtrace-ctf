@@ -82,7 +82,7 @@ typedef struct ctf_funcinfo
 
 typedef struct ctf_lblinfo
 {
-  ctf_id_t ctb_typeidx;		/* Last type associated with the label.  */
+  ctf_id_t ctb_type;		/* Last type associated with the label.  */
 } ctf_lblinfo_t;
 
 typedef struct ctf_snapshot_id

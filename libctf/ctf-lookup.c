@@ -202,7 +202,7 @@ ctf_lookup_variable (ctf_file_t *fp, const char *name)
       return (ctf_set_errno (fp, ECTF_NOTYPEDAT));
     }
 
-  return ent->ctv_typeidx;
+  return ent->ctv_type;
 }
 
 /* Given a symbol table index, return the type of the data object described
