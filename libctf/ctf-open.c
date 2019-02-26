@@ -13,6 +13,7 @@
 #include <gelf.h>
 #include <ctf-impl.h>
 #include <sys/mman.h>
+#include <byteswap.h>
 #include <zlib.h>
 
 static const ctf_dmodel_t _libctf_models[] = {
@@ -154,7 +155,7 @@ get_vbytes_common (unsigned short kind, ssize_t size _libctf_unused_,
     case CTF_K_RESTRICT:
       return 0;
     default:
-      ctf_dprintf ("detected invalid CTF kind -- %u\n", kind);
+      ctf_dprintf ("detected invalid CTF kind -- %x\n", kind);
       return ECTF_CORRUPT;
     }
 }
@@ -914,6 +915,239 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
   return 0;
 }
 
+/* Endianness-flipping routines.
+
+   We flip everything, mindlessly, even 1-byte entities, so that future
+   expansions do not require changes to this code.  */
+
+/* Swap the endianness of something.  */
+
+#define swap_thing(x)							\
+  do {									\
+    _Static_assert (sizeof (x) == 1 || (sizeof (x) % 2 == 0		\
+					&& sizeof (x) <= 8),		\
+		    "Invalid size, update endianness code");		\
+    switch (sizeof (x)) {						\
+    case 2: x = bswap_16 (x); break;					\
+    case 4: x = bswap_32 (x); break;					\
+    case 8: x = bswap_64 (x); break;					\
+    case 1: /* Nothing needs doing */					\
+      break;								\
+    }									\
+  } while (0);
+
+/* Flip the endianness of the CTF header.  */
+
+static void
+flip_header (ctf_header_t *cth)
+{
+  swap_thing (cth->cth_preamble.ctp_magic);
+  swap_thing (cth->cth_preamble.ctp_version);
+  swap_thing (cth->cth_preamble.ctp_flags);
+  swap_thing (cth->cth_parlabel);
+  swap_thing (cth->cth_parname);
+  swap_thing (cth->cth_objtoff);
+  swap_thing (cth->cth_funcoff);
+  swap_thing (cth->cth_varoff);
+  swap_thing (cth->cth_typeoff);
+  swap_thing (cth->cth_stroff);
+  swap_thing (cth->cth_strlen);
+}
+
+/* Flip the endianness of the label section, an array of ctf_lblent_t.  */
+
+static void
+flip_lbls (void *start, size_t len)
+{
+  ctf_lblent_t *lbl = start;
+
+  for (ssize_t i = len / sizeof (struct ctf_lblent); i > 0; lbl++, i--)
+    {
+      swap_thing (lbl->ctl_label);
+      swap_thing (lbl->ctl_type);
+    }
+}
+
+/* Flip the endianness of the data-object or function sections, an array of
+   uint32_t.  (The function section has more internal structure, but that
+   structure is an array of uint32_t, so can be treated as one big array for
+   byte-swapping.)  */
+
+static void
+flip_objts (void *start, size_t len)
+{
+  uint32_t *obj = start;
+
+  for (ssize_t i = len / sizeof (uint32_t); i > 0; obj++, i--)
+      swap_thing (*obj);
+}
+
+/* Flip the endianness of the variable section, an array of ctf_varent_t.  */
+
+static void
+flip_vars (void *start, size_t len)
+{
+  ctf_varent_t *var = start;
+
+  for (ssize_t i = len / sizeof (struct ctf_varent); i > 0; var++, i--)
+    {
+      swap_thing (var->ctv_name);
+      swap_thing (var->ctv_type);
+    }
+}
+
+/* Flip the endianness of the type section, a tagged array of ctf_type or
+   ctf_stype followed by variable data.  */
+
+static int
+flip_types (void *start, size_t len)
+{
+  ctf_type_t *t = start;
+
+  while ((uintptr_t) t < ((uintptr_t) start) + len)
+    {
+      swap_thing (t->ctt_name);
+      swap_thing (t->ctt_info);
+      swap_thing (t->ctt_size);
+
+      uint32_t kind = CTF_V2_INFO_KIND (t->ctt_info);
+      size_t size = t->ctt_size;
+      uint32_t vlen = CTF_V2_INFO_VLEN (t->ctt_info);
+      size_t vbytes = get_vbytes_v2 (kind, size, vlen);
+
+      if (_libctf_unlikely_ (size == CTF_LSIZE_SENT))
+	{
+	  swap_thing (t->ctt_lsizehi);
+	  swap_thing (t->ctt_lsizelo);
+	  size = CTF_TYPE_LSIZE (t);
+	  t = (ctf_type_t *) ((uintptr_t) t + sizeof (ctf_type_t));
+	}
+      else
+	t = (ctf_type_t *) ((uintptr_t) t + sizeof (ctf_stype_t));
+
+      switch (kind)
+	{
+	case CTF_K_FORWARD:
+	case CTF_K_UNKNOWN:
+	case CTF_K_POINTER:
+	case CTF_K_TYPEDEF:
+	case CTF_K_VOLATILE:
+	case CTF_K_CONST:
+	case CTF_K_RESTRICT:
+	  /* These types have no vlen data to swap.  */
+	  assert (vbytes == 0);
+	  break;
+
+	case CTF_K_INTEGER:
+	case CTF_K_FLOAT:
+	  {
+	    /* These types have a single uint32_t.  */
+
+	    uint32_t *item = (uint32_t *) t;
+
+	    swap_thing (*item);
+	  }
+	case CTF_K_FUNCTION:
+	  {
+	    /* This type has a bunch of uint32_ts.  */
+
+	    uint32_t *item = (uint32_t *) t;
+
+	    for (ssize_t i = vlen; i > 0; item++, i--)
+	      swap_thing (*item);
+	    break;
+	  }
+
+	case CTF_K_ARRAY:
+	  {
+	    /* This has a single ctf_array_t.  */
+
+	    ctf_array_t *a = (ctf_array_t *) t;
+
+	    assert (vbytes == sizeof (ctf_array_t));
+	    swap_thing (a->cta_contents);
+	    swap_thing (a->cta_index);
+	    swap_thing (a->cta_nelems);
+
+	    break;
+	  }
+
+	case CTF_K_STRUCT:
+	case CTF_K_UNION:
+	  {
+	    /* This has an array of ctf_member or ctf_lmember, depending on
+	       size.  We could consider it to be a simple array of uint32_t,
+	       but for safety's sake in case these structures ever acquire
+	       non-uint32_t members, do it member by member.  */
+
+	    if (_libctf_unlikely_ (size >= CTF_LSTRUCT_THRESH))
+	      {
+		ctf_lmember_t *lm = (ctf_lmember_t *) t;
+		for (ssize_t i = vlen; i > 0; i--, lm++)
+		  {
+		    swap_thing (lm->ctlm_name);
+		    swap_thing (lm->ctlm_offsethi);
+		    swap_thing (lm->ctlm_type);
+		    swap_thing (lm->ctlm_offsetlo);
+		  }
+	      }
+	    else
+	      {
+		ctf_member_t *m = (ctf_member_t *) t;
+		for (ssize_t i = vlen; i > 0; i--, m++)
+		  {
+		    swap_thing (m->ctm_name);
+		    swap_thing (m->ctm_offset);
+		    swap_thing (m->ctm_type);
+		  }
+	      }
+	    break;
+	  }
+
+	case CTF_K_ENUM:
+	  {
+	    /* This has an array of ctf_enum_t.  */
+
+	    ctf_enum_t *item = (ctf_enum_t *) t;
+
+	    for (ssize_t i = vlen; i > 0; item++, i--)
+	      {
+		swap_thing (item->cte_name);
+		swap_thing (item->cte_value);
+	      }
+	    break;
+	  }
+	default:
+	  ctf_dprintf ("unhandled CTF kind in endianness conversion -- %x\n",
+		       kind);
+	  return ECTF_CORRUPT;
+	}
+
+      t = (ctf_type_t *) ((uintptr_t) t + vbytes);
+    }
+
+  return 0;
+}
+
+/* Flip the endianness of BASE, given the offsets in the (already endian-
+   converted) CTH.
+
+   All of this stuff happens before the header is fully initialized, so the
+   LCTF_*() macros cannot be used yet.  Since we do not try to endian-convert v1
+   data, this is no real loss.  */
+
+static int
+flip_ctf (ctf_header_t *cth, unsigned char *base)
+{
+  base += sizeof (ctf_header_t);
+
+  flip_lbls (base + cth->cth_lbloff, cth->cth_objtoff - cth->cth_lbloff);
+  flip_objts (base + cth->cth_objtoff, cth->cth_funcoff - cth->cth_objtoff);
+  flip_objts (base + cth->cth_funcoff, cth->cth_varoff - cth->cth_funcoff);
+  flip_vars (base + cth->cth_varoff, cth->cth_typeoff - cth->cth_varoff);
+  return flip_types (base + cth->cth_typeoff, cth->cth_stroff - cth->cth_typeoff);
+}
+
 /* Decode the specified CTF buffer and optional symbol table and create a new
    CTF container representing the symbolic debugging information.  This code
    can be used directly by the debugger, or it can be used as the engine for
@@ -928,6 +1162,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   ctf_file_t *fp;
   void *buf, *base;
   size_t size, hdrsz;
+  int foreign_endian = 0;
   int err;
 
   if (ctfsect == NULL || ((symsect == NULL) != (strsect == NULL)))
@@ -954,11 +1189,22 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   /* Validate each part of the CTF header.
 
      First, we validate the preamble (common to all versions).  At that point,
-     we know the specific header version, and can validate the version-specific
-     parts including section offsets and alignments.  */
+     we know the endianness and specific header version, and can validate the
+     version-specific parts including section offsets and alignments.
 
-  if (pp->ctp_magic != CTF_MAGIC)
-    return (ctf_set_open_errno (errp, ECTF_NOCTFBUF));
+     We specifically do not support foreign-endian old versions.  */
+
+  if (_libctf_unlikely_ (pp->ctp_magic != CTF_MAGIC))
+    {
+      if (pp->ctp_magic == bswap_16 (CTF_MAGIC))
+	{
+	  if (pp->ctp_version != CTF_VERSION_2)
+	    return (ctf_set_open_errno (errp, ECTF_CTFVERS));
+	  foreign_endian = 1;
+	}
+      else
+	return (ctf_set_open_errno (errp, ECTF_NOCTFBUF));
+    }
 
 #ifdef NO_COMPAT
   if (_libctf_unlikely_ (pp->ctp_version != CTF_VERSION_2))
@@ -984,6 +1230,10 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     return (ctf_set_open_errno (errp, ECTF_NOCTFBUF));
 
   memcpy (&hp, ctfsect->cts_data, sizeof (hp));
+
+  if (foreign_endian)
+    flip_header (&hp);
+
   hdrsz = sizeof (ctf_header_t);
 
   size = hp.cth_stroff + hp.cth_strlen;
@@ -1006,8 +1256,9 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     return (ctf_set_open_errno (errp, ECTF_CORRUPT));
 
   /* Once everything is determined to be valid, attempt to decompress the CTF
-     data buffer if it is compressed.  Otherwise we just put the data section's
-     buffer pointer into ctf_buf, below. */
+     data buffer if it is compressed, or copy it into new storage if it is not
+     compressed but needs endian-flipping.  Otherwise we just put the data
+     section's buffer pointer into ctf_buf, below.  */
 
 #ifndef NO_COMPAT
   /* Note: if this is a v1 buffer, it will be reallocated and expanded by
@@ -1046,6 +1297,11 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	  return (ctf_set_open_errno (errp, ECTF_CORRUPT));
 	}
 
+    }
+  else if (foreign_endian)
+    {
+      if ((base = ctf_data_alloc (size + hdrsz)) == MAP_FAILED)
+	return (ctf_set_open_errno (errp, ECTF_ZALLOC));
     }
   else
     {
@@ -1102,6 +1358,18 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     {
       fp->ctf_str[CTF_STRTAB_1].cts_strs = strsect->cts_data;
       fp->ctf_str[CTF_STRTAB_1].cts_len = strsect->cts_size;
+    }
+
+  if (foreign_endian &&
+      (err = flip_ctf (&hp, base)) != 0)
+    {
+      /* We can be certain that flip_ctf() will have endian-flipped everything
+         other than the types table when we return.  In particular the header
+         is fine, so set it, to allow freeing to use the usual code path.  */
+
+      (void) ctf_set_open_errno (errp, err);
+      ctf_set_base (fp, &hp, base);
+      goto bad;
     }
 
   ctf_set_base (fp, &hp, base);

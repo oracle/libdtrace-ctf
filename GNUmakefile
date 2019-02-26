@@ -2,7 +2,7 @@
 #
 # Build files in subdirectories are included by this file.
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
@@ -25,7 +25,7 @@ $(if $(subst Linux,,$(shell uname -s)), \
 
 CFLAGS ?= -O2 -g -Wall -pedantic -Wno-unknown-pragmas
 LDFLAGS ?=
-INVARIANT_CFLAGS := -std=gnu99 -D_GNU_SOURCE $(DTO)
+INVARIANT_CFLAGS := -std=gnu11 -D_GNU_SOURCE $(DTO)
 CPPFLAGS += -Iinclude -I$(objdir)
 CC = gcc
 override CFLAGS += $(INVARIANT_CFLAGS)

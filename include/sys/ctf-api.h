@@ -36,7 +36,10 @@ typedef long ctf_id_t;
 
 /* If the debugger needs to provide the CTF library with a set of raw buffers
    for use as the CTF data, symbol table, and string table, it can do so by
-   filling in ctf_sect_t structures and passing them to ctf_bufopen().  */
+   filling in ctf_sect_t structures and passing them to ctf_bufopen().
+
+   The contents of this structure must always be in native endianness (no
+   byteswapping is performed).  */
 
 typedef struct ctf_sect
 {

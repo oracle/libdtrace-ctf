@@ -36,13 +36,14 @@ extern "C"
    operating system kernel in a form that is significantly more compact than
    the equivalent stabs or DWARF representation.  The format is data-model
    independent, so consumers do not need different code depending on whether
-   they are 32-bit or 64-bit programs.  CTF assumes that a standard ELF symbol
-   table is available for use in the debugger, and uses the structure and data
-   of the symbol table to avoid storing redundant information.  The CTF data
-   may be compressed on disk or in memory, indicated by a bit in the header.
-   CTF may be interpreted in a raw disk file, or it may be stored in an ELF
-   section, typically named .ctf.  Data structures are aligned so that a raw
-   CTF file or CTF ELF section may be manipulated using mmap(2).
+   they are 32-bit or 64-bit programs; libctf automatically compensates for
+   endianness varaitions.  CTF assumes that a standard ELF symbol table is
+   available for use in the debugger, and uses the structure and data of the
+   symbol table to avoid storing redundant information.  The CTF data may be
+   compressed on disk or in memory, indicated by a bit in the header.  CTF may
+   be interpreted in a raw disk file, or it may be stored in an ELF section,
+   typically named .ctf.  Data structures are aligned so that a raw CTF file or
+   CTF ELF section may be manipulated using mmap(2).
 
    The CTF file or section itself has the following structure:
 
@@ -109,6 +110,11 @@ extern "C"
 # define CTF_MAX_SIZE_V1	0xfffe	/* Max size of a type in bytes. */
 # define CTF_LSIZE_SENT_V1	0xffff	/* Sentinel for v1 ctt_size.  */
 #endif	/* !NO_COMPAT */
+
+  /* Start of actual data structure definitions.
+
+     Every field in these structures must have corresponding code in the
+     endianness-swapping machinery in libctf/ctf-open.c.  */
 
 typedef struct ctf_preamble
 {
