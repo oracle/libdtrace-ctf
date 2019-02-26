@@ -271,7 +271,7 @@ ctf_lookup_by_id (ctf_file_t **fpp, ctf_id_t type)
 }
 
 /* Given a symbol table index, return the info for the function described
- by the corresponding entry in the symbol table.  */
+   by the corresponding entry in the symbol table.  */
 
 int
 ctf_func_info (ctf_file_t *fp, unsigned long symidx, ctf_funcinfo_t *fip)
@@ -328,7 +328,7 @@ ctf_func_info (ctf_file_t *fp, unsigned long symidx, ctf_funcinfo_t *fip)
 }
 
 /* Given a symbol table index, return the arguments for the function described
-  by the corresponding entry in the symbol table.  */
+   by the corresponding entry in the symbol table.  */
 
 int
 ctf_func_args (ctf_file_t * fp, unsigned long symidx, uint32_t argc,

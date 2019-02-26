@@ -170,7 +170,7 @@ typedef struct ctf_varent
   uint32_t ctv_type;		/* Index of type of this variable.  */
 } ctf_varent_t;
 
-/* In format v2, type sizes, measured in bytes, come in type flavours.  Nearly
+/* In format v2, type sizes, measured in bytes, come in two flavours.  Nearly
    all of them fit into a (UINT_MAX - 1), and thus can be stored in the ctt_size
    member of a ctf_stype_t.  The maximum value for these sizes is CTF_MAX_SIZE.
    Types larger than this must be stored in the ctf_lsize member of a
