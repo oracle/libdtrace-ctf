@@ -10,7 +10,6 @@
 #define	_CTF_H
 
 #include <sys/types.h>
-#include <assert.h>
 #include <limits.h>
 #include <stdint.h>
 
