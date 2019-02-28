@@ -181,7 +181,7 @@ ctf_sort_var (const void *one_, const void *two_, void *strtab_)
    definitions, and then call ctf_bufopen() on it.  This not only leverages
    ctf_bufopen(), but also avoids having to bifurcate the rest of the library
    code with different lookup paths for static and dynamic type definitions.  We
-/   are therefore optimizing greatly for lookup over update, which we assume will
+   are therefore optimizing greatly for lookup over update, which we assume will
    be an uncommon operation.  We perform one extra trick here for the benefit of
    callers and to keep our code simple: ctf_bufopen() will return a new
    ctf_file_t, but we want to keep the fp constant for the caller, so after
