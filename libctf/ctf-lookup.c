@@ -132,8 +132,8 @@ ctf_lookup_by_name (ctf_file_t *fp, const char *name)
 	      while (isspace (q[-1]))
 		q--;		/* Exclude trailing whitespace.  */
 
-	      if ((hp = ctf_hash_lookup (lp->ctl_hash, fp, p,
-					 (size_t) (q - p))) == NULL)
+	      if ((hp = ctf_hash_lookup_type (lp->ctl_hash, fp, p,
+					      (size_t) (q - p))) == NULL)
 		{
 		  (void) ctf_set_errno (fp, ECTF_NOTYPE);
 		  goto err;

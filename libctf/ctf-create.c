@@ -899,7 +899,7 @@ ctf_add_struct_sized (ctf_file_t *fp, uint32_t flag, const char *name,
   ctf_id_t type;
 
   if (name != NULL)
-    hep = ctf_hash_lookup (hp, fp, name, strlen (name));
+    hep = ctf_hash_lookup_type (hp, fp, name, strlen (name));
 
   if (hep != NULL && ctf_type_kind (fp, hep->h_type) == CTF_K_FORWARD)
     dtd = ctf_dtd_lookup (fp, type = hep->h_type);
@@ -936,7 +936,7 @@ ctf_add_union_sized (ctf_file_t *fp, uint32_t flag, const char *name,
   ctf_id_t type;
 
   if (name != NULL)
-    hep = ctf_hash_lookup (hp, fp, name, strlen (name));
+    hep = ctf_hash_lookup_type (hp, fp, name, strlen (name));
 
   if (hep != NULL && ctf_type_kind (fp, hep->h_type) == CTF_K_FORWARD)
     dtd = ctf_dtd_lookup (fp, type = hep->h_type);
@@ -972,7 +972,7 @@ ctf_add_enum (ctf_file_t *fp, uint32_t flag, const char *name)
   ctf_id_t type;
 
   if (name != NULL)
-    hep = ctf_hash_lookup (hp, fp, name, strlen (name));
+    hep = ctf_hash_lookup_type (hp, fp, name, strlen (name));
 
   if (hep != NULL && ctf_type_kind (fp, hep->h_type) == CTF_K_FORWARD)
     dtd = ctf_dtd_lookup (fp, type = hep->h_type);
@@ -1011,8 +1011,8 @@ ctf_add_forward (ctf_file_t *fp, uint32_t flag, const char *name,
 
   /* If the type is already defined or exists as a forward tag, just
      return the ctf_id_t of the existing definition.  */
-  if (name != NULL && (hep = ctf_hash_lookup (hp, fp, name,
-					      strlen (name))) != NULL)
+  if (name != NULL && (hep = ctf_hash_lookup_type (hp, fp, name,
+						   strlen (name))) != NULL)
     return hep->h_type;
 
   if ((type = ctf_add_generic (fp, flag, name, &dtd)) == CTF_ERR)
@@ -1417,7 +1417,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
      verify that it is of the same kind before we do anything else.  */
 
   if ((flag & CTF_ADD_ROOT) && name[0] != '\0'
-      && (hep = ctf_hash_lookup (hp, dst_fp, name, strlen (name))) != NULL)
+      && (hep = ctf_hash_lookup_type (hp, dst_fp, name, strlen (name))) != NULL)
     {
       dst_type = (ctf_id_t) hep->h_type;
       dst_kind = ctf_type_kind (dst_fp, dst_type);

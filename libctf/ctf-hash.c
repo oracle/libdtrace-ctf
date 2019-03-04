@@ -81,8 +81,8 @@ ctf_hash_compute (const char *key, size_t len)
 }
 
 int
-ctf_hash_insert (ctf_hash_t * hp, ctf_file_t * fp, uint32_t type,
-		 uint32_t name)
+ctf_hash_insert_type (ctf_hash_t * hp, ctf_file_t * fp, uint32_t type,
+		      uint32_t name)
 {
   ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID (name)];
   const char *str = ctsp->cts_strs + CTF_NAME_OFFSET (name);
@@ -113,26 +113,27 @@ ctf_hash_insert (ctf_hash_t * hp, ctf_file_t * fp, uint32_t type,
   return 0;
 }
 
-/* Wrapper for ctf_hash_lookup/ctf_hash_insert: if the key is already in the
-   hash, override the previous definition with this new official definition.
-   If the key is not present, then call ctf_hash_insert() and hash it in.  */
+/* Wrapper for ctf_hash_lookup_type/ctf_hash_insert_type: if the key is already
+   in the hash, override the previous definition with this new official
+   definition.  If the key is not present, then call ctf_hash_insert() and hash
+   it in.  */
 int
-ctf_hash_define (ctf_hash_t *hp, ctf_file_t *fp, uint32_t type,
+ctf_hash_define_type (ctf_hash_t *hp, ctf_file_t *fp, uint32_t type,
 		 uint32_t name)
 {
   const char *str = ctf_strptr (fp, name);
-  ctf_helem_t *hep = ctf_hash_lookup (hp, fp, str, strlen (str));
+  ctf_helem_t *hep = ctf_hash_lookup_type (hp, fp, str, strlen (str));
 
   if (hep == NULL)
-    return (ctf_hash_insert (hp, fp, type, name));
+    return (ctf_hash_insert_type (hp, fp, type, name));
 
   hep->h_type = type;
   return 0;
 }
 
 ctf_helem_t *
-ctf_hash_lookup (ctf_hash_t *hp, ctf_file_t *fp, const char *key,
-		 size_t len)
+ctf_hash_lookup_type (ctf_hash_t *hp, ctf_file_t *fp, const char *key,
+		      size_t len)
 {
   ctf_helem_t *hep;
   ctf_strs_t *ctsp;

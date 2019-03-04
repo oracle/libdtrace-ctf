@@ -765,12 +765,12 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	     root-visible version so that we can be sure to find it when
 	     checking for conflicting definitions in ctf_add_type().  */
 
-	  if ((hep = ctf_hash_lookup (&fp->ctf_names, fp,
-				      name, strlen (name))) == NULL)
+	  if ((hep = ctf_hash_lookup_type (&fp->ctf_names, fp,
+					   name, strlen (name))) == NULL)
 	    {
-	      err = ctf_hash_insert (&fp->ctf_names, fp,
-				     LCTF_INDEX_TO_TYPE (fp, id, child),
-				     tp->ctt_name);
+	      err = ctf_hash_insert_type (&fp->ctf_names, fp,
+					  LCTF_INDEX_TO_TYPE (fp, id, child),
+					  tp->ctt_name);
 	      if (err != 0 && err != ECTF_STRTAB)
 		return err;
 	    }
@@ -784,17 +784,17 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_FUNCTION:
-	  err = ctf_hash_insert (&fp->ctf_names, fp,
-				 LCTF_INDEX_TO_TYPE (fp, id, child),
-				 tp->ctt_name);
+	  err = ctf_hash_insert_type (&fp->ctf_names, fp,
+				      LCTF_INDEX_TO_TYPE (fp, id, child),
+				      tp->ctt_name);
 	  if (err != 0 && err != ECTF_STRTAB)
 	    return err;
 	  break;
 
 	case CTF_K_STRUCT:
-	  err = ctf_hash_define (&fp->ctf_structs, fp,
-				 LCTF_INDEX_TO_TYPE (fp, id, child),
-				 tp->ctt_name);
+	  err = ctf_hash_define_type (&fp->ctf_structs, fp,
+				      LCTF_INDEX_TO_TYPE (fp, id, child),
+				      tp->ctt_name);
 
 	  if (err != 0 && err != ECTF_STRTAB)
 	    return err;
@@ -804,9 +804,9 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_UNION:
-	  err = ctf_hash_define (&fp->ctf_unions, fp,
-				 LCTF_INDEX_TO_TYPE (fp, id, child),
-				 tp->ctt_name);
+	  err = ctf_hash_define_type (&fp->ctf_unions, fp,
+				      LCTF_INDEX_TO_TYPE (fp, id, child),
+				      tp->ctt_name);
 
 	  if (err != 0 && err != ECTF_STRTAB)
 	    return err;
@@ -816,18 +816,18 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_ENUM:
-	  err = ctf_hash_define (&fp->ctf_enums, fp,
-				 LCTF_INDEX_TO_TYPE (fp, id, child),
-				 tp->ctt_name);
+	  err = ctf_hash_define_type (&fp->ctf_enums, fp,
+				      LCTF_INDEX_TO_TYPE (fp, id, child),
+				      tp->ctt_name);
 
 	  if (err != 0 && err != ECTF_STRTAB)
 	    return err;
 	  break;
 
 	case CTF_K_TYPEDEF:
-	  err = ctf_hash_insert (&fp->ctf_names, fp,
-				 LCTF_INDEX_TO_TYPE (fp, id, child),
-				 tp->ctt_name);
+	  err = ctf_hash_insert_type (&fp->ctf_names, fp,
+				      LCTF_INDEX_TO_TYPE (fp, id, child),
+				      tp->ctt_name);
 	  if (err != 0 && err != ECTF_STRTAB)
 	    return err;
 	  break;
@@ -850,11 +850,11 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	      hp = &fp->ctf_structs;
 	    }
 
-	  if (ctf_hash_lookup (hp, fp, name, strlen (name)) == NULL)
+	  if (ctf_hash_lookup_type (hp, fp, name, strlen (name)) == NULL)
 	    {
-	      err = ctf_hash_insert (hp, fp,
-				     LCTF_INDEX_TO_TYPE (fp, id, child),
-				     tp->ctt_name);
+	      err = ctf_hash_insert_type (hp, fp,
+					  LCTF_INDEX_TO_TYPE (fp, id, child),
+					  tp->ctt_name);
 	      if (err != 0 && err != ECTF_STRTAB)
 		return err;
 	    }
@@ -873,9 +873,9 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	case CTF_K_VOLATILE:
 	case CTF_K_CONST:
 	case CTF_K_RESTRICT:
-	  err = ctf_hash_insert (&fp->ctf_names, fp,
-				 LCTF_INDEX_TO_TYPE (fp, id, child),
-				 tp->ctt_name);
+	  err = ctf_hash_insert_type (&fp->ctf_names, fp,
+				      LCTF_INDEX_TO_TYPE (fp, id, child),
+				      tp->ctt_name);
 	  if (err != 0 && err != ECTF_STRTAB)
 	    return err;
 	  break;

@@ -316,10 +316,10 @@ static inline ssize_t ctf_get_ctt_size (const ctf_file_t* fp,
 extern const ctf_type_t *ctf_lookup_by_id (ctf_file_t **, ctf_id_t);
 
 extern int ctf_hash_create (ctf_hash_t *, unsigned long);
-extern int ctf_hash_insert (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
-extern int ctf_hash_define (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
-extern ctf_helem_t *ctf_hash_lookup (ctf_hash_t *, ctf_file_t *,
-				     const char *, size_t);
+extern int ctf_hash_insert_type (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
+extern int ctf_hash_define_type (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
+extern ctf_helem_t *ctf_hash_lookup_type (ctf_hash_t *, ctf_file_t *,
+					  const char *, size_t);
 extern uint32_t ctf_hash_size (const ctf_hash_t *);
 extern unsigned long ctf_hash_compute (const char *key, size_t len);
 extern void ctf_hash_destroy (ctf_hash_t *);
