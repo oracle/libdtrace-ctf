@@ -119,6 +119,7 @@ ctf_lookup_by_name (ctf_file_t *fp, const char *name)
 
       for (lp = fp->ctf_lookups; lp->ctl_prefix != NULL; lp++)
 	{
+	  /* TODO: This is not MT-safe.  */
 	  if ((lp->ctl_prefix[0] == '\0' ||
 	       strncmp (p, lp->ctl_prefix, (size_t) (q - p)) == 0) &&
 	      (size_t) (q - p) >= lp->ctl_len)
@@ -132,8 +133,28 @@ ctf_lookup_by_name (ctf_file_t *fp, const char *name)
 	      while (isspace (q[-1]))
 		q--;		/* Exclude trailing whitespace.  */
 
-	      if ((hp = ctf_hash_lookup_type (lp->ctl_hash, fp, p,
-					      (size_t) (q - p))) == NULL)
+	      /* Expand and/or allocate storage for a slice of the name, then
+		 copy it in.  */
+
+	      if (fp->ctf_tmp_typeslicelen >= (size_t) (q - p) + 1)
+		{
+		  memcpy (fp->ctf_tmp_typeslice, p, (size_t) (q - p));
+		  fp->ctf_tmp_typeslice[(size_t) (q - p)] = '\0';
+		}
+	      else
+		{
+		  free (fp->ctf_tmp_typeslice);
+		  fp->ctf_tmp_typeslice = strndup (p, (size_t) (q - p));
+		  if (fp->ctf_tmp_typeslice == NULL)
+		    {
+		      (void) ctf_set_errno (fp, ENOMEM);
+		      return CTF_ERR;
+		    }
+		}
+
+	      if ((hp = ctf_hash_lookup_type (lp->ctl_hash, fp,
+					      fp->ctf_tmp_typeslice,
+					      strlen (fp->ctf_tmp_typeslice))) == 0)
 		{
 		  (void) ctf_set_errno (fp, ECTF_NOTYPE);
 		  goto err;

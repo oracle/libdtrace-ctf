@@ -1490,6 +1490,7 @@ ctf_close (ctf_file_t *fp)
     }
 
   ctf_free (fp->ctf_dvhash, fp->ctf_dvhashlen * sizeof (ctf_dvdef_t *));
+  ctf_free (fp->ctf_tmp_typeslice, fp->ctf_tmp_typeslicelen);
 
   if (fp->ctf_flags & LCTF_MMAP)
     {
