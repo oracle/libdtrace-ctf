@@ -49,21 +49,8 @@ extern "C"
 
 /* libctf in-memory state.  */
 
-typedef struct ctf_helem
-{
-  uint32_t h_name;		/* Reference to name in string table.  */
-  uint32_t h_type;		/* Corresponding type ID number.  */
-  uint32_t h_next;		/* Index of next element in hash chain.  */
-} ctf_helem_t;
-
-typedef struct ctf_hash
-{
-  unsigned short *h_buckets;	/* Hash bucket array (chain indices).  */
-  ctf_helem_t *h_chains;	/* Hash chains buffer.  */
-  unsigned short h_nbuckets;	/* Number of elements in bucket array.  */
-  uint32_t h_nelems;		/* Number of elements in hash table.  */
-  uint32_t h_free;		/* Index of next free hash element.  */
-} ctf_hash_t;
+typedef struct ctf_fixed_hash ctf_hash_t; /* Private to ctf-hash.c.  */
+typedef struct ctf_dynhash ctf_dynhash_t; /* Private to ctf-hash.c.  */
 
 typedef struct ctf_strs
 {
@@ -147,7 +134,6 @@ typedef struct ctf_dmdef
 typedef struct ctf_dtdef
 {
   ctf_list_t dtd_list;		/* List forward/back pointers.  */
-  struct ctf_dtdef *dtd_hash;	/* Hash chain pointer for ctf_dthash.  */
   char *dtd_name;		/* Name associated with definition (if any).  */
   ctf_id_t dtd_type;		/* Type identifier for this definition.  */
   ctf_type_t dtd_data;		/* Type node (see <sys/ctf.h>).  */
@@ -163,7 +149,6 @@ typedef struct ctf_dtdef
 typedef struct ctf_dvdef
 {
   ctf_list_t dvd_list;		/* List forward/back pointers.  */
-  struct ctf_dvdef *dvd_hash;	/* Hash chain pointer for ctf_dvhash.  */
   char *dvd_name;		/* Name associated with variable.  */
   ctf_id_t dvd_type;		/* Type of variable.  */
   unsigned long dvd_snapshots;	/* Snapshot count when inserted.  */
@@ -193,10 +178,10 @@ struct ctf_file
   ctf_sect_t ctf_data;		    /* CTF data from object file.  */
   ctf_sect_t ctf_symtab;	    /* Symbol table from object file.  */
   ctf_sect_t ctf_strtab;	    /* String table from object file.  */
-  ctf_hash_t ctf_structs;	    /* Hash table of struct types.  */
-  ctf_hash_t ctf_unions;	    /* Hash table of union types.  */
-  ctf_hash_t ctf_enums;		    /* Hash table of enum types.  */
-  ctf_hash_t ctf_names;		    /* Hash table of remaining type names.  */
+  ctf_hash_t *ctf_structs;	    /* Hash table of struct types.  */
+  ctf_hash_t *ctf_unions;	    /* Hash table of union types.  */
+  ctf_hash_t *ctf_enums;	    /* Hash table of enum types.  */
+  ctf_hash_t *ctf_names;	    /* Hash table of remaining type names.  */
   ctf_lookup_t ctf_lookups[5];	    /* Pointers to hashes for name lookup.  */
   ctf_strs_t ctf_str[2];	    /* Array of string table base and bounds.  */
   const unsigned char *ctf_base;  /* Base of CTF header + uncompressed buffer.  */
@@ -219,11 +204,9 @@ struct ctf_file
   uint32_t ctf_flags;		  /* Libctf flags (see below).  */
   int ctf_errno;		  /* Error code for most recent error.  */
   int ctf_version;		  /* CTF data version.  */
-  ctf_dtdef_t **ctf_dthash;	  /* Hash of dynamic type definitions.  */
-  unsigned long ctf_dthashlen;	  /* Size of dynamic type hash bucket array.  */
+  ctf_dynhash_t *ctf_dthash;	  /* Hash of dynamic type definitions.  */
   ctf_list_t ctf_dtdefs;	  /* List of dynamic type definitions.  */
-  ctf_dvdef_t **ctf_dvhash;	  /* Hash of dynamic variable mappings.  */
-  unsigned long ctf_dvhashlen;	  /* Size of dynvar hash bucket array.  */
+  ctf_dynhash_t *ctf_dvhash;	  /* Hash of dynamic variable mappings.  */
   ctf_list_t ctf_dvdefs;	  /* List of dynamic variable definitions.  */
   size_t ctf_dtvstrlen;		  /* Total length of dynamic type+var strings.  */
   unsigned long ctf_dtnextid;	  /* Next dynamic type id to assign.  */
@@ -317,14 +300,26 @@ static inline ssize_t ctf_get_ctt_size (const ctf_file_t* fp,
 
 extern const ctf_type_t *ctf_lookup_by_id (ctf_file_t **, ctf_id_t);
 
-extern int ctf_hash_create (ctf_hash_t *, unsigned long);
+typedef unsigned int (*ctf_hash_fun) (const void *ptr);
+extern unsigned int ctf_hash_integer (const void *ptr);
+extern unsigned int ctf_hash_string (const void *ptr);
+
+typedef int (*ctf_hash_eq_fun) (const void *, const void *);
+extern int ctf_hash_eq_integer (const void *, const void *);
+extern int ctf_hash_eq_string (const void *, const void *);
+
+extern ctf_hash_t *ctf_hash_create (unsigned long, ctf_hash_fun, ctf_hash_eq_fun);
 extern int ctf_hash_insert_type (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
 extern int ctf_hash_define_type (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
-extern ctf_helem_t *ctf_hash_lookup_type (ctf_hash_t *, ctf_file_t *,
-					  const char *, size_t);
+extern ctf_id_t ctf_hash_lookup_type (ctf_hash_t *, ctf_file_t *, const char *);
 extern uint32_t ctf_hash_size (const ctf_hash_t *);
-extern unsigned long ctf_hash_compute (const char *key, size_t len);
 extern void ctf_hash_destroy (ctf_hash_t *);
+
+extern ctf_dynhash_t *ctf_dynhash_create (ctf_hash_fun, ctf_hash_eq_fun);
+extern int ctf_dynhash_insert (ctf_dynhash_t *, const void *, void *);
+extern void ctf_dynhash_remove (ctf_dynhash_t *, const void *);
+extern void *ctf_dynhash_lookup (ctf_dynhash_t *, const void *);
+extern void ctf_dynhash_destroy (ctf_dynhash_t *);
 
 #define	ctf_list_prev(elem)	((void *)(((ctf_list_t *)(elem))->l_prev))
 #define	ctf_list_next(elem)	((void *)(((ctf_list_t *)(elem))->l_next))

@@ -710,21 +710,29 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
   /* Now that we've counted up the number of each type, we can allocate
      the hash tables, type translation table, and pointer table.  */
 
-  if ((err = ctf_hash_create (&fp->ctf_structs, pop[CTF_K_STRUCT])) != 0)
-    return err;
+  if ((fp->ctf_structs = ctf_hash_create (pop[CTF_K_STRUCT], ctf_hash_string,
+					  ctf_hash_eq_string)) == NULL)
+    return ENOMEM;
 
-  if ((err = ctf_hash_create (&fp->ctf_unions, pop[CTF_K_UNION])) != 0)
-    return err;
+  if ((fp->ctf_unions = ctf_hash_create (pop[CTF_K_UNION], ctf_hash_string,
+					 ctf_hash_eq_string)) == NULL)
+    return ENOMEM;
 
-  if ((err = ctf_hash_create (&fp->ctf_enums, pop[CTF_K_ENUM])) != 0)
-    return err;
+  if ((fp->ctf_enums = ctf_hash_create (pop[CTF_K_ENUM], ctf_hash_string,
+					ctf_hash_eq_string)) == NULL)
+    return ENOMEM;
 
-  if ((err = ctf_hash_create (&fp->ctf_names,
-			      pop[CTF_K_INTEGER] + pop[CTF_K_FLOAT] +
-			      pop[CTF_K_FUNCTION] + pop[CTF_K_TYPEDEF] +
-			      pop[CTF_K_POINTER] + pop[CTF_K_VOLATILE] +
-			      pop[CTF_K_CONST] + pop[CTF_K_RESTRICT])) != 0)
-    return err;
+  if ((fp->ctf_names = ctf_hash_create (pop[CTF_K_INTEGER] +
+					pop[CTF_K_FLOAT] +
+					pop[CTF_K_FUNCTION] +
+					pop[CTF_K_TYPEDEF] +
+					pop[CTF_K_POINTER] +
+					pop[CTF_K_VOLATILE] +
+					pop[CTF_K_CONST] +
+					pop[CTF_K_RESTRICT],
+					ctf_hash_string,
+					ctf_hash_eq_string)) == NULL)
+    return ENOMEM;
 
   fp->ctf_txlate = ctf_alloc (sizeof (uint32_t) * (fp->ctf_typemax + 1));
   fp->ctf_ptrtab = ctf_alloc (sizeof (uint32_t) * (fp->ctf_typemax + 1));
@@ -749,7 +757,6 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
       ssize_t size, increment, vbytes;
 
       const char *name;
-      ctf_helem_t *hep;
 
       (void) ctf_get_ctt_size (fp, tp, &size, &increment);
       name = ctf_strptr (fp, tp->ctt_name);
@@ -765,18 +772,14 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	     root-visible version so that we can be sure to find it when
 	     checking for conflicting definitions in ctf_add_type().  */
 
-	  if ((hep = ctf_hash_lookup_type (&fp->ctf_names, fp,
-					   name, strlen (name))) == NULL)
+	  if (((ctf_hash_lookup_type (fp->ctf_names, fp, name)) == 0)
+	      || (flag & CTF_ADD_ROOT))
 	    {
-	      err = ctf_hash_insert_type (&fp->ctf_names, fp,
+	      err = ctf_hash_define_type (fp->ctf_names, fp,
 					  LCTF_INDEX_TO_TYPE (fp, id, child),
 					  tp->ctt_name);
 	      if (err != 0 && err != ECTF_STRTAB)
 		return err;
-	    }
-	  else if (flag & CTF_ADD_ROOT)
-	    {
-	      hep->h_type = LCTF_INDEX_TO_TYPE (fp, id, child);
 	    }
 	  break;
 
@@ -784,7 +787,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_FUNCTION:
-	  err = ctf_hash_insert_type (&fp->ctf_names, fp,
+	  err = ctf_hash_insert_type (fp->ctf_names, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 	  if (err != 0 && err != ECTF_STRTAB)
@@ -792,7 +795,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_STRUCT:
-	  err = ctf_hash_define_type (&fp->ctf_structs, fp,
+	  err = ctf_hash_define_type (fp->ctf_structs, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 
@@ -804,7 +807,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_UNION:
-	  err = ctf_hash_define_type (&fp->ctf_unions, fp,
+	  err = ctf_hash_define_type (fp->ctf_unions, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 
@@ -816,7 +819,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_ENUM:
-	  err = ctf_hash_define_type (&fp->ctf_enums, fp,
+	  err = ctf_hash_define_type (fp->ctf_enums, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 
@@ -825,7 +828,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_TYPEDEF:
-	  err = ctf_hash_insert_type (&fp->ctf_names, fp,
+	  err = ctf_hash_insert_type (fp->ctf_names, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 	  if (err != 0 && err != ECTF_STRTAB)
@@ -838,19 +841,19 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  switch (tp->ctt_type)
 	    {
 	    case CTF_K_STRUCT:
-	      hp = &fp->ctf_structs;
+	      hp = fp->ctf_structs;
 	      break;
 	    case CTF_K_UNION:
-	      hp = &fp->ctf_unions;
+	      hp = fp->ctf_unions;
 	      break;
 	    case CTF_K_ENUM:
-	      hp = &fp->ctf_enums;
+	      hp = fp->ctf_enums;
 	      break;
 	    default:
-	      hp = &fp->ctf_structs;
+	      hp = fp->ctf_structs;
 	    }
 
-	  if (ctf_hash_lookup_type (hp, fp, name, strlen (name)) == NULL)
+	  if (ctf_hash_lookup_type (hp, fp, name) == 0)
 	    {
 	      err = ctf_hash_insert_type (hp, fp,
 					  LCTF_INDEX_TO_TYPE (fp, id, child),
@@ -873,7 +876,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	case CTF_K_VOLATILE:
 	case CTF_K_CONST:
 	case CTF_K_RESTRICT:
-	  err = ctf_hash_insert_type (&fp->ctf_names, fp,
+	  err = ctf_hash_insert_type (fp->ctf_names, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 	  if (err != 0 && err != ECTF_STRTAB)
@@ -886,12 +889,12 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
     }
 
   ctf_dprintf ("%lu total types processed\n", fp->ctf_typemax);
-  ctf_dprintf ("%u enum names hashed\n", ctf_hash_size (&fp->ctf_enums));
+  ctf_dprintf ("%u enum names hashed\n", ctf_hash_size (fp->ctf_enums));
   ctf_dprintf ("%u struct names hashed (%d long)\n",
-	       ctf_hash_size (&fp->ctf_structs), nlstructs);
+	       ctf_hash_size (fp->ctf_structs), nlstructs);
   ctf_dprintf ("%u union names hashed (%d long)\n",
-	       ctf_hash_size (&fp->ctf_unions), nlunions);
-  ctf_dprintf ("%u base type names hashed\n", ctf_hash_size (&fp->ctf_names));
+	       ctf_hash_size (fp->ctf_unions), nlunions);
+  ctf_dprintf ("%u base type names hashed\n", ctf_hash_size (fp->ctf_names));
 
   /* Make an additional pass through the pointer table to find pointers that
      point to anonymous typedef nodes.  If we find one, modify the pointer table
@@ -1415,16 +1418,16 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
      NOTE: This code must be kept in sync with the code in ctf_update().  */
   fp->ctf_lookups[0].ctl_prefix = "struct";
   fp->ctf_lookups[0].ctl_len = strlen (fp->ctf_lookups[0].ctl_prefix);
-  fp->ctf_lookups[0].ctl_hash = &fp->ctf_structs;
+  fp->ctf_lookups[0].ctl_hash = fp->ctf_structs;
   fp->ctf_lookups[1].ctl_prefix = "union";
   fp->ctf_lookups[1].ctl_len = strlen (fp->ctf_lookups[1].ctl_prefix);
-  fp->ctf_lookups[1].ctl_hash = &fp->ctf_unions;
+  fp->ctf_lookups[1].ctl_hash = fp->ctf_unions;
   fp->ctf_lookups[2].ctl_prefix = "enum";
   fp->ctf_lookups[2].ctl_len = strlen (fp->ctf_lookups[2].ctl_prefix);
-  fp->ctf_lookups[2].ctl_hash = &fp->ctf_enums;
+  fp->ctf_lookups[2].ctl_hash = fp->ctf_enums;
   fp->ctf_lookups[3].ctl_prefix = _CTF_NULLSTR;
   fp->ctf_lookups[3].ctl_len = strlen (fp->ctf_lookups[3].ctl_prefix);
-  fp->ctf_lookups[3].ctl_hash = &fp->ctf_names;
+  fp->ctf_lookups[3].ctl_hash = fp->ctf_names;
   fp->ctf_lookups[4].ctl_prefix = NULL;
   fp->ctf_lookups[4].ctl_len = 0;
   fp->ctf_lookups[4].ctl_hash = NULL;
@@ -1480,16 +1483,15 @@ ctf_close (ctf_file_t *fp)
       ntd = ctf_list_next (dtd);
       ctf_dtd_delete (fp, dtd);
     }
-
-  ctf_free (fp->ctf_dthash, fp->ctf_dthashlen * sizeof (ctf_dtdef_t *));
+  ctf_dynhash_destroy (fp->ctf_dthash);
 
   for (dvd = ctf_list_next (&fp->ctf_dvdefs); dvd != NULL; dvd = nvd)
     {
       nvd = ctf_list_next (dvd);
       ctf_dvd_delete (fp, dvd);
     }
+  ctf_dynhash_destroy (fp->ctf_dvhash);
 
-  ctf_free (fp->ctf_dvhash, fp->ctf_dvhashlen * sizeof (ctf_dvdef_t *));
   ctf_free (fp->ctf_tmp_typeslice, fp->ctf_tmp_typeslicelen);
 
   if (fp->ctf_flags & LCTF_MMAP)
@@ -1527,10 +1529,10 @@ ctf_close (ctf_file_t *fp)
   if (fp->ctf_ptrtab != NULL)
       ctf_free (fp->ctf_ptrtab, sizeof (uint32_t) * (fp->ctf_typemax + 1));
 
-  ctf_hash_destroy (&fp->ctf_structs);
-  ctf_hash_destroy (&fp->ctf_unions);
-  ctf_hash_destroy (&fp->ctf_enums);
-  ctf_hash_destroy (&fp->ctf_names);
+  ctf_hash_destroy (fp->ctf_structs);
+  ctf_hash_destroy (fp->ctf_unions);
+  ctf_hash_destroy (fp->ctf_enums);
+  ctf_hash_destroy (fp->ctf_names);
 
   ctf_free (fp, sizeof (ctf_file_t));
 }

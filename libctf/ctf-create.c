@@ -18,25 +18,27 @@
    ctf_bufopen() on it.  If ctf_bufopen succeeds, we mark the new container r/w
    and initialize the dynamic members.  We set dtvstrlen to 1 to reserve the
    first byte of the string table for a \0 byte, and we start assigning type
-   IDs at 1 because type ID 0 is used as a sentinel.  */
+   IDs at 1 because type ID 0 is used as a sentinel and a not-found
+   indicator.  */
 
 ctf_file_t *
 ctf_create (int *errp)
 {
   static const ctf_header_t hdr = { .cth_preamble = {CTF_MAGIC, CTF_VERSION } };
 
-  const unsigned long hashlen = 1024;
-  ctf_dtdef_t **dthash = ctf_alloc (hashlen * sizeof (ctf_dtdef_t *));
-  ctf_dvdef_t **dvhash = ctf_alloc (hashlen * sizeof (ctf_dvdef_t *));
+  ctf_dynhash_t *dthash;
+  ctf_dynhash_t *dvhash;
   ctf_sect_t cts;
   ctf_file_t *fp;
 
+  dthash = ctf_dynhash_create (ctf_hash_integer, ctf_hash_eq_integer);
   if (dthash == NULL)
     return (ctf_set_open_errno (errp, EAGAIN));
 
+  dvhash = ctf_dynhash_create (ctf_hash_string, ctf_hash_eq_string);
   if (dvhash == NULL)
     {
-      ctf_free (dthash, hashlen * sizeof (ctf_dtdef_t *));
+      ctf_dynhash_destroy (dthash);
       return (ctf_set_open_errno (errp, EAGAIN));
     }
 
@@ -50,16 +52,12 @@ ctf_create (int *errp)
 
   if ((fp = ctf_bufopen (&cts, NULL, NULL, errp)) == NULL)
     {
-      ctf_free (dthash, hashlen * sizeof (ctf_dtdef_t *));
-      ctf_free (dvhash, hashlen * sizeof (ctf_dvdef_t *));
+      ctf_dynhash_destroy (dthash);
+      ctf_dynhash_destroy (dvhash);
       return NULL;
     }
 
   fp->ctf_flags |= LCTF_RDWR;
-  fp->ctf_dthashlen = hashlen;
-  fp->ctf_dvhashlen = hashlen;
-  memset (dthash, 0, hashlen * sizeof (ctf_dtdef_t *));
-  memset (dvhash, 0, hashlen * sizeof (ctf_dvdef_t *));
   fp->ctf_dthash = dthash;
   fp->ctf_dvhash = dvhash;
   fp->ctf_dtvstrlen = 1;
@@ -435,10 +433,8 @@ ctf_update (ctf_file_t *fp)
   nfp->ctf_flags |= fp->ctf_flags & ~LCTF_DIRTY;
   nfp->ctf_data.cts_data = NULL;	/* Force ctf_data_free() on close.  */
   nfp->ctf_dthash = fp->ctf_dthash;
-  nfp->ctf_dthashlen = fp->ctf_dthashlen;
   nfp->ctf_dtdefs = fp->ctf_dtdefs;
   nfp->ctf_dvhash = fp->ctf_dvhash;
-  nfp->ctf_dvhashlen = fp->ctf_dvhashlen;
   nfp->ctf_dvdefs = fp->ctf_dvdefs;
   nfp->ctf_dtvstrlen = fp->ctf_dtvstrlen;
   nfp->ctf_dtnextid = fp->ctf_dtnextid;
@@ -449,11 +445,9 @@ ctf_update (ctf_file_t *fp)
   nfp->ctf_snapshot_lu = fp->ctf_snapshots;
 
   fp->ctf_dthash = NULL;
-  fp->ctf_dthashlen = 0;
   memset (&fp->ctf_dtdefs, 0, sizeof (ctf_list_t));
 
   fp->ctf_dvhash = NULL;
-  fp->ctf_dvhashlen = 0;
   memset (&fp->ctf_dvdefs, 0, sizeof (ctf_list_t));
 
   memcpy (&ofp, fp, sizeof (ctf_file_t));
@@ -461,13 +455,13 @@ ctf_update (ctf_file_t *fp)
   memcpy (nfp, &ofp, sizeof (ctf_file_t));
 
   /* Initialize the ctf_lookup_by_name top-level dictionary.  We keep an
-     array of type name prefixes and the corresponding ctf_hash to use.
+     array of type name prefixes and the corresponding ctf_dynhash to use.
      NOTE: This code must be kept in sync with the code in ctf_bufopen().  */
 
-  fp->ctf_lookups[0].ctl_hash = &fp->ctf_structs;
-  fp->ctf_lookups[1].ctl_hash = &fp->ctf_unions;
-  fp->ctf_lookups[2].ctl_hash = &fp->ctf_enums;
-  fp->ctf_lookups[3].ctl_hash = &fp->ctf_names;
+  fp->ctf_lookups[0].ctl_hash = fp->ctf_structs;
+  fp->ctf_lookups[1].ctl_hash = fp->ctf_unions;
+  fp->ctf_lookups[2].ctl_hash = fp->ctf_enums;
+  fp->ctf_lookups[3].ctl_hash = fp->ctf_names;
 
   nfp->ctf_refcnt = 1;		/* Force nfp to be freed.  */
   ctf_close (nfp);
@@ -478,31 +472,17 @@ ctf_update (ctf_file_t *fp)
 void
 ctf_dtd_insert (ctf_file_t *fp, ctf_dtdef_t *dtd)
 {
-  unsigned long h = dtd->dtd_type % (fp->ctf_dthashlen - 1);
-
-  dtd->dtd_hash = fp->ctf_dthash[h];
-  fp->ctf_dthash[h] = dtd;
+  ctf_dynhash_insert (fp->ctf_dthash, (void *) dtd->dtd_type, dtd);
   ctf_list_append (&fp->ctf_dtdefs, dtd);
 }
 
 void
 ctf_dtd_delete (ctf_file_t *fp, ctf_dtdef_t *dtd)
 {
-  unsigned long h = dtd->dtd_type % (fp->ctf_dthashlen - 1);
-  ctf_dtdef_t *p, **q = &fp->ctf_dthash[h];
   ctf_dmdef_t *dmd, *nmd;
   size_t len;
 
-  for (p = *q; p != NULL; p = p->dtd_hash)
-    {
-      if (p != dtd)
-	q = &p->dtd_hash;
-      else
-	break;
-    }
-
-  if (p != NULL)
-    *q = p->dtd_hash;
+  ctf_dynhash_remove (fp->ctf_dthash, (void *) dtd->dtd_type);
 
   switch (LCTF_INFO_KIND (fp, dtd->dtd_data.ctt_info))
     {
@@ -542,29 +522,13 @@ ctf_dtd_delete (ctf_file_t *fp, ctf_dtdef_t *dtd)
 ctf_dtdef_t *
 ctf_dtd_lookup (ctf_file_t *fp, ctf_id_t type)
 {
-  unsigned long h = type % (fp->ctf_dthashlen - 1);
-  ctf_dtdef_t *dtd;
-
-  if (fp->ctf_dthash == NULL)
-    return NULL;
-
-  for (dtd = fp->ctf_dthash[h]; dtd != NULL; dtd = dtd->dtd_hash)
-    {
-      if (dtd->dtd_type == type)
-	break;
-    }
-
-  return dtd;
+  return (ctf_dtdef_t *) ctf_dynhash_lookup (fp->ctf_dthash, (void *) type);
 }
 
 void
 ctf_dvd_insert (ctf_file_t *fp, ctf_dvdef_t *dvd)
 {
-  unsigned long h = ctf_hash_compute (dvd->dvd_name, strlen (dvd->dvd_name))
-    % (fp->ctf_dvhashlen - 1);
-
-  dvd->dvd_hash = fp->ctf_dvhash[h];
-  fp->ctf_dvhash[h] = dvd;
+  ctf_dynhash_insert (fp->ctf_dvhash, dvd->dvd_name, dvd);
   ctf_list_append (&fp->ctf_dvdefs, dvd);
 }
 
@@ -572,26 +536,10 @@ void
 ctf_dvd_delete (ctf_file_t *fp, ctf_dvdef_t *dvd)
 {
   size_t len = strlen (dvd->dvd_name);
-  unsigned long h = ctf_hash_compute (dvd->dvd_name, len)
-    % (fp->ctf_dvhashlen - 1);
-  ctf_dvdef_t *p, **q = &fp->ctf_dvhash[h];
+  ctf_dynhash_remove (fp->ctf_dvhash, dvd->dvd_name);
 
-  for (p = *q; p != NULL; p = p->dvd_hash)
-    {
-      if (p != dvd)
-	q = &p->dvd_hash;
-      else
-	break;
-    }
-
-  if (p != NULL)
-    *q = p->dvd_hash;
-
-  if (dvd->dvd_name)
-    {
-      ctf_free (dvd->dvd_name, len + 1);
-      fp->ctf_dtvstrlen -= len + 1;
-    }
+  ctf_free (dvd->dvd_name, len + 1);
+  fp->ctf_dtvstrlen -= len + 1;
 
   ctf_list_delete (&fp->ctf_dvdefs, dvd);
   ctf_free (dvd, sizeof (ctf_dvdef_t));
@@ -600,20 +548,7 @@ ctf_dvd_delete (ctf_file_t *fp, ctf_dvdef_t *dvd)
 ctf_dvdef_t *
 ctf_dvd_lookup (ctf_file_t *fp, const char *name)
 {
-  unsigned long h = ctf_hash_compute (name, strlen (name))
-    % (fp->ctf_dvhashlen - 1);
-  ctf_dvdef_t *dvd;
-
-  if (fp->ctf_dvhash == NULL)
-    return NULL;
-
-  for (dvd = fp->ctf_dvhash[h]; dvd != NULL; dvd = dvd->dvd_hash)
-    {
-      if (strcmp (name, dvd->dvd_name) == 0)
-	break;
-    }
-
-  return dvd;
+  return (ctf_dvdef_t *) ctf_dynhash_lookup (fp->ctf_dvhash, name);
 }
 
 /* Discard all of the dynamic type definitions and variable definitions that
@@ -893,16 +828,15 @@ ctf_id_t
 ctf_add_struct_sized (ctf_file_t *fp, uint32_t flag, const char *name,
 		      size_t size)
 {
-  ctf_hash_t *hp = &fp->ctf_structs;
-  ctf_helem_t *hep = NULL;
+  ctf_hash_t *hp = fp->ctf_structs;
   ctf_dtdef_t *dtd;
-  ctf_id_t type;
+  ctf_id_t type = 0;
 
   if (name != NULL)
-    hep = ctf_hash_lookup_type (hp, fp, name, strlen (name));
+    type = ctf_hash_lookup_type (hp, fp, name);
 
-  if (hep != NULL && ctf_type_kind (fp, hep->h_type) == CTF_K_FORWARD)
-    dtd = ctf_dtd_lookup (fp, type = hep->h_type);
+  if (type != 0 && ctf_type_kind (fp, type) == CTF_K_FORWARD)
+    dtd = ctf_dtd_lookup (fp, type);
   else if ((type = ctf_add_generic (fp, flag, name, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us.  */
 
@@ -930,16 +864,15 @@ ctf_id_t
 ctf_add_union_sized (ctf_file_t *fp, uint32_t flag, const char *name,
 		     size_t size)
 {
-  ctf_hash_t *hp = &fp->ctf_unions;
-  ctf_helem_t *hep = NULL;
+  ctf_hash_t *hp = fp->ctf_unions;
   ctf_dtdef_t *dtd;
-  ctf_id_t type;
+  ctf_id_t type = 0;
 
   if (name != NULL)
-    hep = ctf_hash_lookup_type (hp, fp, name, strlen (name));
+    type = ctf_hash_lookup_type (hp, fp, name);
 
-  if (hep != NULL && ctf_type_kind (fp, hep->h_type) == CTF_K_FORWARD)
-    dtd = ctf_dtd_lookup (fp, type = hep->h_type);
+  if (type != 0 && ctf_type_kind (fp, type) == CTF_K_FORWARD)
+    dtd = ctf_dtd_lookup (fp, type);
   else if ((type = ctf_add_generic (fp, flag, name, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us */
 
@@ -966,16 +899,15 @@ ctf_add_union (ctf_file_t *fp, uint32_t flag, const char *name)
 ctf_id_t
 ctf_add_enum (ctf_file_t *fp, uint32_t flag, const char *name)
 {
-  ctf_hash_t *hp = &fp->ctf_enums;
-  ctf_helem_t *hep = NULL;
+  ctf_hash_t *hp = fp->ctf_enums;
   ctf_dtdef_t *dtd;
-  ctf_id_t type;
+  ctf_id_t type = 0;
 
   if (name != NULL)
-    hep = ctf_hash_lookup_type (hp, fp, name, strlen (name));
+    type = ctf_hash_lookup_type (hp, fp, name);
 
-  if (hep != NULL && ctf_type_kind (fp, hep->h_type) == CTF_K_FORWARD)
-    dtd = ctf_dtd_lookup (fp, type = hep->h_type);
+  if (type != 0 && ctf_type_kind (fp, type) == CTF_K_FORWARD)
+    dtd = ctf_dtd_lookup (fp, type);
   else if ((type = ctf_add_generic (fp, flag, name, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us.  */
 
@@ -990,20 +922,19 @@ ctf_add_forward (ctf_file_t *fp, uint32_t flag, const char *name,
 		 uint32_t kind)
 {
   ctf_hash_t *hp;
-  ctf_helem_t *hep;
   ctf_dtdef_t *dtd;
-  ctf_id_t type;
+  ctf_id_t type = 0;
 
   switch (kind)
     {
     case CTF_K_STRUCT:
-      hp = &fp->ctf_structs;
+      hp = fp->ctf_structs;
       break;
     case CTF_K_UNION:
-      hp = &fp->ctf_unions;
+      hp = fp->ctf_unions;
       break;
     case CTF_K_ENUM:
-      hp = &fp->ctf_enums;
+      hp = fp->ctf_enums;
       break;
     default:
       return (ctf_set_errno (fp, ECTF_NOTSUE));
@@ -1011,9 +942,8 @@ ctf_add_forward (ctf_file_t *fp, uint32_t flag, const char *name,
 
   /* If the type is already defined or exists as a forward tag, just
      return the ctf_id_t of the existing definition.  */
-  if (name != NULL && (hep = ctf_hash_lookup_type (hp, fp, name,
-						   strlen (name))) != NULL)
-    return hep->h_type;
+  if (name != NULL && (type = ctf_hash_lookup_type (hp, fp, name)) != 0)
+    return type;
 
   if ((type = ctf_add_generic (fp, flag, name, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us.  */
@@ -1369,6 +1299,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 {
   ctf_id_t dst_type = CTF_ERR;
   uint32_t dst_kind = CTF_K_UNKNOWN;
+  ctf_id_t tmp;
 
   const char *name;
   uint32_t kind, flag, vlen;
@@ -1383,7 +1314,6 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
   ssize_t size;
 
   ctf_hash_t *hp;
-  ctf_helem_t *hep;
 
   if (!(dst_fp->ctf_flags & LCTF_RDWR))
     return (ctf_set_errno (dst_fp, ECTF_RDONLY));
@@ -1399,16 +1329,16 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
   switch (kind)
     {
     case CTF_K_STRUCT:
-      hp = &dst_fp->ctf_structs;
+      hp = dst_fp->ctf_structs;
       break;
     case CTF_K_UNION:
-      hp = &dst_fp->ctf_unions;
+      hp = dst_fp->ctf_unions;
       break;
     case CTF_K_ENUM:
-      hp = &dst_fp->ctf_enums;
+      hp = dst_fp->ctf_enums;
       break;
     default:
-      hp = &dst_fp->ctf_names;
+      hp = dst_fp->ctf_names;
       break;
     }
 
@@ -1417,9 +1347,9 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
      verify that it is of the same kind before we do anything else.  */
 
   if ((flag & CTF_ADD_ROOT) && name[0] != '\0'
-      && (hep = ctf_hash_lookup_type (hp, dst_fp, name, strlen (name))) != NULL)
+      && (tmp = ctf_hash_lookup_type (hp, dst_fp, name)) != 0)
     {
-      dst_type = (ctf_id_t) hep->h_type;
+      dst_type = tmp;
       dst_kind = ctf_type_kind (dst_fp, dst_type);
     }
 

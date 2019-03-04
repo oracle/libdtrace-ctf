@@ -64,7 +64,6 @@ ctf_lookup_by_name (ctf_file_t *fp, const char *name)
   static const char delimiters[] = " \t\n\r\v\f*";
 
   const ctf_lookup_t *lp;
-  const ctf_helem_t *hp;
   const char *p, *q, *end;
   ctf_id_t type = 0;
   ctf_id_t ntype, ptype;
@@ -152,15 +151,13 @@ ctf_lookup_by_name (ctf_file_t *fp, const char *name)
 		    }
 		}
 
-	      if ((hp = ctf_hash_lookup_type (lp->ctl_hash, fp,
-					      fp->ctf_tmp_typeslice,
-					      strlen (fp->ctf_tmp_typeslice))) == 0)
+	      if ((type = ctf_hash_lookup_type (lp->ctl_hash, fp,
+						fp->ctf_tmp_typeslice)) == 0)
 		{
 		  (void) ctf_set_errno (fp, ECTF_NOTYPE);
 		  goto err;
 		}
 
-	      type = hp->h_type;
 	      break;
 	    }
 	}

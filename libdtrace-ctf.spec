@@ -12,8 +12,8 @@ BuildRequires: rpm
 Name:         libdtrace-ctf
 License:      GPLv2
 Group:        Development/Libraries
-Requires:     gcc elfutils-libelf zlib
-BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers zlib-devel
+Requires:     gcc elfutils-libelf zlib glib2
+BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers glib2-devel zlib-devel
 Summary:      Compact Type Format library.
 Version:      1.1.0
 Release:      1%{?dist}

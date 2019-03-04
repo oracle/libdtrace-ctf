@@ -8,13 +8,13 @@
 
 BUILDLIBS += libdtrace-ctf
 SHLIBS += libdtrace-ctf
-libdtrace-ctf_CPPFLAGS = -I$(libdtrace-ctf_DIR)
+libdtrace-ctf_CPPFLAGS = -I$(libdtrace-ctf_DIR) $(shell pkg-config --cflags glib-2.0)
 libdtrace-ctf_TARGET = libdtrace-ctf
 libdtrace-ctf_DIR := $(current-dir)
 libdtrace-ctf_SOURCES = ctf-open.c ctf-archive.c ctf-create.c ctf-error.c \
                         ctf-hash.c ctf-labels.c ctf-lib.c ctf-lookup.c \
                         ctf-decl.c ctf-types.c ctf-subr.c ctf-util.c
-libdtrace-ctf_LIBS := -lz
+libdtrace-ctf_LIBS := $(shell pkg-config --libs glib-2.0) -lz
 libdtrace-ctf_VERSION := 1.5.0
 libdtrace-ctf_SONAME := libdtrace-ctf.so.1
 libdtrace-ctf_VERSCRIPT := $(libdtrace-ctf_DIR)libdtrace-ctf.ver
