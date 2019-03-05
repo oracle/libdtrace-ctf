@@ -32,8 +32,9 @@ include:
 
 src:
 	for name in libctf/*.c libctf/*.h; do \
-	   $(MAKE) -f $(topdir)/maint/Makefile.maint _subst topdir=$(topdir) \
-	   	   FILE=$$name; \
+           head -50 $$name | grep -q 'Not synced with GNU.' || \
+	      $(MAKE) -f $(topdir)/maint/Makefile.maint _subst topdir=$(topdir) \
+		      FILE=$$name; \
 	done
 
 _subst:
