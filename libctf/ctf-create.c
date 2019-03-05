@@ -24,7 +24,7 @@
 ctf_file_t *
 ctf_create (int *errp)
 {
-  static const ctf_header_t hdr = { .cth_preamble = { CTF_MAGIC, CTF_VERSION } };
+  static const ctf_header_t hdr = { .cth_preamble = { CTF_MAGIC, CTF_VERSION, 0 } };
 
   ctf_dynhash_t *dthash;
   ctf_dynhash_t *dvhash;
