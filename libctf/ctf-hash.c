@@ -5,7 +5,9 @@
    http://oss.oracle.com/licenses/upl.
 
    Licensed under the GNU General Public License (GPL), version 2. See the file
-   COPYING in the top level of this tree.  */
+   COPYING in the top level of this tree.
+
+   Not synced with GNU.  */
 
 #include <string.h>
 #include <ctf-impl.h>
