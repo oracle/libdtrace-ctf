@@ -923,6 +923,12 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
    We flip everything, mindlessly, even 1-byte entities, so that future
    expansions do not require changes to this code.  */
 
+/* < C11? define away static assertions.  */
+
+#if !defined (__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+#define _Static_assert(cond, err)
+#endif
+
 /* Swap the endianness of something.  */
 
 #define swap_thing(x)							\
