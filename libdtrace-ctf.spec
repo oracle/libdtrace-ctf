@@ -15,8 +15,8 @@ Group:        Development/Libraries
 Requires:     gcc elfutils-libelf zlib glib2
 BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers glib2-devel zlib-devel
 Summary:      Compact Type Format library.
-Version:      1.1.0
-Release:      1%{?dist}
+Version:      1.2.0
+Release:      0.1%{?dist}
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 ExclusiveArch:    x86_64 sparc64 aarch64
@@ -77,6 +77,12 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
+* Tue Mar  5 2019 - nick.alcock@oracle.com - 1.2.0-0.1
+- Work towards 1.2.0.
+- Reformat everything to GNU style.
+- Support opening CTF files of any endianness.
+- Use GHashTable for dynamically-sized hashtables.
+
 * Fri Dec 14 2018 - nick.alcock@oracle.com - 1.1.0-1
 - Add ctf_add_{struct,union}_sized(). [Orabug: 29054972]
 - Work around some very minor CTF-generation bugs seen in the wild
