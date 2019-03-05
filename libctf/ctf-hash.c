@@ -233,8 +233,8 @@ ctf_hash_insert_type (ctf_hash_t * hp, ctf_file_t * fp, uint32_t type,
 
 /* Wrapper for ctf_hash_lookup_type/ctf_hash_insert_type: if the key is already
    in the hash, override the previous definition with this new official
-   definition.  If the key is not present, then call ctf_hash_insert() and hash
-   it in.  */
+   definition.  If the key is not present, then call ctf_hash_insert_type() and
+   hash it in.  */
 int
 ctf_hash_define_type (ctf_hash_t *hp, ctf_file_t *fp, uint32_t type,
 		 uint32_t name)
