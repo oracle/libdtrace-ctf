@@ -19,7 +19,7 @@ gnu-warnings:
 	$(MAKE) CFLAGS="-O2 -g -Wall -W -Wall -Wno-narrowing -Wwrite-strings -Wmissing-format-attribute -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition -pedantic -Wno-long-long"
 
 dir:
-	[[ -n $(GNU_DIR) ]] || { echo "Please set GNU_DIR." >&2 && false; }
+	[[ -n "$(GNU_DIR)" ]] || { echo "Please set GNU_DIR." >&2 && false; }
 	[[ -f $(GNU_DIR)/Makefile.tpl ]] || \
 	    { echo "Please set GNU_DIR to the top level of a Cygnus tree." >&2; \
 	      false; }
