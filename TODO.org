@@ -35,6 +35,14 @@ might be broken (and have to revert one commit on every release branch as a
 consequence).  Add a feature-flag system to allow codebases to certify that they
 are ready for such changes in a fine-grained manner.
 
+** TODO validate all type IDs added
+Right now, we do not validate type IDs passed in (e.g. for types containing
+references to other types) unless we need the types for some other purpose
+in the addition function. So you can pass in garbage, and cause all sorts of
+chaos on load.  We shuld validate the damn things.  Yes, this stops people
+adding a forward before adding the thing it is a forward to, but nobody
+should be doing anything so crazy.
+
 * Features
 ** TODO Add function-signature mapping
 Required for typed args in FBT and systrace.
