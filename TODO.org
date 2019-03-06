@@ -1,5 +1,5 @@
 * Efficiency
-** TODO Move to a decent hash?
+** DONE Move to a decent hash?
 Currently, there are two distinct classes of hashtable used in libctf:
 
  - ctf_hash hashes, used for hashes of data read from CTF sections only.  These
@@ -19,10 +19,7 @@ and very slow -- though as it is only used when ctf_discard() is called, and
 that is only called on the occasion of a type error, this is probably not
 important.
 
-** TODO vape ctf_txlate
-This great big table is added to lots of things, initialized to zero... and
-never used for anything else.
-
+** DONE adapt to endianness changes
 * Reliability
 ** TODO Add a testsuite.
 OpenSolaris doesn't come with one, as far as I can tell.
