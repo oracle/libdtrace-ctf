@@ -205,6 +205,7 @@ struct ctf_file
   int ctf_errno;		  /* Error code for most recent error.  */
   int ctf_version;		  /* CTF data version.  */
   ctf_dynhash_t *ctf_dthash;	  /* Hash of dynamic type definitions.  */
+  ctf_dynhash_t *ctf_dtbyname;	  /* DTDs, indexed by name.  */
   ctf_list_t ctf_dtdefs;	  /* List of dynamic type definitions.  */
   ctf_dynhash_t *ctf_dvhash;	  /* Hash of dynamic variable mappings.  */
   ctf_list_t ctf_dvdefs;	  /* List of dynamic variable definitions.  */
@@ -333,11 +334,12 @@ extern void ctf_list_delete (ctf_list_t *, void *);
 
 extern void ctf_dtd_insert (ctf_file_t *, ctf_dtdef_t *);
 extern void ctf_dtd_delete (ctf_file_t *, ctf_dtdef_t *);
-extern ctf_dtdef_t *ctf_dtd_lookup (ctf_file_t *, ctf_id_t);
+extern ctf_dtdef_t *ctf_dtd_lookup (const ctf_file_t *, ctf_id_t);
+extern ctf_dtdef_t *ctf_dynamic_type (const ctf_file_t *, ctf_id_t);
 
 extern void ctf_dvd_insert (ctf_file_t *, ctf_dvdef_t *);
 extern void ctf_dvd_delete (ctf_file_t *, ctf_dvdef_t *);
-extern ctf_dvdef_t *ctf_dvd_lookup (ctf_file_t *, const char *);
+extern ctf_dvdef_t *ctf_dvd_lookup (const ctf_file_t *, const char *);
 
 extern void ctf_decl_init (ctf_decl_t *, char *, size_t);
 extern void ctf_decl_fini (ctf_decl_t *);

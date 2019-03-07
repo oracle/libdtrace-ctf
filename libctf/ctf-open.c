@@ -1490,6 +1490,7 @@ ctf_close (ctf_file_t *fp)
       ctf_dtd_delete (fp, dtd);
     }
   ctf_dynhash_destroy (fp->ctf_dthash);
+  ctf_dynhash_destroy (fp->ctf_dtbyname);
 
   for (dvd = ctf_list_next (&fp->ctf_dvdefs); dvd != NULL; dvd = nvd)
     {

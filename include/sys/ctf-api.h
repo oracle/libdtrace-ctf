@@ -102,6 +102,11 @@ typedef struct ctf_snapshot_id
 
 #define	ECTF_BASE	1000	/* Base value for libctf errnos.  */
 
+#ifndef NO_COMPAT
+/* Definitions to inform callers about silently changed semantics.  */
+#define LIBDTRACE_CTF_OMISSIBLE_CTF_UPDATE 1
+#endif
+
 enum
   {
    ECTF_FMT = ECTF_BASE,	/* File is not in CTF or ELF format.  */

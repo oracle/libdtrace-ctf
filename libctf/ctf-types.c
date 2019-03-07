@@ -366,7 +366,8 @@ ssize_t
 ctf_type_align (ctf_file_t *fp, ctf_id_t type)
 {
   const ctf_type_t *tp;
-  ctf_arinfo_t r;
+  ctf_file_t *ofp = fp;
+  int kind;
 
   if ((type = ctf_type_resolve (fp, type)) == CTF_ERR)
     return -1;			/* errno is set for us.  */
@@ -374,48 +375,70 @@ ctf_type_align (ctf_file_t *fp, ctf_id_t type)
   if ((tp = ctf_lookup_by_id (&fp, type)) == NULL)
     return -1;			/* errno is set for us.  */
 
-  switch (LCTF_INFO_KIND (fp, tp->ctt_info))
+  kind = LCTF_INFO_KIND (fp, tp->ctt_info);
+  switch (kind)
     {
     case CTF_K_POINTER:
     case CTF_K_FUNCTION:
       return fp->ctf_dmodel->ctd_pointer;
 
     case CTF_K_ARRAY:
-      if (ctf_array_info (fp, type, &r) == CTF_ERR)
-	return -1;		/* errno is set for us.  */
-      return (ctf_type_align (fp, r.ctr_contents));
+      {
+	ctf_arinfo_t r;
+	if (ctf_array_info (fp, type, &r) == CTF_ERR)
+	  return -1;		/* errno is set for us.  */
+	return (ctf_type_align (fp, r.ctr_contents));
+      }
 
     case CTF_K_STRUCT:
     case CTF_K_UNION:
       {
-	uint32_t n = LCTF_INFO_VLEN (fp, tp->ctt_info);
-	ssize_t size, increment;
 	size_t align = 0;
-	const void *vmp;
+	ctf_dtdef_t *dtd;
 
-	(void) ctf_get_ctt_size (fp, tp, &size, &increment);
-	vmp = (unsigned char *) tp + increment;
-
-	if (LCTF_INFO_KIND (fp, tp->ctt_info) == CTF_K_STRUCT)
-	  n = MIN (n, 1);	/* Only use first member for structs.  */
-
-	if (size < CTF_LSTRUCT_THRESH)
+	if ((dtd = ctf_dynamic_type (ofp, type)) == NULL)
 	  {
-	    const ctf_member_t *mp = vmp;
-	    for (; n != 0; n--, mp++)
+	    uint32_t n = LCTF_INFO_VLEN (fp, tp->ctt_info);
+	    ssize_t size, increment;
+	    const void *vmp;
+
+	    (void) ctf_get_ctt_size (fp, tp, &size, &increment);
+	    vmp = (unsigned char *) tp + increment;
+
+	    if (kind == CTF_K_STRUCT)
+	      n = MIN (n, 1);	/* Only use first member for structs.  */
+
+	    if (size < CTF_LSTRUCT_THRESH)
 	      {
-		ssize_t am = ctf_type_align (fp, mp->ctm_type);
-		align = MAX (align, am);
+		const ctf_member_t *mp = vmp;
+		for (; n != 0; n--, mp++)
+		  {
+		    ssize_t am = ctf_type_align (fp, mp->ctm_type);
+		    align = MAX (align, am);
+		  }
+	      }
+	    else
+	      {
+		const ctf_lmember_t *lmp = vmp;
+		for (; n != 0; n--, lmp++)
+		  {
+		    ssize_t am = ctf_type_align (fp, lmp->ctlm_type);
+		    align = MAX (align, am);
+		  }
 	      }
 	  }
 	else
 	  {
-	    const ctf_lmember_t *lmp = vmp;
-	    for (; n != 0; n--, lmp++)
-	      {
-		ssize_t am = ctf_type_align (fp, lmp->ctlm_type);
-		align = MAX (align, am);
-	      }
+	      ctf_dmdef_t *dmd;
+
+	      for (dmd = ctf_list_next (&dtd->dtd_u.dtu_members);
+		   dmd != NULL; dmd = ctf_list_next (dmd))
+		{
+		  ssize_t am = ctf_type_align (fp, dmd->dmd_type);
+		  align = MAX (align, am);
+		  if (kind == CTF_K_STRUCT)
+		    break;
+		}
 	  }
 
 	return align;
@@ -505,12 +528,19 @@ int
 ctf_type_encoding (ctf_file_t *fp, ctf_id_t type, ctf_encoding_t *ep)
 {
   ctf_file_t *ofp = fp;
+  ctf_dtdef_t *dtd;
   const ctf_type_t *tp;
   ssize_t increment;
   uint32_t data;
 
   if ((tp = ctf_lookup_by_id (&fp, type)) == NULL)
     return CTF_ERR;		/* errno is set for us.  */
+
+  if ((dtd = ctf_dynamic_type (ofp, type)) != NULL)
+    {
+      *ep = dtd->dtd_u.dtu_enc;
+      return 0;
+    }
 
   (void) ctf_get_ctt_size (fp, tp, NULL, &increment);
 
@@ -696,6 +726,7 @@ ctf_array_info (ctf_file_t *fp, ctf_id_t type, ctf_arinfo_t *arp)
   ctf_file_t *ofp = fp;
   const ctf_type_t *tp;
   const ctf_array_t *ap;
+  const ctf_dtdef_t *dtd;
   ssize_t increment;
 
   if ((tp = ctf_lookup_by_id (&fp, type)) == NULL)
@@ -703,6 +734,12 @@ ctf_array_info (ctf_file_t *fp, ctf_id_t type, ctf_arinfo_t *arp)
 
   if (LCTF_INFO_KIND (fp, tp->ctt_info) != CTF_K_ARRAY)
     return (ctf_set_errno (ofp, ECTF_NOTARRAY));
+
+  if ((dtd = ctf_dynamic_type (ofp, type)) != NULL)
+    {
+      *arp = dtd->dtd_u.dtu_arr;
+      return 0;
+    }
 
   (void) ctf_get_ctt_size (fp, tp, NULL, &increment);
 

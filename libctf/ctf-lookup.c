@@ -269,6 +269,7 @@ const ctf_type_t *
 ctf_lookup_by_id (ctf_file_t **fpp, ctf_id_t type)
 {
   ctf_file_t *fp = *fpp;	/* Caller passes in starting CTF container.  */
+  ctf_id_t idx;
 
   if ((fp->ctf_flags & LCTF_CHILD) && LCTF_TYPE_ISPARENT (fp, type)
       && (fp = fp->ctf_parent) == NULL)
@@ -277,13 +278,25 @@ ctf_lookup_by_id (ctf_file_t **fpp, ctf_id_t type)
       return NULL;
     }
 
-  type = LCTF_TYPE_TO_INDEX (fp, type);
-  if (type > 0 && (unsigned long) type <= fp->ctf_typemax)
+  idx = LCTF_TYPE_TO_INDEX (fp, type);
+  if (idx > 0 && (unsigned long) idx <= fp->ctf_typemax)
     {
       *fpp = fp;		/* Function returns ending CTF container.  */
-      return (LCTF_INDEX_TO_TYPEPTR (fp, type));
+      return (LCTF_INDEX_TO_TYPEPTR (fp, idx));
     }
 
+  /* If this container is writable, check for a dynamic type.  */
+
+  if (fp->ctf_flags & LCTF_RDWR)
+    {
+      ctf_dtdef_t *dtd;
+
+      if ((dtd = ctf_dynamic_type (fp, type)) != NULL)
+	{
+	  *fpp = fp;
+	  return &dtd->dtd_data;
+	}
+    }
   (void) ctf_set_errno (*fpp, ECTF_BADID);
   return NULL;
 }
