@@ -105,6 +105,30 @@ ctf_strdup (const char *s1)
   return s2;
 }
 
+/* A string appender working on dynamic strings.  */
+
+char *
+ctf_str_append (char *s, const char *append)
+{
+  size_t s_len = 0;
+
+  if (append == NULL)
+    return s;
+
+  if (s != NULL)
+    s_len = strlen (s);
+
+  size_t append_len = strlen (append);
+
+  if ((s = realloc (s, s_len + append_len + 1)) == NULL)
+    return NULL;
+
+  memcpy (s + s_len, append, append_len);
+  s[s_len + append_len] = '\0';
+
+  return s;
+}
+
 /* Store the specified error code into errp if it is non-NULL, and then
    return NULL for the benefit of the caller.  */
 
