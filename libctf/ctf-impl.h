@@ -308,6 +308,8 @@ typedef int (*ctf_hash_eq_fun) (const void *, const void *);
 extern int ctf_hash_eq_integer (const void *, const void *);
 extern int ctf_hash_eq_string (const void *, const void *);
 
+typedef void (*ctf_hash_free_fun) (void *);
+
 extern ctf_hash_t *ctf_hash_create (unsigned long, ctf_hash_fun, ctf_hash_eq_fun);
 extern int ctf_hash_insert_type (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
 extern int ctf_hash_define_type (ctf_hash_t *, ctf_file_t *, uint32_t, uint32_t);
@@ -315,8 +317,9 @@ extern ctf_id_t ctf_hash_lookup_type (ctf_hash_t *, ctf_file_t *, const char *);
 extern uint32_t ctf_hash_size (const ctf_hash_t *);
 extern void ctf_hash_destroy (ctf_hash_t *);
 
-extern ctf_dynhash_t *ctf_dynhash_create (ctf_hash_fun, ctf_hash_eq_fun);
-extern int ctf_dynhash_insert (ctf_dynhash_t *, const void *, void *);
+extern ctf_dynhash_t *ctf_dynhash_create (ctf_hash_fun, ctf_hash_eq_fun,
+					  ctf_hash_free_fun, ctf_hash_free_fun);
+extern int ctf_dynhash_insert (ctf_dynhash_t *, void *, void *);
 extern void ctf_dynhash_remove (ctf_dynhash_t *, const void *);
 extern void *ctf_dynhash_lookup (ctf_dynhash_t *, const void *);
 extern void ctf_dynhash_destroy (ctf_dynhash_t *);

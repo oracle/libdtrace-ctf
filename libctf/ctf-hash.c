@@ -60,14 +60,18 @@ ctf_hash_eq_string (const void *a, const void *b)
    Implemented using GHashTable, an expanding hash.  */
 
 ctf_dynhash_t *
-ctf_dynhash_create (ctf_hash_fun hash_fun, ctf_hash_eq_fun eq_fun)
+ctf_dynhash_create (ctf_hash_fun hash_fun, ctf_hash_eq_fun eq_fun,
+		    ctf_hash_free_fun key_free,
+		    ctf_hash_free_fun value_free)
 {
-  return (ctf_dynhash_t *) g_hash_table_new ((GHashFunc) hash_fun,
-					     (GEqualFunc) eq_fun);
+  return (ctf_dynhash_t *) g_hash_table_new_full ((GHashFunc) hash_fun,
+						  (GEqualFunc) eq_fun,
+						  (GDestroyNotify) key_free,
+						  (GDestroyNotify) value_free);
 }
 
 int
-ctf_dynhash_insert (ctf_dynhash_t *hp, const void *key, void *value)
+ctf_dynhash_insert (ctf_dynhash_t *hp, void *key, void *value)
 {
   g_hash_table_insert ((GHashTable *) hp, (gpointer) key, value);
   return 0;
