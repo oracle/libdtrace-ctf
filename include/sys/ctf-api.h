@@ -178,15 +178,18 @@ enum
 /* These typedefs are used to define the signature for callback functions
    that can be used with the iteration and visit functions below.  */
 
-typedef int ctf_visit_f (const char *, ctf_id_t, unsigned long, int, void *);
-typedef int ctf_member_f (const char *, ctf_id_t, unsigned long, void *);
-typedef int ctf_enum_f (const char *, int, void *);
-typedef int ctf_variable_f (const char *, ctf_id_t, void *);
-typedef int ctf_type_f (ctf_id_t, void *);
-typedef int ctf_label_f (const char *, const ctf_lblinfo_t *, void *);
-typedef int ctf_archive_member_f (ctf_file_t *, const char *name, void *);
+typedef int ctf_visit_f (const char *name, ctf_id_t type, unsigned long offset,
+			 int depth, void *arg);
+typedef int ctf_member_f (const char *name, ctf_id_t membtype,
+			  unsigned long offset, void *arg);
+typedef int ctf_enum_f (const char *name, int val, void *arg);
+typedef int ctf_variable_f (const char *name, ctf_id_t type, void *arg);
+typedef int ctf_type_f (ctf_id_t type, void *arg);
+typedef int ctf_label_f (const char *name, const ctf_lblinfo_t *info,
+			 void *arg);
+typedef int ctf_archive_member_f (ctf_file_t *fp, const char *name, void *arg);
 typedef int ctf_archive_raw_member_f (const char *name, const void *content,
-				      size_t len, void *);
+				      size_t len, void *arg);
 
 extern ctf_file_t *ctf_bufopen (const ctf_sect_t *, const ctf_sect_t *,
 				const ctf_sect_t *, int *);
