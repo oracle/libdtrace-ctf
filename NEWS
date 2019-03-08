@@ -6,9 +6,9 @@ moved around: upstream consumers can now include <sys/ctf-api.h> if
 they want to, or remain with the old <cys/ctf_api.h> if they prefer.
 
 <sys/ctf_types.h> (containing some obsolescent types used by some
-consumers, and a single macro) is no longer used by the libctf codebase.
-It is still installed for compatibility, but you are encouraged to migrate
-away from it.
+consumers, and a single macro) is no longer used by the libdtrace-ctf
+codebase.  It is still installed for compatibility, but you are encouraged
+to migrate away from it.
 
 One field in the public API, ctf_lblinfo_t.ctb_typeidx, has been renamed
 for clarity to ctf_lblinfo_t.ctb_type (it is not an index: it is a type
@@ -20,6 +20,19 @@ with version upgrades, this is implemented by flipping the endianness of
 the entire file aggressively at open time: cross-endian files thus take a
 little longer to open, and -- if stored uncompressed -- consume a little
 more memory than native-endian files.)
+
+The internal implementation of the hashtables used by libdtrace-ctf has
+changed.  As a consequence, libdtrace-ctf now depends on glib 2.x.
+
+It is no longer necessary to call ctf_update() between calls to ctf_add_*()
+to make types added by previous ctf_add_*() calls visible to later calls
+to those functions.  (It still needs to be called before other operations,
+including ctf_type_*(), iteration functions, and CTF writeout).  Since
+ctf_update() is very expensive, this can result in a huge runtime reduction
+for programs doing batch type addition.
+
+All ctf_id_t arguments to ctf_add_*() functions are now validated to ensure
+they are existing types.
 
 1.1.0
 -----
