@@ -805,9 +805,13 @@ ctf_add_reftype (ctf_file_t *fp, uint32_t flag, ctf_id_t ref, uint32_t kind)
 {
   ctf_dtdef_t *dtd;
   ctf_id_t type;
+  ctf_file_t *tmp = fp;
 
   if (ref == CTF_ERR || ref < 0 || ref > CTF_MAX_TYPE)
     return (ctf_set_errno (fp, EINVAL));
+
+  if (ctf_lookup_by_id (&tmp, ref) == NULL)
+    return CTF_ERR;		/* errno is set for us.  */
 
   if ((type = ctf_add_generic (fp, flag, NULL, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us.  */
@@ -843,9 +847,17 @@ ctf_add_array (ctf_file_t *fp, uint32_t flag, const ctf_arinfo_t *arp)
 {
   ctf_dtdef_t *dtd;
   ctf_id_t type;
+  ctf_file_t *tmp = fp;
 
   if (arp == NULL)
     return (ctf_set_errno (fp, EINVAL));
+
+  if (ctf_lookup_by_id (&tmp, arp->ctr_contents) == NULL)
+    return CTF_ERR;		/* errno is set for us.  */
+
+  tmp = fp;
+  if (ctf_lookup_by_id (&tmp, arp->ctr_index) == NULL)
+    return CTF_ERR;		/* errno is set for us.  */
 
   if ((type = ctf_add_generic (fp, flag, NULL, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us.  */
@@ -883,6 +895,8 @@ ctf_add_function (ctf_file_t *fp, uint32_t flag,
   ctf_id_t type;
   uint32_t vlen;
   ctf_id_t *vdat = NULL;
+  ctf_file_t *tmp = fp;
+  size_t i;
 
   if (ctc == NULL || (ctc->ctc_flags & ~CTF_FUNC_VARARG) != 0
       || (ctc->ctc_argc != 0 && argv == NULL))
@@ -891,6 +905,16 @@ ctf_add_function (ctf_file_t *fp, uint32_t flag,
   vlen = ctc->ctc_argc;
   if (ctc->ctc_flags & CTF_FUNC_VARARG)
     vlen++;	       /* Add trailing zero to indicate varargs (see below).  */
+
+  if (ctf_lookup_by_id (&tmp, ctc->ctc_return) == NULL)
+    return CTF_ERR;		/* errno is set for us.  */
+
+  for (i = 0; i < ctc->ctc_argc; i++)
+    {
+      tmp = fp;
+      if (ctf_lookup_by_id (&tmp, argv[i]) == NULL)
+	return CTF_ERR;		/* errno is set for us.  */
+    }
 
   if (vlen > CTF_MAX_VLEN)
     return (ctf_set_errno (fp, EOVERFLOW));
@@ -1072,9 +1096,13 @@ ctf_add_typedef (ctf_file_t *fp, uint32_t flag, const char *name,
 {
   ctf_dtdef_t *dtd;
   ctf_id_t type;
+  ctf_file_t *tmp = fp;
 
   if (ref == CTF_ERR || ref < 0 || ref > CTF_MAX_TYPE)
     return (ctf_set_errno (fp, EINVAL));
+
+  if (ctf_lookup_by_id (&tmp, ref) == NULL)
+    return CTF_ERR;		/* errno is set for us.  */
 
   if ((type = ctf_add_generic (fp, flag, name, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us.  */
@@ -1294,12 +1322,16 @@ int
 ctf_add_variable (ctf_file_t *fp, const char *name, ctf_id_t ref)
 {
   ctf_dvdef_t *dvd;
+  ctf_file_t *tmp = fp;
 
   if (!(fp->ctf_flags & LCTF_RDWR))
     return (ctf_set_errno (fp, ECTF_RDONLY));
 
   if (ctf_dvd_lookup (fp, name) != NULL)
     return (ctf_set_errno (fp, ECTF_DUPLICATE));
+
+  if (ctf_lookup_by_id (&tmp, ref) == NULL)
+    return CTF_ERR;		/* errno is set for us.  */
 
   if ((dvd = ctf_alloc (sizeof (ctf_dvdef_t))) == NULL)
     return (ctf_set_errno (fp, EAGAIN));
