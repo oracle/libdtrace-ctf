@@ -189,22 +189,40 @@ typedef struct ctf_stype_v1
 {
   uint32_t ctt_name;		/* Reference to name in string table.  */
   unsigned short ctt_info;	/* Encoded kind, variant length (see below).  */
+#ifndef __GNUC__
   union
   {
     unsigned short _size;	/* Size of entire type in bytes.  */
     unsigned short _type;	/* Reference to another type.  */
   } _u;
+#else
+  __extension__
+  union
+  {
+    unsigned short ctt_size;	/* Size of entire type in bytes.  */
+    unsigned short ctt_type;	/* Reference to another type.  */
+  };
+#endif
 } ctf_stype_v1_t;
 
 typedef struct ctf_type_v1
 {
   uint32_t ctt_name;		/* Reference to name in string table.  */
   unsigned short ctt_info;	/* Encoded kind, variant length (see below).  */
+#ifndef __GNUC__
   union
   {
     unsigned short _size;	/* Always CTF_LSIZE_SENT_V1.  */
     unsigned short _type;	/* Do not use.  */
   } _u;
+#else
+  __extension__
+  union
+  {
+    unsigned short ctt_size;	/* Always CTF_LSIZE_SENT_V1.  */
+    unsigned short ctt_type;	/* Do not use.  */
+  };
+#endif
   uint32_t ctt_lsizehi;		/* High 32 bits of type size in bytes.  */
   uint32_t ctt_lsizelo;		/* Low 32 bits of type size in bytes.  */
 } ctf_type_v1_t;
@@ -215,28 +233,48 @@ typedef struct ctf_stype
 {
   uint32_t ctt_name;		/* Reference to name in string table.  */
   uint32_t ctt_info;		/* Encoded kind, variant length (see below).  */
+#ifndef __GNUC__
   union
   {
     uint32_t _size;		/* Size of entire type in bytes.  */
     uint32_t _type;		/* Reference to another type.  */
   } _u;
+#else
+  __extension__
+  union
+  {
+    uint32_t ctt_size;		/* Size of entire type in bytes.  */
+    uint32_t ctt_type;		/* Reference to another type.  */
+  };
+#endif
 } ctf_stype_t;
 
 typedef struct ctf_type
 {
   uint32_t ctt_name;		/* Reference to name in string table.  */
   uint32_t ctt_info;		/* Encoded kind, variant length (see below).  */
-  union
+#ifndef __GNUC__
+union
   {
     uint32_t _size;		/* Always CTF_LSIZE_SENT.  */
     uint32_t _type;		/* Do not use.  */
   } _u;
+#else
+  __extension__
+  union
+  {
+    uint32_t ctt_size;		/* Always CTF_LSIZE_SENT.  */
+    uint32_t ctt_type;		/* Do not use.  */
+  };
+#endif
   uint32_t ctt_lsizehi;		/* High 32 bits of type size in bytes.  */
   uint32_t ctt_lsizelo;		/* Low 32 bits of type size in bytes.  */
 } ctf_type_t;
 
+#ifndef __GNUC__
 #define ctt_size _u._size	/* For fundamental types that have a size.  */
 #define ctt_type _u._type	/* For types that reference another type.  */
+#endif
 
 /* The following macros and inline functions compose and decompose values for
    ctt_info and ctt_name, as well as other structures that contain name
