@@ -286,8 +286,8 @@ typedef struct ctf_archive_modent
 #define LCTF_VBYTES(fp, kind, size, vlen) \
   ((fp)->ctf_fileops->ctfo_get_vbytes(kind, size, vlen))
 
-static inline ssize_t ctf_get_ctt_size (const ctf_file_t* fp,
-					const ctf_type_t* tp,
+static inline ssize_t ctf_get_ctt_size (const ctf_file_t *fp,
+					const ctf_type_t *tp,
 					ssize_t *sizep,
 					ssize_t *incrementp)
 {
