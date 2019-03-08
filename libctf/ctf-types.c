@@ -798,7 +798,7 @@ ctf_enum_value (ctf_file_t * fp, ctf_id_t type, const char *name, int *valp)
   ctf_file_t *ofp = fp;
   const ctf_type_t *tp;
   const ctf_enum_t *ep;
-  ssize_t size, increment;
+  ssize_t increment;
   uint32_t n;
 
   if ((type = ctf_type_resolve (fp, type)) == CTF_ERR)
@@ -813,7 +813,7 @@ ctf_enum_value (ctf_file_t * fp, ctf_id_t type, const char *name, int *valp)
       return CTF_ERR;
     }
 
-  (void) ctf_get_ctt_size (fp, tp, &size, &increment);
+  (void) ctf_get_ctt_size (fp, tp, NULL, &increment);
 
   ep = (const ctf_enum_t *) ((uintptr_t) tp + increment);
 
