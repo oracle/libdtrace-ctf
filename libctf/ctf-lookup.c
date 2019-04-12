@@ -97,7 +97,7 @@ ctf_lookup_by_name (ctf_file_t *fp, const char *name)
 	  ntype = fp->ctf_ptrtab[LCTF_TYPE_TO_INDEX (fp, type)];
 	  if (ntype == 0)
 	    {
-	      ntype = ctf_type_resolve (fp, type);
+	      ntype = ctf_type_resolve_unsliced (fp, type);
 	      if (ntype == CTF_ERR
 		  || (ntype =
 		      fp->ctf_ptrtab[LCTF_TYPE_TO_INDEX (fp, ntype)]) == 0)

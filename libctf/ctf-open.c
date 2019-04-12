@@ -144,6 +144,8 @@ get_vbytes_common (unsigned short kind, ssize_t size _libctf_unused_,
     case CTF_K_INTEGER:
     case CTF_K_FLOAT:
       return (sizeof (uint32_t));
+    case CTF_K_SLICE:
+      return (sizeof (ctf_slice_t));
     case CTF_K_ENUM:
       return (sizeof (ctf_enum_t) * vlen);
     case CTF_K_FORWARD:
@@ -207,15 +209,19 @@ static const ctf_fileops_t ctf_fileops[] = {
 #ifndef NO_COMPAT
   /* CTF_VERSION_1 */
   {get_kind_v1, get_root_v1, get_vlen_v1, get_ctt_size_v1, get_vbytes_v1},
-  /* CTF_VERSION_1_UPGRADED_2 */
+  /* CTF_VERSION_1_UPGRADED_3 */
+  {get_kind_v2, get_root_v2, get_vlen_v2, get_ctt_size_v2, get_vbytes_v2},
+  /* CTF_VERSION_2 */
   {get_kind_v2, get_root_v2, get_vlen_v2, get_ctt_size_v2, get_vbytes_v2},
 #else
   /* CTF_VERSION_1 */
   {NULL, NULL, NULL, NULL, NULL},
-  /* CTF_VERSION_1_UPGRADED_2 */
+  /* CTF_VERSION_1_UPGRADED_3 */
+  {NULL, NULL, NULL, NULL, NULL},
+  /* CTF_VERSION_2 */
   {NULL, NULL, NULL, NULL, NULL},
 #endif /* !NO_COMPAT */
-  /* CTF_VERSION_2 */
+  /* CTF_VERSION_3, identical to 2: only new type kinds */
   {get_kind_v2, get_root_v2, get_vlen_v2, get_ctt_size_v2, get_vbytes_v2},
 };
 
@@ -399,10 +405,12 @@ ctf_set_version (ctf_file_t * fp, ctf_header_t * cth, int ctf_version)
 
 #ifndef NO_COMPAT
 /*
- * Upgrade the type table to CTF_VERSION_2 (really CTF_VERSION_1_UPGRADED_2).
+ * Upgrade the type table to CTF_VERSION_3 (really CTF_VERSION_1_UPGRADED_3).
  *
  * The upgrade is not done in-place: the ctf_base is moved.  ctf_strptr() must
  * not be called before reallocation is complete.
+ *
+ * Type kinds not checked here due to nonexistence in older formats: CTF_K_SLICE
  */
 static int
 upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
@@ -625,7 +633,7 @@ upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
 
   assert ((size_t) t2p - (size_t) fp->ctf_buf == new_cth->cth_stroff);
 
-  ctf_set_version (fp, (ctf_header_t *) ctf_base, CTF_VERSION_1_UPGRADED_2);
+  ctf_set_version (fp, (ctf_header_t *) ctf_base, CTF_VERSION_1_UPGRADED_3);
   ctf_free_base (fp, old_ctf_base, old_ctf_size);
   memcpy (cth, new_cth, sizeof (ctf_header_t));
 
@@ -783,7 +791,10 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	    }
 	  break;
 
+	  /* These kinds have no name, so do not need interning into any
+	     hashtables.  */
 	case CTF_K_ARRAY:
+	case CTF_K_SLICE:
 	  break;
 
 	case CTF_K_FUNCTION:
@@ -1081,6 +1092,20 @@ flip_types (void *start, size_t len)
 	    break;
 	  }
 
+	case CTF_K_SLICE:
+	  {
+	    /* This has a single ctf_slice_t.  */
+
+	    ctf_slice_t *s = (ctf_slice_t *) t;
+
+	    assert (vbytes == sizeof (ctf_slice_t));
+	    swap_thing (s->cts_type);
+	    swap_thing (s->cts_offset);
+	    swap_thing (s->cts_bits);
+
+	    break;
+	  }
+
 	case CTF_K_STRUCT:
 	case CTF_K_UNION:
 	  {
@@ -1207,7 +1232,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     {
       if (pp->ctp_magic == bswap_16 (CTF_MAGIC))
 	{
-	  if (pp->ctp_version != CTF_VERSION_2)
+	  if (pp->ctp_version != CTF_VERSION_3)
 	    return (ctf_set_open_errno (errp, ECTF_CTFVERS));
 	  foreign_endian = 1;
 	}
@@ -1216,14 +1241,14 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     }
 
 #ifdef NO_COMPAT
-  if (_libctf_unlikely_ (pp->ctp_version != CTF_VERSION_2))
+  if (_libctf_unlikely_ (pp->ctp_version != CTF_VERSION_3))
     return (ctf_set_open_errno (errp, ECTF_CTFVERS));
 #else
   if (_libctf_unlikely_ ((pp->ctp_version < CTF_VERSION_1)
-			 || (pp->ctp_version > CTF_VERSION_2)))
+			 || (pp->ctp_version > CTF_VERSION_3)))
     return (ctf_set_open_errno (errp, ECTF_CTFVERS));
 
-  if ((symsect != NULL) && (pp->ctp_version != CTF_VERSION_2))
+  if ((symsect != NULL) && (pp->ctp_version < CTF_VERSION_2))
     {
       /* The symtab can contain function entries which contain embedded ctf
 	 info.  We do not support dynamically upgrading such entries (none

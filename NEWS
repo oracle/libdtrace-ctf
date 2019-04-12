@@ -34,6 +34,26 @@ for programs doing batch type addition.
 All ctf_id_t arguments to ctf_add_*() functions are now validated to ensure
 they are existing types.
 
+You can now change the encoding of an existing type using ctf_add_slice().
+A slice changes the encoding (bitness and offset) of some underlying int,
+float, or enum type, but otherwise appears identical at read-time, except
+that ctf_type_reference() will return the original int / float / enum.
+(Calling ctf_type_reference() on these types was an error before now, so
+this should affect no existing callers).  The error ECTF_NOTINTFP, raised
+if you try to find out the encoding of a type that does not support it, has
+changed meaning slightly to include enums as well, now that they support
+encodings too.
+
+The convenience function ctf_add_enum_encoded() allows the addition of an
+enumerated type with a particular encoding: under the covers, it adds the
+specified enum, if not already present, then creates and hands back a slice
+to it.
+
+The convenience function ctf_add_member_encoded() is like
+ctf_add_member_offset() but takes an encoding and emits a new slice.  (It
+does not look to see if an identical slice already exists, so callers that
+care about such things probably want to call ctf_add_slice() directly.)
+
 1.1.0
 -----
 

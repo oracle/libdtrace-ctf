@@ -263,6 +263,9 @@ ctf_update (ctf_file_t *fp)
 	case CTF_K_ARRAY:
 	  type_size += sizeof (ctf_array_t);
 	  break;
+	case CTF_K_SLICE:
+	  type_size += sizeof (ctf_slice_t);
+	  break;
 	case CTF_K_FUNCTION:
 	  type_size += sizeof (uint32_t) * (vlen + (vlen & 1));
 	  break;
@@ -386,6 +389,11 @@ ctf_update (ctf_file_t *fp)
 	    }
 	  memcpy (t, &encoding, sizeof (encoding));
 	  t += sizeof (encoding);
+	  break;
+
+	case CTF_K_SLICE:
+	  memcpy (t, &dtd->dtd_u.dtu_slice, sizeof (struct ctf_slice));
+	  t += sizeof (struct ctf_slice);
 	  break;
 
 	case CTF_K_ARRAY:
@@ -823,6 +831,45 @@ ctf_add_reftype (ctf_file_t *fp, uint32_t flag, ctf_id_t ref, uint32_t kind)
 }
 
 ctf_id_t
+ctf_add_slice (ctf_file_t *fp, uint32_t flag, ctf_id_t ref,
+	       const ctf_encoding_t *ep)
+{
+  ctf_dtdef_t *dtd;
+  ctf_id_t type;
+  int kind;
+  const ctf_type_t *tp;
+  ctf_file_t *tmp = fp;
+
+  if (ep == NULL)
+    return (ctf_set_errno (fp, EINVAL));
+
+  if ((ep->cte_bits > 255) || (ep->cte_offset > 255))
+    return (ctf_set_errno (fp, ECTF_SLICEOVERFLOW));
+
+  if (ref == CTF_ERR || ref < 0 || ref > CTF_MAX_TYPE)
+    return (ctf_set_errno (fp, EINVAL));
+
+  if ((tp = ctf_lookup_by_id (&tmp, ref)) == NULL)
+    return CTF_ERR;		/* errno is set for us.  */
+
+  kind = ctf_type_kind_unsliced (tmp, ref);
+  if ((kind != CTF_K_INTEGER) && (kind != CTF_K_FLOAT) &&
+      (kind != CTF_K_ENUM))
+    return (ctf_set_errno (fp, ECTF_NOTINTFP));
+
+  if ((type = ctf_add_generic (fp, flag, NULL, &dtd)) == CTF_ERR)
+    return CTF_ERR;		/* errno is set for us.  */
+
+  dtd->dtd_data.ctt_info = CTF_TYPE_INFO (CTF_K_SLICE, flag, 0);
+  dtd->dtd_data.ctt_size = clp2 (P2ROUNDUP (ep->cte_bits, NBBY) / NBBY);
+  dtd->dtd_u.dtu_slice.cts_type = ref;
+  dtd->dtd_u.dtu_slice.cts_bits = ep->cte_bits;
+  dtd->dtd_u.dtu_slice.cts_offset = ep->cte_offset;
+
+  return type;
+}
+
+ctf_id_t
 ctf_add_integer (ctf_file_t *fp, uint32_t flag,
 		 const char *name, const ctf_encoding_t *ep)
 {
@@ -1046,6 +1093,39 @@ ctf_add_enum (ctf_file_t *fp, uint32_t flag, const char *name)
   dtd->dtd_data.ctt_size = fp->ctf_dmodel->ctd_int;
 
   return type;
+}
+
+ctf_id_t
+ctf_add_enum_encoded (ctf_file_t *fp, uint32_t flag, const char *name,
+		      const ctf_encoding_t *ep)
+{
+  ctf_hash_t *hp = fp->ctf_enums;
+  ctf_id_t type = 0;
+
+  /* First, create the enum if need be, using most of the same machinery as
+     ctf_add_enum(), to ensure that we do not allow things past that are not
+     enums or forwards to them.  (This includes other slices: you cannot slice a
+     slice, which would be a useless thing to do anyway.)  */
+
+  if (name != NULL)
+    {
+      type = ctf_hash_lookup_type (hp, fp, name);
+      if (type == 0)
+	type = ctf_dtd_lookup_type_by_name (fp, CTF_K_ENUM, name);
+    }
+
+  if (type != 0)
+    {
+      if ((ctf_type_kind (fp, type) != CTF_K_FORWARD) &&
+	  (ctf_type_kind_unsliced (fp, type) != CTF_K_ENUM))
+	return (ctf_set_errno (fp, ECTF_NOTINTFP));
+    }
+  else if ((type = ctf_add_enum (fp, flag, name)) == CTF_ERR)
+    return CTF_ERR;		/* errno is set for us.  */
+
+  /* Now attach a suitable slice to it.  */
+
+  return ctf_add_slice (fp, flag, type, ep);
 }
 
 ctf_id_t
@@ -1312,6 +1392,24 @@ ctf_add_member_offset (ctf_file_t *fp, ctf_id_t souid, const char *name,
 }
 
 int
+ctf_add_member_encoded (ctf_file_t *fp, ctf_id_t souid, const char *name,
+			ctf_id_t type, unsigned long bit_offset,
+			const ctf_encoding_t encoding)
+{
+  ctf_dtdef_t *dtd = ctf_dtd_lookup (fp, type);
+  int kind = LCTF_INFO_KIND (fp, dtd->dtd_data.ctt_info);
+  int otype = type;
+
+  if ((kind != CTF_K_INTEGER) && (kind != CTF_K_FLOAT) && (kind != CTF_K_ENUM))
+    return (ctf_set_errno (fp, ECTF_NOTINTFP));
+
+  if ((type = ctf_add_slice (fp, CTF_ADD_NONROOT, otype, &encoding)) == CTF_ERR)
+    return CTF_ERR;		/* errno is set for us.  */
+
+  return ctf_add_member_offset (fp, souid, name, type, bit_offset);
+}
+
+int
 ctf_add_member (ctf_file_t *fp, ctf_id_t souid, const char *name,
 		ctf_id_t type)
 {
@@ -1494,7 +1592,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
       && (tmp = ctf_hash_lookup_type (hp, dst_fp, name)) != 0)
     {
       dst_type = tmp;
-      dst_kind = ctf_type_kind (dst_fp, dst_type);
+      dst_kind = ctf_type_kind_unsliced (dst_fp, dst_type);
     }
 
   /* If an identically named dst_type exists, fail with ECTF_CONFLICT
@@ -1511,11 +1609,11 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
       return (ctf_set_errno (dst_fp, ECTF_CONFLICT));
     }
 
-  /* We take special action for an integer or a float since it is
+  /* We take special action for an integer, float, or slice since it is
      described not only by its name but also its encoding.  For integers,
      bit-fields exploit this degeneracy.  */
 
-  if (kind == CTF_K_INTEGER || kind == CTF_K_FLOAT)
+  if (kind == CTF_K_INTEGER || kind == CTF_K_FLOAT || kind == CTF_K_SLICE)
     {
       if (ctf_type_encoding (src_fp, src_type, &src_en) != 0)
 	return (ctf_set_errno (dst_fp, ctf_errno (src_fp)));
@@ -1531,7 +1629,9 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	    {
 	      /* The type that we found in the hash is also root-visible.  If
 		 the two types match then use the existing one; otherwise,
-		 declare a conflict.  */
+		 declare a conflict.  Note: slices are not certain to match
+		 even if there is no conflict: we must check the contained type
+		 too.  */
 
 #ifndef NO_COMPAT
 	      /* Do not report a conflict if the source type is a 1- or 4-bit
@@ -1542,7 +1642,10 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		return CTF_ERR;			/* errno set for us.  */
 
 	      if (memcmp (&src_en, &dst_en, sizeof (ctf_encoding_t)) == 0)
-		return dst_type;
+		{
+		  if (kind != CTF_K_SLICE)
+		    return dst_type;
+		}
 	      else
 #ifndef NO_COMPAT
 		if (!(strcmp (name, "int") == 0
@@ -1585,7 +1688,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	      int droot;	/* Is the dst root-visible?  */
 	      int match;	/* Do the encodings match?  */
 
-	      if (kind != CTF_K_INTEGER && kind != CTF_K_FLOAT)
+	      if (kind != CTF_K_INTEGER && kind != CTF_K_FLOAT && kind != CTF_K_SLICE)
 		return dtd->dtd_type;
 
 	      sroot = (flag & CTF_ADD_ROOT);
@@ -1599,7 +1702,8 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	      /* If the types share the same encoding then return the id of the
 		 first unless one type is root-visible and the other is not; in
 		 that case the new type must get a new id if a match is never
-		 found. */
+		 found.  Note: slices are not certain to match even if there is
+		 no conflict: we must check the contained type too. */
 
 #ifndef NO_COMPAT
 	      /* If there's no match then keep looking unless both types are
@@ -1609,7 +1713,10 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		 UEK4 4.1.12-99.  */
 #endif /* !NO_COMPAT */
 	      if (match && sroot == droot)
-		return dtd->dtd_type;
+		{
+		  if (kind != CTF_K_SLICE)
+		    return dtd->dtd_type;
+		}
 	      else if (!match && sroot && droot)
 #ifndef NO_COMPAT
 		if (!(strcmp (name, "int") == 0 && sroot
@@ -1647,6 +1754,18 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
       /* If we found a match we will have either returned it or declared a
        conflict.  */
       dst_type = ctf_add_float (dst_fp, flag, name, &src_en);
+      break;
+
+    case CTF_K_SLICE:
+      /* We have checked for conflicting encodings: now try to add the
+	 contained type.  */
+      src_type = ctf_type_reference (src_fp, src_type);
+      dst_type = ctf_add_type (dst_fp, src_fp, src_type);
+
+      if (src_type == CTF_ERR)
+	return CTF_ERR;				/* errno is set for us.  */
+
+      dst_type = ctf_add_slice (dst_fp, flag, src_type, &src_en);
       break;
 
     case CTF_K_POINTER:

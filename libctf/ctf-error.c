@@ -1,5 +1,5 @@
 /* Error table.
-   Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 
    Licensed under the Universal Permissive License v 1.0 as shown at
    http://oss.oracle.com/licenses/upl.
@@ -32,7 +32,7 @@ static const char *const _ctf_errlist[] = {
   "Type is not a struct or union",		     /* ECTF_NOTSOU */
   "Type is not an enum",			     /* ECTF_NOTENUM */
   "Type is not a struct, union, or enum",	     /* ECTF_NOTSUE */
-  "Type is not an integer or float",		     /* ECTF_NOTINTFP */
+  "Type is not an integer, float, or enum",	     /* ECTF_NOTINTFP */
   "Type is not an array",			     /* ECTF_NOTARRAY */
   "Type does not reference another type",	     /* ECTF_NOTREF */
   "Input buffer is too small for type name",	     /* ECTF_NAMELEN */
@@ -55,7 +55,8 @@ static const char *const _ctf_errlist[] = {
   "Attempt to roll back past a ctf_update",	     /* ECTF_OVERROLLBACK */
   "Failed to compress CTF data",		     /* ECTF_COMPRESS */
   "Failed to create CTF archive",		     /* ECTF_ARCREATE */
-  "Name not found in CTF archive"		     /* ECTF_ARNNAME */
+  "Name not found in CTF archive",		     /* ECTF_ARNNAME */
+  "Overflow of type bitness or offset in slice"	     /* ECTF_SLICEOVERFLOW */
 };
 
 static const int _ctf_nerr = sizeof (_ctf_errlist) / sizeof (_ctf_errlist[0]);

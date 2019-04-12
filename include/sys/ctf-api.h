@@ -59,7 +59,7 @@ typedef struct ctf_sect
 typedef struct ctf_encoding
 {
   uint32_t cte_format;		 /* Data format (CTF_INT_* or CTF_FP_* flags).  */
-  uint32_t cte_offset;		 /* Oofset of value in bits.  */
+  uint32_t cte_offset;		 /* Offset of value in bits.  */
   uint32_t cte_bits;		 /* Size of storage in bits.  */
 } ctf_encoding_t;
 
@@ -131,7 +131,7 @@ enum
    ECTF_NOTSOU,			/* Type is not a struct or union.  */
    ECTF_NOTENUM,		/* Type is not an enum.  */
    ECTF_NOTSUE,			/* Type is not a struct, union, or enum.  */
-   ECTF_NOTINTFP,		/* Type is not an integer or float.  */
+   ECTF_NOTINTFP,		/* Type is not an integer, float, or enum.  */
    ECTF_NOTARRAY,		/* Type is not an array.  */
    ECTF_NOTREF,			/* Type does not reference another type.  */
    ECTF_NAMELEN,		/* Buffer is too small to hold type name.  */
@@ -154,7 +154,8 @@ enum
    ECTF_OVERROLLBACK,		/* Attempt to roll back past a ctf_update.  */
    ECTF_COMPRESS,		/* Failed to compress CTF data.  */
    ECTF_ARCREATE,		/* Error creating CTF archive.  */
-   ECTF_ARNNAME			/* Name not found in CTF archive.  */
+   ECTF_ARNNAME,		/* Name not found in CTF archive.  */
+   ECTF_SLICEOVERFLOW		/* Overflow of type bitness or offset in slice.  */
   };
 
 /* The CTF data model is inferred to be the caller's data model or the data
@@ -269,6 +270,8 @@ extern int ctf_archive_raw_iter (const ctf_archive_t *,
 extern ctf_id_t ctf_add_array (ctf_file_t *, uint32_t,
 			       const ctf_arinfo_t *);
 extern ctf_id_t ctf_add_const (ctf_file_t *, uint32_t, ctf_id_t);
+extern ctf_id_t ctf_add_enum_encoded (ctf_file_t *, uint32_t, const char *,
+				      const ctf_encoding_t *);
 extern ctf_id_t ctf_add_enum (ctf_file_t *, uint32_t, const char *);
 extern ctf_id_t ctf_add_float (ctf_file_t *, uint32_t,
 			       const char *, const ctf_encoding_t *);
@@ -278,6 +281,7 @@ extern ctf_id_t ctf_add_function (ctf_file_t *, uint32_t,
 				  const ctf_funcinfo_t *, const ctf_id_t *);
 extern ctf_id_t ctf_add_integer (ctf_file_t *, uint32_t, const char *,
 				 const ctf_encoding_t *);
+extern ctf_id_t ctf_add_slice (ctf_file_t *, uint32_t, ctf_id_t, const ctf_encoding_t *);
 extern ctf_id_t ctf_add_pointer (ctf_file_t *, uint32_t, ctf_id_t);
 extern ctf_id_t ctf_add_type (ctf_file_t *, ctf_file_t *, ctf_id_t);
 extern ctf_id_t ctf_add_typedef (ctf_file_t *, uint32_t, const char *,
@@ -295,6 +299,9 @@ extern int ctf_add_enumerator (ctf_file_t *, ctf_id_t, const char *, int);
 extern int ctf_add_member (ctf_file_t *, ctf_id_t, const char *, ctf_id_t);
 extern int ctf_add_member_offset (ctf_file_t *, ctf_id_t, const char *,
 				  ctf_id_t, unsigned long);
+extern int ctf_add_member_encoded (ctf_file_t *, ctf_id_t, const char *,
+				   ctf_id_t, unsigned long,
+				   const ctf_encoding_t);
 
 extern int ctf_add_variable (ctf_file_t *, const char *, ctf_id_t);
 

@@ -13,9 +13,9 @@
 #include <limits.h>
 #include <stdint.h>
 
+#ifndef NO_COMPAT
 /* Types used only for backward-compatibility with old callers. */
 
-#ifndef NO_COMPAT
 #include <sys/ctf_types.h>
 #endif /* !NO_COMPAT */
 
@@ -36,7 +36,7 @@ extern "C"
    the equivalent stabs or DWARF representation.  The format is data-model
    independent, so consumers do not need different code depending on whether
    they are 32-bit or 64-bit programs; libctf automatically compensates for
-   endianness varaitions.  CTF assumes that a standard ELF symbol table is
+   endianness variations.  CTF assumes that a standard ELF symbol table is
    available for use in the debugger, and uses the structure and data of the
    symbol table to avoid storing redundant information.  The CTF data may be
    compressed on disk or in memory, indicated by a bit in the header.  CTF may
@@ -155,11 +155,12 @@ typedef struct ctf_header
    version we went to, not just "we were upgraded".) */
 
 # define CTF_VERSION_1 1
-# define CTF_VERSION_1_UPGRADED_2 2
+# define CTF_VERSION_1_UPGRADED_3 2
+# define CTF_VERSION_2 3
 #endif	/* !NO_COMPAT */
 
-#define CTF_VERSION_2 3
-#define CTF_VERSION CTF_VERSION_2 /* Current version.  */
+#define CTF_VERSION_3 4
+#define CTF_VERSION CTF_VERSION_3 /* Current version.  */
 
 #define CTF_F_COMPRESS	0x1	/* Data buffer is compressed by libctf.  */
 
@@ -372,18 +373,20 @@ union
 #define CTF_K_VOLATILE	11	/* ctt_type is base type.  */
 #define CTF_K_CONST	12	/* ctt_type is base type.  */
 #define CTF_K_RESTRICT	13	/* ctt_type is base type.  */
+#define CTF_K_SLICE	14	/* Variant data is a ctf_slice_t.  */
 
 #define CTF_K_MAX	63	/* Maximum possible (V2) CTF_K_* value.  */
 
 /* Values for ctt_type when kind is CTF_K_INTEGER.  The flags, offset in bits,
-   and size in bits are encoded as a single word using the following macros.  */
+   and size in bits are encoded as a single word using the following macros.
+   (However, you can also encode the offset and bitness in a slice.)  */
 
-#define CTF_INT_ENCODING(data)	(((data) & 0xff000000) >> 24)
-#define CTF_INT_OFFSET(data)	(((data) & 0x00ff0000) >> 16)
-#define CTF_INT_BITS(data)	(((data) & 0x0000ffff))
+#define CTF_INT_ENCODING(data) (((data) & 0xff000000) >> 24)
+#define CTF_INT_OFFSET(data)   (((data) & 0x00ff0000) >> 16)
+#define CTF_INT_BITS(data)     (((data) & 0x0000ffff))
 
 #define CTF_INT_DATA(encoding, offset, bits) \
-	(((encoding) << 24) | ((offset) << 16) | (bits))
+       (((encoding) << 24) | ((offset) << 16) | (bits))
 
 #define CTF_INT_SIGNED	0x01	/* Integer is signed (otherwise unsigned).  */
 #define CTF_INT_CHAR	0x02	/* Character display format.  */
@@ -399,13 +402,24 @@ union
 #endif
 
 /* Values for ctt_type when kind is CTF_K_FLOAT.  The encoding, offset in bits,
-   and size in bits are encoded as a single word using the following macros.  */
-#define CTF_FP_ENCODING(data)	(((data) & 0xff000000) >> 24)
-#define CTF_FP_OFFSET(data)	(((data) & 0x00ff0000) >> 16)
-#define CTF_FP_BITS(data)	(((data) & 0x0000ffff))
+   and size in bits are encoded as a single word using the following macros.
+   (However, you can also encode the offset and bitness in a slice.)  */
+
+#define CTF_FP_ENCODING(data)  (((data) & 0xff000000) >> 24)
+#define CTF_FP_OFFSET(data)    (((data) & 0x00ff0000) >> 16)
+#define CTF_FP_BITS(data)      (((data) & 0x0000ffff))
 
 #define CTF_FP_DATA(encoding, offset, bits) \
-	(((encoding) << 24) | ((offset) << 16) | (bits))
+       (((encoding) << 24) | ((offset) << 16) | (bits))
+
+/* Variant data when kind is CTF_K_FLOAT is an encoding in the top eight bits.  */
+#define CTF_FP_ENCODING(data)	(((data) & 0xff000000) >> 24)
+
+#ifndef NO_COMPAT
+/* v1 and v2 encode the redundant offset and bits value here too.  */
+#define CTF_FP_OFFSET(data)	(((data) & 0x00ff0000) >> 16)
+#define CTF_FP_BITS(data)	(((data) & 0x0000ffff))
+#endif
 
 #define CTF_FP_SINGLE	1	/* IEEE 32-bit float encoding.  */
 #define CTF_FP_DOUBLE	2	/* IEEE 64-bit float encoding.  */
@@ -421,6 +435,19 @@ union
 #define CTF_FP_LDIMAGRY	12	/* Long double imaginary (128-bit) encoding.  */
 
 #define CTF_FP_MAX	12	/* Maximum possible CTF_FP_* value */
+
+/* A slice increases the offset and reduces the bitness of the referenced
+   ctt_type, which must be a type which has an encoding (fp, int, or enum).  We
+   also store the referenced type in here, because it is easier to keep the
+   ctt_size correct for the slice than to shuffle the size into here and keep
+   the ctt_type where it is for other types.  */
+
+typedef struct ctf_slice
+{
+  uint32_t cts_type;
+  unsigned char cts_offset;
+  unsigned char cts_bits;
+} ctf_slice_t;
 
 typedef struct ctf_array_v1
 {

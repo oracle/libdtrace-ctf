@@ -143,6 +143,7 @@ typedef struct ctf_dtdef
     ctf_arinfo_t dtu_arr;	/* array */
     ctf_encoding_t dtu_enc;	/* integer or float */
     ctf_id_t *dtu_argv;		/* function */
+    ctf_slice_t dtu_slice;	/* slice */
   } dtd_u;
 } ctf_dtdef_t;
 
@@ -367,6 +368,9 @@ extern void ctf_free (void *, size_t);
 extern char *ctf_strdup (const char *);
 extern char *ctf_str_append (char *, const char *);
 extern const char *ctf_strerror (int);
+
+extern ctf_id_t ctf_type_resolve_unsliced (ctf_file_t *, ctf_id_t);
+extern int ctf_type_kind_unsliced (ctf_file_t *, ctf_id_t);
 
 _libctf_printflike_ (1, 2)
 extern void ctf_dprintf (const char *, ...);

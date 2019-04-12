@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at
  * http://oss.oracle.com/licenses/upl.
@@ -132,3 +132,10 @@ LIBDTRACE_CTF_1.5 {
         ctf_add_struct_sized;
         ctf_add_union_sized;
 } LIBDTRACE_CTF_1.4;
+
+LIBDTRACE_CTF_1.6 {
+    global:
+        ctf_add_slice;
+	ctf_add_enum_encoded;
+	ctf_add_member_encoded;
+} LIBDTRACE_CTF_1.5;
