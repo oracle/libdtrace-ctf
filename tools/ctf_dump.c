@@ -1,5 +1,4 @@
-/*
-   A simple CTF dumper.
+/* A simple CTF dumper.
 
    Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
 
@@ -80,14 +79,14 @@ ctf_member_print (const char *name, ctf_id_t id, unsigned long offset,
 
   ctf_type_lname (*fp, id, buf, sizeof (buf));
   printf ("    [0x%lx] (ID 0x%lx) (kind %i) %s %s (aligned at 0x%lx",
-	  offset, id, ctf_type_kind (*fp, id), buf, name, ctf_type_align (*fp,
-									  id));
+	  offset, id, ctf_type_kind (*fp, id), buf, name,
+	  ctf_type_align (*fp, id));
   if ((ctf_type_kind (*fp, id) == CTF_K_INTEGER)
       || (ctf_type_kind (*fp, id) == CTF_K_FLOAT))
     {
       ctf_encoding_t ep;
       ctf_type_encoding (*fp, id, &ep);
-      printf (", format 0x%x, offset 0x%x, bits 0x%x", ep.cte_format,
+      printf (", format 0x%x, offset:bits 0x%x:0x%x", ep.cte_format,
 	      ep.cte_offset, ep.cte_bits);
     }
   printf (")\n");
@@ -95,30 +94,67 @@ ctf_member_print (const char *name, ctf_id_t id, unsigned long offset,
   return 0;
 }
 
+/* Slices need special handling to distinguish them from their referenced
+   type.  */
+
+static int
+ctf_is_slice (ctf_file_t *fp, ctf_id_t id, ctf_encoding_t *enc)
+{
+  int kind = ctf_type_kind (fp, id);
+
+  return (((kind == CTF_K_INTEGER) || (kind == CTF_K_ENUM)
+	   || (kind == CTF_K_FLOAT))
+	  && ctf_type_reference (fp, id) != CTF_ERR
+	  && ctf_type_encoding (fp, id, enc) != CTF_ERR);
+}
+
+static int
+ctf_slice_details (ctf_file_t *fp, ctf_id_t id)
+{
+  ctf_encoding_t enc;
+  if (ctf_is_slice (fp, id, &enc))
+    {
+      ctf_type_encoding (fp, id, &enc);
+      printf ("[slice 0x%x:0x%x]", enc.cte_offset, enc.cte_bits);
+      return 1;
+    }
+  return 0;
+}
+
 static int
 ctf_type_print (ctf_id_t id, void *state)
 {
   ctf_file_t **fp = state;
-  ctf_id_t ref, newref;
-  char buf[512];
+  ctf_id_t new_id;
 
-  ctf_type_lname (*fp, id, buf, sizeof (buf));
-  printf ("    ID %lx", id);
-  ref = id;
-  while ((newref = ctf_type_reference (*fp, ref)) != CTF_ERR)
+  printf ("    ID");
+  new_id = id;
+  do
     {
-      ref = newref;
-      printf (" -> %lx", ref);
-    }
+      char buf[512];
+
+      id = new_id;
+      printf (" %lx: ", id);
+      ctf_type_lname (*fp, id, buf, sizeof (buf));
+
+      if (!ctf_slice_details (*fp, id))
+	printf ("%s (size %lx)", buf[0] == '\0' ? "(nameless)" : buf,
+		ctf_type_size (*fp, id));
+
+      new_id = ctf_type_reference (*fp, id);
+      if (new_id != CTF_ERR)
+	printf (" ->");
+    } while (new_id != CTF_ERR);
+
   if (ctf_errno (*fp) != ECTF_NOTREF)
     {
       printf ("%p: reference lookup error: %s\n",
 	      (void *) *fp, ctf_errmsg (ctf_errno (*fp)));
       return 0;
     }
-  printf (": %s (size: %lx)\n", buf, ctf_type_size (*fp, id));
 
-  ctf_type_visit (*fp, ref, ctf_member_print, state);
+  printf ("\n");
+  ctf_type_visit (*fp, id, ctf_member_print, state);
 
   return 0;
 }
