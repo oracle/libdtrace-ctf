@@ -232,6 +232,7 @@ extern ctf_id_t ctf_lookup_by_symbol (ctf_file_t *, unsigned long);
 extern ctf_id_t ctf_lookup_variable (ctf_file_t *, const char *);
 
 extern ctf_id_t ctf_type_resolve (ctf_file_t *, ctf_id_t);
+extern char *ctf_type_aname (ctf_file_t *, ctf_id_t);
 extern ssize_t ctf_type_lname (ctf_file_t *, ctf_id_t, char *, size_t);
 extern char *ctf_type_name (ctf_file_t *, ctf_id_t, char *, size_t);
 extern ssize_t ctf_type_size (ctf_file_t *, ctf_id_t);

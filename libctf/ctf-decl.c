@@ -31,7 +31,7 @@
 #include <string.h>
 
 void
-ctf_decl_init (ctf_decl_t *cd, char *buf, size_t len)
+ctf_decl_init (ctf_decl_t *cd)
 {
   int i;
 
@@ -42,10 +42,6 @@ ctf_decl_init (ctf_decl_t *cd, char *buf, size_t len)
 
   cd->cd_qualp = CTF_PREC_BASE;
   cd->cd_ordp = CTF_PREC_BASE;
-
-  cd->cd_buf = buf;
-  cd->cd_ptr = buf;
-  cd->cd_end = buf + len;
 }
 
 void
@@ -158,14 +154,32 @@ ctf_decl_push (ctf_decl_t *cd, ctf_file_t *fp, ctf_id_t type)
 _libctf_printflike_ (2, 3)
 void ctf_decl_sprintf (ctf_decl_t *cd, const char *format, ...)
 {
-  size_t len = (size_t) (cd->cd_end - cd->cd_ptr);
   va_list ap;
-  size_t n;
+  char *str;
+  int n;
+
+  if (cd->cd_enomem)
+    return;
 
   va_start (ap, format);
-  n = vsnprintf (cd->cd_ptr, len, format, ap);
+  n = vasprintf (&str, format, ap);
   va_end (ap);
 
-  cd->cd_ptr += MIN (n, len);
-  cd->cd_len += n;
+  if (n > 0)
+      cd->cd_buf = ctf_str_append (cd->cd_buf, str);
+
+  /* Sticky error condition.  */
+  if (n < 0)
+    {
+      free (cd->cd_buf);
+      cd->cd_buf = NULL;
+      cd->cd_enomem = 1;
+    }
+
+  free (str);
+}
+
+char *ctf_decl_buf (ctf_decl_t *cd)
+{
+  return cd->cd_buf;
 }

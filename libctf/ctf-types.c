@@ -213,28 +213,30 @@ ctf_type_resolve_unsliced (ctf_file_t *fp, ctf_id_t type)
   return type;
 }
 
-/* Lookup the given type ID and print a string name for it into buf.  Return
-   the actual number of bytes (not including \0) needed to format the name.  */
+/* Lookup the given type ID and return its name as a new dynamcally-allocated
+   string.  */
 
-ssize_t
-ctf_type_lname (ctf_file_t *fp, ctf_id_t type, char *buf, size_t len)
+char *
+ctf_type_aname (ctf_file_t *fp, ctf_id_t type)
 {
   ctf_decl_t cd;
   ctf_decl_node_t *cdp;
   ctf_decl_prec_t prec, lp, rp;
   int ptr, arr;
   uint32_t k;
+  char *buf;
 
   if (fp == NULL && type == CTF_ERR)
-    return -1;		/* Simplify caller code by permitting CTF_ERR.  */
+    return NULL;	/* Simplify caller code by permitting CTF_ERR.  */
 
-  ctf_decl_init (&cd, buf, len);
+  ctf_decl_init (&cd);
   ctf_decl_push (&cd, fp, type);
 
   if (cd.cd_err != 0)
     {
       ctf_decl_fini (&cd);
-      return (ctf_set_errno (fp, cd.cd_err));
+      ctf_set_errno (fp, cd.cd_err);
+      return NULL;
     }
 
   /* If the type graph's order conflicts with lexical precedence order
@@ -317,11 +319,34 @@ ctf_type_lname (ctf_file_t *fp, ctf_id_t type, char *buf, size_t len)
 	ctf_decl_sprintf (&cd, ")");
     }
 
-  if (cd.cd_len >= len)
-    (void) ctf_set_errno (fp, ECTF_NAMELEN);
+  if (cd.cd_enomem)
+    (void) ctf_set_errno (fp, ENOMEM);
+
+  buf = ctf_decl_buf (&cd);
 
   ctf_decl_fini (&cd);
-  return cd.cd_len;
+  return buf;
+}
+
+/* Lookup the given type ID and print a string name for it into buf.  Return
+   the actual number of bytes (not including \0) needed to format the name.  */
+
+ssize_t
+ctf_type_lname (ctf_file_t *fp, ctf_id_t type, char *buf, size_t len)
+{
+  char *str = ctf_type_aname (fp, type);
+  size_t slen = strlen (str);
+
+  if (str == NULL)
+    return CTF_ERR;             /* errno is set for us */
+
+  snprintf (buf, len, "%s", str);
+  free (str);
+
+  if (slen >= len)
+    (void) ctf_set_errno (fp, ECTF_NAMELEN);
+
+  return slen;
 }
 
 /* Lookup the given type ID and print a string name for it into buf.  If buf

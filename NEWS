@@ -54,6 +54,11 @@ ctf_add_member_offset() but takes an encoding and emits a new slice.  (It
 does not look to see if an identical slice already exists, so callers that
 care about such things probably want to call ctf_add_slice() directly.)
 
+The new function ctf_type_aname() is like ctf_type_name() and ctf_type_lname()
+except that it returns the new type name in a dynamically-allocated string that
+the caller must free, and never truncates it.
+
+
 1.1.0
 -----
 

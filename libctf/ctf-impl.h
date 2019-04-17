@@ -116,10 +116,8 @@ typedef struct ctf_decl
   ctf_decl_prec_t cd_qualp;	     /* Qualifier precision.  */
   ctf_decl_prec_t cd_ordp;	     /* Ordered precision.  */
   char *cd_buf;			     /* Buffer for output.  */
-  char *cd_ptr;			     /* Buffer location.  */
-  char *cd_end;			     /* Buffer limit.  */
-  size_t cd_len;		     /* Buffer space required.  */
   int cd_err;			     /* Saved error value.  */
+  int cd_enomem;		     /* Nonzero if OOM during printing.  */
 } ctf_decl_t;
 
 typedef struct ctf_dmdef
@@ -342,12 +340,13 @@ extern void ctf_dvd_insert (ctf_file_t *, ctf_dvdef_t *);
 extern void ctf_dvd_delete (ctf_file_t *, ctf_dvdef_t *);
 extern ctf_dvdef_t *ctf_dvd_lookup (const ctf_file_t *, const char *);
 
-extern void ctf_decl_init (ctf_decl_t *, char *, size_t);
+extern void ctf_decl_init (ctf_decl_t *);
 extern void ctf_decl_fini (ctf_decl_t *);
 extern void ctf_decl_push (ctf_decl_t *, ctf_file_t *, ctf_id_t);
 
 _libctf_printflike_ (2, 3)
 extern void ctf_decl_sprintf (ctf_decl_t *, const char *, ...);
+extern char *ctf_decl_buf (ctf_decl_t *cd);
 
 extern const char *ctf_strraw (ctf_file_t *, uint32_t);
 extern const char *ctf_strptr (ctf_file_t *, uint32_t);
