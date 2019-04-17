@@ -52,6 +52,19 @@ typedef struct ctf_sect
   off64_t cts_offset;		  /* File offset of this section (if any).  */
 } ctf_sect_t;
 
+/* Symbolic names for CTF sections.  */
+
+typedef enum ctf_sect_names
+  {
+   CTF_SECT_HEADER,
+   CTF_SECT_LABEL,
+   CTF_SECT_OBJT,
+   CTF_SECT_FUNC,
+   CTF_SECT_VAR,
+   CTF_SECT_TYPE,
+   CTF_SECT_STR
+  } ctf_sect_names_t;
+
 /* Encoding information for integers, floating-point values, and certain other
    intrinsics can be obtained by calling ctf_type_encoding(), below.  The flags
    field will contain values appropriate for the type defined in <sys/ctf.h>.  */
@@ -155,7 +168,9 @@ enum
    ECTF_COMPRESS,		/* Failed to compress CTF data.  */
    ECTF_ARCREATE,		/* Error creating CTF archive.  */
    ECTF_ARNNAME,		/* Name not found in CTF archive.  */
-   ECTF_SLICEOVERFLOW		/* Overflow of type bitness or offset in slice.  */
+   ECTF_SLICEOVERFLOW,		/* Overflow of type bitness or offset in slice.  */
+   ECTF_DUMPSECTUNKNOWN,	/* Unknown section number in dump.  */
+   ECTF_DUMPSECTCHANGED		/* Section changed in middle of dump.  */
   };
 
 /* The CTF data model is inferred to be the caller's data model or the data
@@ -191,6 +206,10 @@ typedef int ctf_label_f (const char *name, const ctf_lblinfo_t *info,
 typedef int ctf_archive_member_f (ctf_file_t *fp, const char *name, void *arg);
 typedef int ctf_archive_raw_member_f (const char *name, const void *content,
 				      size_t len, void *arg);
+typedef char *ctf_dump_decorate_f (ctf_sect_names_t sect,
+				   char *line, void *arg);
+
+typedef struct ctf_dump_state ctf_dump_state_t;
 
 extern ctf_file_t *ctf_bufopen (const ctf_sect_t *, const ctf_sect_t *,
 				const ctf_sect_t *, int *);
@@ -267,6 +286,9 @@ extern int ctf_archive_iter (const ctf_archive_t *, ctf_archive_member_f *,
 			     void *);
 extern int ctf_archive_raw_iter (const ctf_archive_t *,
 				 ctf_archive_raw_member_f *, void *);
+extern char *ctf_dump (ctf_file_t *, ctf_dump_state_t **state,
+		       ctf_sect_names_t sect, ctf_dump_decorate_f *,
+		       void *arg);
 
 extern ctf_id_t ctf_add_array (ctf_file_t *, uint32_t,
 			       const ctf_arinfo_t *);

@@ -56,7 +56,9 @@ static const char *const _ctf_errlist[] = {
   "Failed to compress CTF data",		     /* ECTF_COMPRESS */
   "Failed to create CTF archive",		     /* ECTF_ARCREATE */
   "Name not found in CTF archive",		     /* ECTF_ARNNAME */
-  "Overflow of type bitness or offset in slice"	     /* ECTF_SLICEOVERFLOW */
+  "Overflow of type bitness or offset in slice",     /* ECTF_SLICEOVERFLOW */
+  "Unknown section number in dump",		     /* ECTF_DUMPSECTUNKNOWN */
+  "Section changed in middle of dump"		     /* ECTF_DUMPSECTCHANGED */
 };
 
 static const int _ctf_nerr = sizeof (_ctf_errlist) / sizeof (_ctf_errlist[0]);

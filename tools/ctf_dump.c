@@ -19,8 +19,6 @@
 
 #define GZCHUNKSIZE (1024*512)	/* gzip uncompression chunk size.  */
 
-static int ctf_type_print (ctf_id_t id, void *state);
-
 static ctf_sect_t
 ctf_uncompress (const char *name)
 {
@@ -65,111 +63,6 @@ ctf_uncompress (const char *name)
   return sect;
 }
 
-static int
-ctf_member_print (const char *name, ctf_id_t id, unsigned long offset,
-		  int depth, void *state)
-{
-  ctf_file_t **fp = state;
-  char buf[512];
-  int i;
-
-  printf ("	   ");
-  for (i = 1; i < depth; i++)
-    printf ("    ");
-
-  ctf_type_lname (*fp, id, buf, sizeof (buf));
-  printf ("    [0x%lx] (ID 0x%lx) (kind %i) %s %s (aligned at 0x%lx",
-	  offset, id, ctf_type_kind (*fp, id), buf, name,
-	  ctf_type_align (*fp, id));
-  if ((ctf_type_kind (*fp, id) == CTF_K_INTEGER)
-      || (ctf_type_kind (*fp, id) == CTF_K_FLOAT))
-    {
-      ctf_encoding_t ep;
-      ctf_type_encoding (*fp, id, &ep);
-      printf (", format 0x%x, offset:bits 0x%x:0x%x", ep.cte_format,
-	      ep.cte_offset, ep.cte_bits);
-    }
-  printf (")\n");
-
-  return 0;
-}
-
-/* Slices need special handling to distinguish them from their referenced
-   type.  */
-
-static int
-ctf_is_slice (ctf_file_t *fp, ctf_id_t id, ctf_encoding_t *enc)
-{
-  int kind = ctf_type_kind (fp, id);
-
-  return (((kind == CTF_K_INTEGER) || (kind == CTF_K_ENUM)
-	   || (kind == CTF_K_FLOAT))
-	  && ctf_type_reference (fp, id) != CTF_ERR
-	  && ctf_type_encoding (fp, id, enc) != CTF_ERR);
-}
-
-static int
-ctf_slice_details (ctf_file_t *fp, ctf_id_t id)
-{
-  ctf_encoding_t enc;
-  if (ctf_is_slice (fp, id, &enc))
-    {
-      ctf_type_encoding (fp, id, &enc);
-      printf ("[slice 0x%x:0x%x]", enc.cte_offset, enc.cte_bits);
-      return 1;
-    }
-  return 0;
-}
-
-static int
-ctf_type_print (ctf_id_t id, void *state)
-{
-  ctf_file_t **fp = state;
-  ctf_id_t new_id;
-
-  printf ("    ID");
-  new_id = id;
-  do
-    {
-      char buf[512];
-
-      id = new_id;
-      printf (" %lx: ", id);
-      ctf_type_lname (*fp, id, buf, sizeof (buf));
-
-      if (!ctf_slice_details (*fp, id))
-	printf ("%s (size %lx)", buf[0] == '\0' ? "(nameless)" : buf,
-		ctf_type_size (*fp, id));
-
-      new_id = ctf_type_reference (*fp, id);
-      if (new_id != CTF_ERR)
-	printf (" ->");
-    } while (new_id != CTF_ERR);
-
-  if (ctf_errno (*fp) != ECTF_NOTREF)
-    {
-      printf ("%p: reference lookup error: %s\n",
-	      (void *) *fp, ctf_errmsg (ctf_errno (*fp)));
-      return 0;
-    }
-
-  printf ("\n");
-  ctf_type_visit (*fp, id, ctf_member_print, state);
-
-  return 0;
-}
-
-static int
-ctf_var_print (const char *name, ctf_id_t id, void *state)
-{
-  ctf_file_t **fp = state;
-  char buf[512];
-
-  ctf_type_lname (*fp, id, buf, sizeof (buf));
-  printf ("    %s -> ID %lx: %s\n", name, id, buf);
-  return 0;
-}
-
 static ctf_file_t *
 read_ctf (const char *file)
 {
@@ -200,63 +93,81 @@ read_ctf (const char *file)
   return (ctfp);
 }
 
-static void
-dump_ctf (const char *file, ctf_file_t *fp, int quiet)
+static char *indent_lines (ctf_sect_names_t sect _libctf_unused_,
+			   char *line, void *arg)
 {
-  const char *errmsg;
-  int err;
+  char *spaces = arg;
+  char *new_str;
+
+  if (asprintf(&new_str, "%s%s", spaces, line) < 0)
+    return line;
+  return new_str;
+}
+
+static void
+dump_ctf (const char *file, ctf_file_t *fp, int quiet, const char *one_section)
+{
+  const char *things[] = {"Labels", "Data objects", "Function objects",
+			  "Variables", "Types", "Strings", ""};
+  int i;
+  const char **thing;
 
   if (!quiet)
     printf ("\nCTF file: %s\n", file);
 
-  printf ("\n  Types: \n");
-  err = ctf_type_iter (fp, ctf_type_print, &fp);
-
-  if (err != 0)
+  for (i = 1, thing = things; *thing[0] ; thing++, i++)
     {
-      errmsg = "type";
-      goto err;
-    }
+      ctf_dump_state_t *s = NULL;
+      char *item;
 
-  printf ("\n  Variables: \n");
-  err = ctf_variable_iter (fp, ctf_var_print, &fp);
+      if (one_section && strcmp (one_section, *thing) != 0)
+	continue;
 
-  if (err != 0)
-    {
-      errmsg = "variable";
-      goto err;
+      printf ("\n  %s:\n", *thing);
+      while ((item = ctf_dump (fp, &s, i, indent_lines,
+			       (void *) "    ")) != NULL)
+	{
+	  printf ("%s\n", item);
+	  free (item);
+	}
+
+      if (ctf_errno (fp))
+	goto err;
     }
 
   return;
 
 err:
   fflush (stdout);
-  fprintf (stderr, "%s %s iteration failed: %s\n", file, errmsg,
-	   ctf_errmsg (err));
+  fprintf (stderr, "%s %s iteration failed: %s\n", file, *thing,
+	   ctf_errmsg (ctf_errno (fp)));
   exit (1);
 }
 
 static void
 usage (int argc _libctf_unused_, char *argv[])
 {
-  fprintf (stderr, "Syntax: %s [-p parent-ctf] -n ctf...\n\n", argv[0]);
+  fprintf (stderr, "Syntax: %s [-p parent-ctf] [-s section] q -n ctf...\n\n", argv[0]);
   fprintf (stderr, "-n: Do not dump parent's contents after loading.\n\n");
   fprintf (stderr, "-q: Quiet: do not dump the CTF filename.\n\n");
   fprintf (stderr, "-p is mandatory if any CTF files have parents.\n");
   fprintf (stderr, "If any CTF file has parents, all CTF files must have "
 	   "the same parent.\n");
+  fprintf (stderr, "-s NAME: only dump one section (names are the same as in the full output\n");
+  fprintf (stderr, "         e.g. \"Types\" or \"Data objects\".\n");
 }
 
 int
 main (int argc, char *argv[])
 {
   const char *parent = NULL;
+  const char *one_section = NULL;
   ctf_file_t *pfp = NULL;
   int opt;
   int skip_parent = 0;
   int quiet = 0;
 
-  while ((opt = getopt (argc, argv, "hnqp:")) != -1)
+  while ((opt = getopt (argc, argv, "hnqp:s:")) != -1)
     {
       switch (opt)
 	{
@@ -266,6 +177,9 @@ main (int argc, char *argv[])
 	case 'p':
 	  parent = optarg;
 	  pfp = read_ctf (parent);
+	  break;
+	case 's':
+	  one_section = optarg;
 	  break;
 	case 'q':
 	  quiet = 1;
@@ -279,7 +193,7 @@ main (int argc, char *argv[])
   char **name;
 
   if (pfp && !skip_parent)
-    dump_ctf (parent, pfp, quiet);
+    dump_ctf (parent, pfp, quiet, one_section);
 
   for (name = &argv[optind]; *name; name++)
     {
@@ -292,7 +206,7 @@ main (int argc, char *argv[])
       if (parent)
 	ctf_import (fp, pfp);
 
-      dump_ctf (*name, fp, quiet);
+      dump_ctf (*name, fp, quiet, one_section);
 
       sect = ctf_getdatasect (fp);
       ctf_close (fp);
