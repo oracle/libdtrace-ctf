@@ -70,6 +70,21 @@ ctf_list_delete (ctf_list_t *lp, void *existing)
     lp->l_prev = p->l_prev;
 }
 
+/* Convert a 32-bit ELF symbol into GElf (Elf64) and return a pointer to it.  */
+
+Elf64_Sym *
+ctf_sym_to_gelf (const Elf32_Sym *src, Elf64_Sym *dst)
+{
+  dst->st_name = src->st_name;
+  dst->st_value = src->st_value;
+  dst->st_size = src->st_size;
+  dst->st_info = src->st_info;
+  dst->st_other = src->st_other;
+  dst->st_shndx = src->st_shndx;
+
+  return dst;
+}
+
 /* Convert an encoded CTF string name into a pointer to a C string by looking
   up the appropriate string table buffer and then adding the offset.  */
 

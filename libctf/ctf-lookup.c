@@ -223,6 +223,40 @@ ctf_lookup_variable (ctf_file_t *fp, const char *name)
   return ent->ctv_type;
 }
 
+/* Given a symbol table index, return the name of that symbol from the secondary
+   symbol table, or the null string (never NULL).  */
+const char *
+ctf_lookup_symbol_name (ctf_file_t *fp, unsigned long symidx)
+{
+  const ctf_sect_t *sp = &fp->ctf_symtab;
+  Elf64_Sym sym, *gsp;
+
+  if (sp->cts_data == NULL)
+    {
+      ctf_set_errno (fp, ECTF_NOSYMTAB);
+      return _CTF_NULLSTR;
+    }
+
+  if (symidx >= fp->ctf_nsyms)
+    {
+      ctf_set_errno (fp, EINVAL);
+      return _CTF_NULLSTR;
+    }
+
+  if (sp->cts_entsize == sizeof (Elf32_Sym))
+    {
+      const Elf32_Sym *symp = (Elf32_Sym *) sp->cts_data + symidx;
+      gsp = ctf_sym_to_gelf (symp, &sym);
+    }
+  else
+      gsp = (Elf64_Sym *) sp->cts_data + symidx;
+
+  if (gsp->st_name < fp->ctf_str[CTF_STRTAB_1].cts_len)
+    return (const char *) fp->ctf_str[CTF_STRTAB_1].cts_strs + gsp->st_name;
+
+  return _CTF_NULLSTR;
+}
+
 /* Given a symbol table index, return the type of the data object described
    by the corresponding entry in the symbol table.  */
 

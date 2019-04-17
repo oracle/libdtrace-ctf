@@ -225,21 +225,6 @@ static const ctf_fileops_t ctf_fileops[] = {
   {get_kind_v2, get_root_v2, get_vlen_v2, get_ctt_size_v2, get_vbytes_v2},
 };
 
-/* Convert a 32-bit ELF symbol into GElf (Elf64) and return a pointer to it.  */
-
-static Elf64_Sym *
-sym_to_gelf (const Elf32_Sym *src, Elf64_Sym *dst)
-{
-  dst->st_name = src->st_name;
-  dst->st_value = src->st_value;
-  dst->st_size = src->st_size;
-  dst->st_info = src->st_info;
-  dst->st_other = src->st_other;
-  dst->st_shndx = src->st_shndx;
-
-  return dst;
-}
-
 /* Initialize the symtab translation table by filling each entry with the
   offset of the CTF type or function data corresponding to each STT_FUNC or
   STT_OBJECT entry in the symbol table.  */
@@ -268,7 +253,7 @@ init_symtab (ctf_file_t *fp, const ctf_header_t *hp,
   for (; xp < xend; xp++, symp += sp->cts_entsize)
     {
       if (sp->cts_entsize == sizeof (Elf32_Sym))
-	gsp = sym_to_gelf ((Elf32_Sym *) (uintptr_t) symp, &sym);
+	gsp = ctf_sym_to_gelf ((Elf32_Sym *) (uintptr_t) symp, &sym);
       else
 	gsp = (Elf64_Sym *) (uintptr_t) symp;
 

@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <ctype.h>
+#include <gelf.h>
 
 #ifdef	__cplusplus
 extern "C"
@@ -373,6 +374,9 @@ extern int ctf_type_kind_unsliced (ctf_file_t *, ctf_id_t);
 
 _libctf_printflike_ (1, 2)
 extern void ctf_dprintf (const char *, ...);
+
+extern Elf64_Sym *ctf_sym_to_gelf (const Elf32_Sym *src, Elf64_Sym *dst);
+extern const char *ctf_lookup_symbol_name (ctf_file_t *fp, unsigned long symidx);
 
 /* Variables, all underscore-prepended. */
 
