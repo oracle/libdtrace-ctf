@@ -1051,7 +1051,9 @@ flip_types (void *start, size_t len)
 	    uint32_t *item = (uint32_t *) t;
 
 	    swap_thing (*item);
+	    break;
 	  }
+
 	case CTF_K_FUNCTION:
 	  {
 	    /* This type has a bunch of uint32_ts.  */
