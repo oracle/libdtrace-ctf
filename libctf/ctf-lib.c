@@ -481,7 +481,7 @@ ctf_version (int version)
   if (version > 0)
     {
       /*  Dynamic version switching is not presently supported. */
-      if (version != CTF_VERSION_2)
+      if (version != CTF_VERSION)
 	{
 	  errno = ENOTSUP;
 	  return -1;
