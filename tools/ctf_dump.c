@@ -99,7 +99,7 @@ static char *indent_lines (ctf_sect_names_t sect _libctf_unused_,
   char *spaces = arg;
   char *new_str;
 
-  if (asprintf(&new_str, "%s%s", spaces, line) < 0)
+  if (asprintf (&new_str, "%s%s", spaces, line) < 0)
     return line;
   return new_str;
 }
