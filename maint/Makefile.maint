@@ -2,6 +2,8 @@
 .PHONY: all gnu dir include src _subst __one_subst
 .SILENT:
 
+SHELL=/bin/bash
+
 topdir := $(shell pwd)
 
 all:
