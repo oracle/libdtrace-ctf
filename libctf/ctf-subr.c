@@ -50,7 +50,7 @@ ctf_strerror (int err)
 }
 
 _libctf_printflike_ (1, 2)
-     void ctf_dprintf (const char *format, ...)
+void ctf_dprintf (const char *format, ...)
 {
   if (_libctf_debug)
     {
