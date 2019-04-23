@@ -138,13 +138,14 @@ ctf_fdopen (int fd, int *errp)
   if ((size_t) nbytes >= sizeof (ctf_preamble_t) &&
       hdr.ctf.ctp_magic == CTF_MAGIC)
     {
+      void *data;
+
       if (hdr.ctf.ctp_version > CTF_VERSION)
 	return (ctf_set_open_errno (errp, ECTF_CTFVERS));
 
-      ctfsect.cts_data = mmap (NULL, st.st_size, PROT_READ,
-			       MAP_PRIVATE, fd, 0);
+      data = mmap (NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 
-      if (ctfsect.cts_data == MAP_FAILED)
+      if (data == MAP_FAILED)
 	return (ctf_set_open_errno (errp, errno));
 
       ctfsect.cts_name = _CTF_SECTION;
@@ -154,7 +155,8 @@ ctf_fdopen (int fd, int *errp)
       ctfsect.cts_entsize = 1;
       ctfsect.cts_offset = 0;
 
-      if ((fp = ctf_bufopen (&ctfsect, NULL, NULL, errp)) == NULL)
+      if ((fp = ctf_simple_open (data, (size_t) st.st_size, NULL, 0, 0,
+				 NULL, 0, errp)) == NULL)
 	ctf_sect_munmap (&ctfsect);
 
       return fp;

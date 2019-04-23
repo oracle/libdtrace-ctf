@@ -213,7 +213,6 @@ ctf_update (ctf_file_t *fp)
   ctf_dtdef_t *dtd;
   ctf_dvdef_t *dvd;
   ctf_varent_t *dvarents;
-  ctf_sect_t cts;
 
   unsigned char *s, *s0, *t;
   unsigned long i;
@@ -440,15 +439,8 @@ ctf_update (ctf_file_t *fp)
      is successful, we then switch nfp and fp and free the old container.  */
 
   ctf_data_protect (buf, buf_size);
-  cts.cts_name = _CTF_SECTION;
-  cts.cts_type = SHT_PROGBITS;
-  cts.cts_flags = 0;
-  cts.cts_data = buf;
-  cts.cts_size = buf_size;
-  cts.cts_entsize = 1;
-  cts.cts_offset = 0;
 
-  if ((nfp = ctf_bufopen (&cts, NULL, NULL, &err)) == NULL)
+  if ((nfp = ctf_simple_open (buf, buf_size, NULL, 0, 0, NULL, 0, &err)) == NULL)
     {
       ctf_data_free (buf, buf_size);
       return (ctf_set_errno (fp, err));

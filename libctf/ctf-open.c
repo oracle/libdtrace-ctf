@@ -1169,6 +1169,54 @@ flip_ctf (ctf_header_t *cth, unsigned char *base)
   return flip_types (base + cth->cth_typeoff, cth->cth_stroff - cth->cth_typeoff);
 }
 
+/* Open a CTF file, mocking up a suitable ctf_sect.  */
+ctf_file_t *ctf_simple_open (const char *ctfsect, size_t ctfsect_size,
+			     const char *symsect, size_t symsect_size,
+			     size_t symsect_entsize,
+			     const char *strsect, size_t strsect_size,
+			     int *errp)
+{
+  ctf_sect_t skeleton;
+
+  ctf_sect_t ctf_sect, sym_sect, str_sect;
+  ctf_sect_t *ctfsectp = NULL;
+  ctf_sect_t *symsectp = NULL;
+  ctf_sect_t *strsectp = NULL;
+
+  skeleton.cts_name = _CTF_SECTION;
+  skeleton.cts_type = SHT_PROGBITS;
+  skeleton.cts_flags = 0;
+  skeleton.cts_entsize = 1;
+  skeleton.cts_offset = 0;
+
+  if (ctfsect)
+    {
+      memcpy (&ctf_sect, &skeleton, sizeof (struct ctf_sect));
+      ctf_sect.cts_data = ctfsect;
+      ctf_sect.cts_size = ctfsect_size;
+      ctfsectp = &ctf_sect;
+    }
+
+  if (symsect)
+    {
+      memcpy (&sym_sect, &skeleton, sizeof (struct ctf_sect));
+      sym_sect.cts_data = symsect;
+      sym_sect.cts_size = symsect_size;
+      sym_sect.cts_entsize = symsect_entsize;
+      symsectp = &sym_sect;
+    }
+
+  if (strsect)
+    {
+      memcpy (&str_sect, &skeleton, sizeof (struct ctf_sect));
+      str_sect.cts_data = strsect;
+      str_sect.cts_size = strsect_size;
+      strsectp = &str_sect;
+    }
+
+  return ctf_bufopen (ctfsectp, symsectp, strsectp, errp);
+}
+
 /* Decode the specified CTF buffer and optional symbol table and create a new
    CTF container representing the symbolic debugging information.  This code
    can be used directly by the debugger, or it can be used as the engine for

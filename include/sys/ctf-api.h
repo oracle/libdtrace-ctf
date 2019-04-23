@@ -211,6 +211,8 @@ typedef char *ctf_dump_decorate_f (ctf_sect_names_t sect,
 
 typedef struct ctf_dump_state ctf_dump_state_t;
 
+extern ctf_file_t *ctf_simple_open (const char *, size_t, const char *, size_t,
+				   size_t, const char *, size_t, int *);
 extern ctf_file_t *ctf_bufopen (const ctf_sect_t *, const ctf_sect_t *,
 				const ctf_sect_t *, int *);
 extern ctf_file_t *ctf_fdopen (int, int *);

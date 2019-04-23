@@ -58,6 +58,9 @@ The new function ctf_type_aname() is like ctf_type_name() and ctf_type_lname()
 except that it returns the new type name in a dynamically-allocated string that
 the caller must free, and never truncates it.
 
+The new function ctf_simple_open() is useful if you want to pass in buffers
+to ctf_bufopen() without having to mock up an entire ctf_symtab.
+
 
 1.1.0
 -----

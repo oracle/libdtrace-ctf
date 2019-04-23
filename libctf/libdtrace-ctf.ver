@@ -140,4 +140,5 @@ LIBDTRACE_CTF_1.6 {
 	ctf_add_member_encoded;
 	ctf_type_aname;
 	ctf_dump;
+	ctf_simple_open;
 } LIBDTRACE_CTF_1.5;
