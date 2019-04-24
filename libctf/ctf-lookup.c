@@ -224,7 +224,7 @@ ctf_lookup_variable (ctf_file_t *fp, const char *name)
 }
 
 /* Given a symbol table index, return the name of that symbol from the secondary
-   symbol table, or the null string (never NULL).  */
+   string table, or the null string (never NULL).  */
 const char *
 ctf_lookup_symbol_name (ctf_file_t *fp, unsigned long symidx)
 {
