@@ -363,8 +363,8 @@ union
 #define CTF_K_POINTER	3	/* ctt_type is referenced type.  */
 #define CTF_K_ARRAY	4	/* Variant data is single ctf_array_t.  */
 #define CTF_K_FUNCTION	5	/* ctt_type is return type, variant data is
-       				   list of argument types (unsigned short's for v1,
-       				   uint32_t's for v2).  */
+				   list of argument types (unsigned short's for v1,
+				   uint32_t's for v2).  */
 #define CTF_K_STRUCT	6	/* Variant data is list of ctf_member_t's.  */
 #define CTF_K_UNION	7	/* Variant data is list of ctf_member_t's.  */
 #define CTF_K_ENUM	8	/* Variant data is list of ctf_enum_t's.  */

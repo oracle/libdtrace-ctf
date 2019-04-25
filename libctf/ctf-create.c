@@ -1833,7 +1833,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	if (dst_type != CTF_ERR && dst_kind != CTF_K_FORWARD)
 	  {
 	    if (ctf_type_size (src_fp, src_type) !=
-	 	ctf_type_size (dst_fp, dst_type))
+		ctf_type_size (dst_fp, dst_type))
 	      {
 		ctf_dprintf ("Conflict for type %s against ID %lx: "
 			     "union size differs, old %li, new %li\n",

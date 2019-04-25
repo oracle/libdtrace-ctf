@@ -410,7 +410,7 @@ ctf_dump_type (ctf_id_t id, void *arg)
   len = strlen (str);
   if (str[len-1] == '\n')
     str[len-1] = '\0';
-    
+
   ctf_dump_append (state, str);
   return 0;
 
