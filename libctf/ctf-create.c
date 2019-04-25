@@ -196,15 +196,15 @@ ctf_sort_var (const void *one_, const void *two_, void *strtab_)
    container with the updated type definitions.  In order to make this code and
    the rest of libctf as simple as possible, we perform updates by taking the
    dynamic type definitions and creating an in-memory CTF file containing the
-   definitions, and then call ctf_bufopen() on it.  This not only leverages
-   ctf_bufopen(), but also avoids having to bifurcate the rest of the library
+   definitions, and then call ctf_simple_open() on it.  This not only leverages
+   ctf_simple_open(), but also avoids having to bifurcate the rest of the library
    code with different lookup paths for static and dynamic type definitions.  We
    are therefore optimizing greatly for lookup over update, which we assume will
    be an uncommon operation.  We perform one extra trick here for the benefit of
-   callers and to keep our code simple: ctf_bufopen() will return a new
+   callers and to keep our code simple: ctf_simple_open() will return a new
    ctf_file_t, but we want to keep the fp constant for the caller, so after
-   ctf_bufopen() returns, we use memcpy to swap the interior of the old and new
-   ctf_file_t's, and then free the old.  */
+   ctf_simple_open() returns, we use memcpy to swap the interior of the old and
+   new ctf_file_t's, and then free the old.  */
 int
 ctf_update (ctf_file_t *fp)
 {
@@ -435,7 +435,7 @@ ctf_update (ctf_file_t *fp)
     }
   assert (t == (unsigned char *) buf + sizeof (ctf_header_t) + hdr.cth_stroff);
 
-  /* Finally, we are ready to ctf_bufopen() the new container.  If this
+  /* Finally, we are ready to ctf_simple_open() the new container.  If this
      is successful, we then switch nfp and fp and free the old container.  */
 
   ctf_data_protect (buf, buf_size);
