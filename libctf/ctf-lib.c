@@ -7,10 +7,10 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
+#include <ctf-impl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <ctf-impl.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>

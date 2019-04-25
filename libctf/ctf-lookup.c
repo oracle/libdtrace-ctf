@@ -7,9 +7,9 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
+#include <ctf-impl.h>
 #include <gelf.h>
 #include <string.h>
-#include <ctf-impl.h>
 
 /* Compare the given input string and length against a table of known C storage
    qualifier keywords.  We just ignore these in ctf_lookup_by_name, below.  To

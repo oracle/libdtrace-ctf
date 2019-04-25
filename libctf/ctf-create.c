@@ -7,12 +7,12 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
+#include <ctf-impl.h>
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <assert.h>
 #include <gelf.h>
 #include <string.h>
-#include <ctf-impl.h>
 
 /* To create an empty CTF container, we just declare a zeroed header and call
    ctf_bufopen() on it.  If ctf_bufopen succeeds, we mark the new container r/w

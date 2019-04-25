@@ -7,11 +7,11 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
+#include <ctf-impl.h>
 #include <string.h>
 #include <sys/types.h>
 #include <assert.h>
 #include <gelf.h>
-#include <ctf-impl.h>
 #include <sys/mman.h>
 #include <byteswap.h>
 #include <zlib.h>

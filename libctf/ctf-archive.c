@@ -7,6 +7,7 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
+#include <ctf-impl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,8 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <ctf-impl.h>
 
 static off_t arc_write_one_ctf (ctf_file_t * f, int fd, size_t threshold);
 static ctf_file_t *ctf_arc_open_by_offset (const ctf_archive_t * arc,

@@ -10,6 +10,7 @@
 #ifndef	_CTF_IMPL_H
 #define	_CTF_IMPL_H
 
+#include "config.h"
 #include <sys/errno.h>
 #include <sys/ctf-api.h>
 #include <sys/types.h>

@@ -9,8 +9,8 @@
 
    Not synced with GNU.  */
 
-#include <string.h>
 #include <ctf-impl.h>
+#include <string.h>
 #include <glib.h>
 
 /* We have two hashtable implementations: one, ctf_dynhash_*(), is an interface to

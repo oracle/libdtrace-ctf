@@ -7,8 +7,8 @@
    Licensed under the GNU General Public License (GPL), version 2. See the file
    COPYING in the top level of this tree.  */
 
-#include <string.h>
 #include <ctf-impl.h>
+#include <string.h>
 
 /* Simple doubly-linked list append routine.  This implementation assumes that
    each list element contains an embedded ctf_list_t as the first member.
