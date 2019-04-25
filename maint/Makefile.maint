@@ -14,7 +14,7 @@ all:
 HEADERS := include/sys/ctf.h include/sys/ctf-api.h
 
 gnu: dir include src
-	git show-ref -s --head HEAD > $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR))
+	git show-ref --verify -s --head HEAD > $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR))
 
 gnu-warnings:
 	$(MAKE) clean
