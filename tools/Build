@@ -7,7 +7,7 @@
 # COPYING in the top level of this tree.
 
 CMDS += ctf_dump ctf_ar
-CPPFLAGS = -Ilibctf -Iinclude
+CPPFLAGS += -Ilibctf
 
 ctf_dump_TARGET = ctf_dump
 ctf_dump_DIR := $(current-dir)
