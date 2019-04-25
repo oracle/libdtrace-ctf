@@ -3,6 +3,7 @@
 .SILENT:
 
 SHELL=/bin/bash
+OUTFILE=$(FILE)
 
 topdir := $(shell pwd)
 
@@ -46,13 +47,13 @@ _subst:
 			topdir=$(topdir) OUT=$(topdir)/maint/.old; \
 	fi
 
-	mkdir -p $(GNU_DIR)/$(dir $(FILE))
-	if [[ -e $(topdir)/maint/.old ]] && [[ -e $(GNU_DIR)/$(FILE) ]] && \
-	   ! cmp -s $(topdir)/maint/.old $(GNU_DIR)/$(FILE); then \
-		echo "WARNING: $(GNU_DIR)/$(FILE): changed in GNU tree, needs manual sync" >&2; \
+	mkdir -p $(GNU_DIR)/$(dir $(OUTFILE))
+	if [[ -e $(topdir)/maint/.old ]] && [[ -e $(GNU_DIR)/$(OUTFILE) ]] && \
+	   ! cmp -s $(topdir)/maint/.old $(GNU_DIR)/$(OUTFILE); then \
+		echo "WARNING: $(GNU_DIR)/$(OUTFILE): changed in GNU tree, needs manual sync" >&2; \
 	else \
 		cat $(FILE) | $(MAKE) -f $(topdir)/maint/Makefile.maint \
-			__one_subst topdir=$(topdir) OUT=$(GNU_DIR)/$(FILE); \
+			__one_subst topdir=$(topdir) OUT=$(GNU_DIR)/$(OUTFILE); \
 	fi
 	rm -f $(topdir)/maint/.old
 	printf "SYNC %s\n" "$(FILE)"
