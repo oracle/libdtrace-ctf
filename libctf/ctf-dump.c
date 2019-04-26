@@ -487,25 +487,25 @@ ctf_dump (ctf_file_t *fp, ctf_dump_state_t **statep, ctf_sect_names_t sect,
 	  if (ctf_label_iter (fp, ctf_dump_label, state) < 0)
 	    {
 	      if (ctf_errno (fp) != ECTF_NOLABELDATA)
-		goto end;		/* errno is set for us */
+		goto end;		/* errno is set for us.  */
 	      ctf_set_errno (fp, 0);
 	    }
 	  break;
 	case CTF_SECT_OBJT:
 	  if (ctf_dump_objts (fp, state) < 0)
-	    goto end;			/* errno is set for us */
+	    goto end;			/* errno is set for us.  */
 	  break;
 	case CTF_SECT_FUNC:
 	  if (ctf_dump_funcs (fp, state) < 0)
-	    goto end;			/* errno is set for us */
+	    goto end;			/* errno is set for us.  */
 	  break;
 	case CTF_SECT_VAR:
 	  if (ctf_variable_iter (fp, ctf_dump_var, state) < 0)
-	    goto end;			/* errno is set for us */
+	    goto end;			/* errno is set for us.  */
 	  break;
 	case CTF_SECT_TYPE:
 	  if (ctf_type_iter (fp, ctf_dump_type, state) < 0)
-	    goto end;			/* errno is set for us */
+	    goto end;			/* errno is set for us.  */
 	  break;
 	case CTF_SECT_STR:
 	  ctf_dump_str (fp, state);
@@ -548,7 +548,7 @@ ctf_dump (ctf_file_t *fp, ctf_dump_state_t **statep, ctf_sect_names_t sect,
 
 	  nline = strchr (line, '\n');
 	  if (nline)
-	      nline[0] = '\0';
+	    nline[0] = '\0';
 
 	  ret = func (sect, line, arg);
 	  str = ctf_str_append (str, ret);
