@@ -415,12 +415,6 @@ union
 /* Variant data when kind is CTF_K_FLOAT is an encoding in the top eight bits.  */
 #define CTF_FP_ENCODING(data)	(((data) & 0xff000000) >> 24)
 
-#ifndef NO_COMPAT
-/* v1 and v2 encode the redundant offset and bits value here too.  */
-#define CTF_FP_OFFSET(data)	(((data) & 0x00ff0000) >> 16)
-#define CTF_FP_BITS(data)	(((data) & 0x0000ffff))
-#endif
-
 #define CTF_FP_SINGLE	1	/* IEEE 32-bit float encoding.  */
 #define CTF_FP_DOUBLE	2	/* IEEE 64-bit float encoding.  */
 #define CTF_FP_CPLX	3	/* Complex encoding.  */
