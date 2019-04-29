@@ -1,0 +1,303 @@
+CTF FILE FORMAT
+---------------
+
+Format: v2 + slices (current v3, trunk pre-1.2)
+
+A CTF file ("container", since it is usually not a file, but an ELF section or
+something or that sort) is divided into a number of sections internally,
+identified by offset from the header. In order, the sections are:
+
+ - Type label section
+ - Data object section
+ - Function info section
+ - Variable info section
+ - Data type section
+ - String table
+
+We'll consider these in order of importance (not the same as order in the file).
+
+Other things in the header:
+  - a preamble containing a magic number (used to determine container
+    endianness: libctf will endian-flip foreign-endian containers into the
+    native endianness at open time), a version number, whose current value is
+    the CTF_VERSION constant, and a set of CTF_F global flags
+  - a parent container name and label, which indicates (in some
+    consumer-dependent way) the name of the container containing types whose ID
+    has its MSB turned on (the "parent container"): it is only nonzero if this
+    container is not itself a parent.  This allows types to be shared between
+    containers: with one container being the parent of potentially many others.
+    (The parent label has space allocated in the header, but is not used by any
+    code in libctf at present.)
+
+This does mean that a container cannot be used both as a parent and as a child
+container at the same time, because type IDs referring to types within the same
+container will have their MSB turned on if this was constructed as a parent
+container.  While there is a parent name and parent label in the header, it is
+purely up to the CTF consumer and convention how this is interpreted: neither
+libctf nor the format prohibits ctf_import()ing any container at all as a parent
+container, though you should in general import the same parent at consumption
+time as you did when you generated the container, or things wil misbehave.
+
+
+Data type section
+-----------------
+
+This is the core section in a CTF file, an array of variable-length entries,
+each entry a struct ctf_stype or struct ctf_type followed by optional
+variable-length data.  Each array index is transformed into a type ID by
+flipping on the MSB iff this is a parent type container.  These type IDs are how
+types are referenced within CTF containers.  The ID of each type is not stored
+witih the type, but is implied by its array index.
+
+The ctf_type_t and ctf_stype_t act as a discriminated union with an identical
+first few members:
+
+typedef struct ctf_stype
+{
+  uint32_t ctt_name;		/* Reference to name in string table.  */
+  uint32_t ctt_info;		/* Encoded kind, variant length (see below).  */
+  union
+  {
+    uint32_t ctt_size;		/* Size of entire type in bytes.  */
+    uint32_t ctt_type;		/* Reference to another type.  */
+  };
+} ctf_stype_t;
+
+All types are represented by an instance of one of these structures: ctt_name is
+0 for unnamed types, while ctt_info is a tiny bitfielded structure accessed via
+masking:
+
+               ------------------------
+   ctt_info:   | kind | isroot | vlen |
+               ------------------------
+               31    26    25  24     0
+where
+
+kind: a CTF_K_* constant indicating whether this type is an int, a float, an array,
+      a pointer, a structure or what-have-you (see below)
+isroot: is 1 if this type has a name, 0 otherwise
+vlen: the length of a kind-specific variable data region ("variant data") which
+      immediately follows the ctf_stype or ctf_type structure, and contains 
+      type-kind-specific properties (array length, an array of structure
+      members, or whatever). The data in the vlen region is the closest thing to
+      most of the attributes used by DWARF to describe types.  In general, only
+      kinds for which the vlen is actually variable can be trusted to have
+      useful values in this field: for all other kinds, the vlen is meaningless
+      and is usually hardwwiired for that kind where needed.  ctf.h defines the
+      currently-valid set of kinds:
+
+#define CTF_K_UNKNOWN	0	/* Unknown type (used for padding).  */
+#define CTF_K_INTEGER	1	/* Variant data is CTF_INT_DATA (see below).  */
+#define CTF_K_FLOAT	2	/* Variant data is CTF_FP_DATA (see below).  */
+#define CTF_K_POINTER	3	/* ctt_type is referenced type.  */
+#define CTF_K_ARRAY	4	/* Variant data is single ctf_array_t.  */
+#define CTF_K_FUNCTION	5	/* ctt_type is return type, variant data is
+				   list of argument types (unsigned short's for v1,
+				   uint32_t's for v2).  */
+#define CTF_K_STRUCT	6	/* Variant data is list of ctf_member_t's.  */
+#define CTF_K_UNION	7	/* Variant data is list of ctf_member_t's.  */
+#define CTF_K_ENUM	8	/* Variant data is list of ctf_enum_t's.  */
+#define CTF_K_FORWARD	9	/* No additional data; ctt_name is tag.  */
+#define CTF_K_TYPEDEF	10	/* ctt_type is referenced type.  */
+#define CTF_K_VOLATILE	11	/* ctt_type is base type.  */
+#define CTF_K_CONST	12	/* ctt_type is base type.  */
+#define CTF_K_RESTRICT	13	/* ctt_type is base type.  */
+#define CTF_K_SLICE	14	/* Variant data is a ctf_slice_t.  */
+
+#define CTF_K_MAX	63	/* Maximum possible (V2) CTF_K_* value.  */
+
+Most of these obviously relate directly to specific C types: the only strange
+one is 'slice', which allows you to take an integral type and modify its
+bitness, for easy construction of bitfields (a slice of a CTF_K_ENUM is the only
+way to specify an enum bitfield).
+
+
+Looking at the rest of the ctf_stype_t, the ctt_size / ctt_type union is a trick
+to reduce sizes. Most type-kinds that refer to another type (like pointers, or
+cv-quals) have a fixed size, defined by the platform ABI (libctf calls this the
+'machine model'): most types that have a variable size do not refer to another
+type: all the most voluminous type kinds either do one or the other. So the
+ctt_size / ctt_type contains whichever of these is applicable to the type in
+question. (A few kinds, like structures or function pointers, refer to more than
+one type ID: in this case, relevant type IDs are carried in the vlen data.)
+
+For very large types the ctf_stype is not enough: the size of types can exceed
+that representable by a uint32_t.  For these, we use a ctf_type_t instead:
+
+typedef struct ctf_type
+{
+  uint32_t ctt_name;		/* Reference to name in string table.  */
+  uint32_t ctt_info;		/* Encoded kind, variant length (see below).  */
+  union
+  {
+    uint32_t ctt_size;		/* Always CTF_LSIZE_SENT.  */
+    uint32_t ctt_type;		/* Do not use.  */
+  };
+  uint32_t ctt_lsizehi;		/* High 32 bits of type size in bytes.  */
+  uint32_t ctt_lsizelo;		/* Low 32 bits of type size in bytes.  */
+} ctf_type_t;
+
+As noted above, this overlays on top of the ctf_stype_t, so almost all code can
+just deal directly with whichever it prefers and check ctt_size to see if this
+is a ctf_type or ctf_stype. You distinguish a ctf_type_t from a ctf_stype_t
+because ctf_type_t has ctt_size == CTF_LSIZE_SENT (which is an invalid value for
+a type ID).
+
+Structure members use a similar trick. Almost all the time, the size of the
+structure (the ctt_size) is less than 2^32 bytes, and the variable data is an
+array of ctf_member_t's:
+
+typedef struct ctf_member_v2
+{
+  uint32_t ctm_name;		/* Reference to name in string table.  */
+  uint32_t ctm_offset;		/* Offset of this member in bits.  */
+  uint32_t ctm_type;		/* Reference to type of member.  */
+} ctf_member_t;
+
+But if the structure is really huge (above CTF_LSTRUCT_THRESH bytes in length),
+the ctt_size overflows the range of the ctm_offset, and every member in this
+structure is instead described by the larger ctf_lmember_t:
+
+typedef struct ctf_lmember_v2
+{
+  uint32_t ctlm_name;		/* Reference to name in string table.  */
+  uint32_t ctlm_offsethi;	/* High 32 bits of member offset in bits.  */
+  uint32_t ctlm_type;		/* Reference to type of member.  */
+  uint32_t ctlm_offsetlo;	/* Low 32 bits of member offset in bits.  */
+} ctf_lmember_t;
+
+Unions are identical, and you can represent unnamed structure and union fields
+as well with no extensions, by just adding members at the appropriate bit offset
+in the containing struct/union (which is how unnamed structs/unions appear to
+the programmer, and thus how they should appear to debuggers).
+
+
+Structure members show the general theme for variant data: in most cases, the
+variant data is some sort of structure, or an array of structures, or is not
+present at all (things like typedefs don't have one): but function types, and
+integral and floating-point types, use different sorts of vlen.  Function types
+use a list of argument types with vlen / sizeof (uint32_t) members, with the
+ctt_type being the return type; integer and floating-point types use flags
+packed into a single uint32_t in the variant data encoding things like format,
+bitness, etc:
+
+#define CTF_INT_ENCODING(data) (((data) & 0xff000000) >> 24)
+#define CTF_INT_OFFSET(data)   (((data) & 0x00ff0000) >> 16)
+#define CTF_INT_BITS(data)     (((data) & 0x0000ffff))
+
+#define CTF_INT_DATA(encoding, offset, bits) \
+       (((encoding) << 24) | ((offset) << 16) | (bits))
+
+#define CTF_INT_SIGNED	0x01	/* Integer is signed (otherwise unsigned).  */
+#define CTF_INT_CHAR	0x02	/* Character display format.  */
+#define CTF_INT_BOOL	0x04	/* Boolean display format.  */
+#define CTF_INT_VARARGS	0x08	/* Varargs display format.  */
+
+Or, for floats:
+
+#define CTF_FP_ENCODING(data)  (((data) & 0xff000000) >> 24)
+#define CTF_FP_OFFSET(data)    (((data) & 0x00ff0000) >> 16)
+#define CTF_FP_BITS(data)      (((data) & 0x0000ffff))
+
+#define CTF_FP_DATA(encoding, offset, bits) \
+       (((encoding) << 24) | ((offset) << 16) | (bits))
+
+/* Variant data when kind is CTF_K_FLOAT is an encoding in the top eight bits.  */
+#define CTF_FP_ENCODING(data)	(((data) & 0xff000000) >> 24)
+
+#define CTF_FP_SINGLE	1	/* IEEE 32-bit float encoding.  */
+#define CTF_FP_DOUBLE	2	/* IEEE 64-bit float encoding.  */
+#define CTF_FP_CPLX	3	/* Complex encoding.  */
+#define CTF_FP_DCPLX	4	/* Double complex encoding.  */
+#define CTF_FP_LDCPLX	5	/* Long double complex encoding.  */
+#define CTF_FP_LDOUBLE	6	/* Long double encoding.  */
+#define CTF_FP_INTRVL	7	/* Interval (2x32-bit) encoding.  */
+#define CTF_FP_DINTRVL	8	/* Double interval (2x64-bit) encoding.  */
+#define CTF_FP_LDINTRVL	9	/* Long double interval (2x128-bit) encoding.  */
+#define CTF_FP_IMAGRY	10	/* Imaginary (32-bit) encoding.  */
+#define CTF_FP_DIMAGRY	11	/* Long imaginary (64-bit) encoding.  */
+#define CTF_FP_LDIMAGRY	12	/* Long double imaginary (128-bit) encoding.  */
+
+#define CTF_FP_MAX	12	/* Maximum possible CTF_FP_* value */
+
+Some of the formats, particularly in the floating-point realm, are somewhat
+debatable, and we hope for discussion of what formats are appropriate (C99
+complex types appear to be provided for, but not much else).
+
+It is notable that there are two redundant ways to encode the bitness of
+bitfield types, and three redundant ways to encode their offset: you can put
+either directly into the encoding, or put it into a slice, or specify the offset
+via bit-specific values in the containing structure or union. libctf hides as
+much of this as possible by making it appear that slices are the same kind as
+the kind they point to, contributing only an encoding: the only difference
+between the slice and its underlying type is that you can call
+ctf_type_reference() on the slice to get that underlying type, which you cannot
+do on an int.
+
+(In the header alone, but not in the data format, there is an additional
+feature: the CTF_CHAR macro is an integral type of the same signedness as the
+build target's char type, turning on CTF_INT_SIGNED, nor not, appropriately.)
+
+
+Function info and data object sections
+--------------------------------------
+
+These two sections, taken together, map 1:1 to the symbols of type STT_OBJECT
+and STT_FUNC in an ELF symbol table (usually the symbol table in the ELF object
+in which the CTF section is embedded). It is generated by traversing the symbol
+table, and whenever a suitable symbol is encountered, adding an entry for it
+to the data object or function info sections, depending on whether this is a
+STT_OBJECT or STT_FUNC symbol.
+
+Both producer and consumer must agree on the definition of 'suitable', since
+there is no cross-checking here, and if even one symbol is treated differently,
+all symbols following it will be misattributed.
+
+For both STT_FUNC and STT_OBJECT symbols, symbols that have a name that _START_
+or _END_ or that is SHN_UNDEF are omitted; for STT_OBJECT symbols, we further
+omit zero-valued SHN_ABS symbols.
+
+The data object section is an array of type IDs, one entry per suitable entry in
+the symbol table: each type ID is the type of the corresponding symbol.
+
+The function object section is an array of things that (if they were in
+structures rather than just a stream of bytes) would look fairly similar to the
+variant data for CTF_K_FUNCTION types, described above:
+
+uint32_t ctt_info; # vlen is number of args
+ctf_id_t ctc_return;
+ctf_id_t args[vlen];
+
+If the last arg is zero, this is a varargs function, and libctf will flip on the
+CTF_FUNC_VARARG flag in the funcinfo on return.
+
+
+Variable info section
+---------------------
+
+This is a very simple section, an array of ctf_varent_t sorted in ascending
+strcmp() order by ctv_name.  It is used for systems in which there is nothing
+resembling a string table, in which address -> name lookup for data objects is
+done by machinery outside the purview of CTF, and the caller wants to resolve
+string names to types.  This covers data objects only: there is currently
+nothing resembling the function info section with manual lookup like this.
+
+
+Label section
+-------------
+
+This section is an array of ctf_lblent, which can be used to tile the type space
+into named regions.  It might be useful for parallel deduplicators, or to have
+distinct parent containers for different regions of the type space (with names
+denoted by the label), or such things.
+
+
+String table
+------------
+
+This is a perfectly normal ELF string table, with a first entry which is simply
+\0 (so unnamed items can be denoted by the integer 0): it is specific to the CTF
+contianer alone.  String table references in CTF have an MSB which, when 1
+(CTF_STRTAB_1), means to use a specific ELF string table (usually the one
+accompanying the symbol table used for the function info and data object
+sections).
