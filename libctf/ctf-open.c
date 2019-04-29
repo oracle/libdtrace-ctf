@@ -240,7 +240,7 @@ init_symtab (ctf_file_t *fp, const ctf_header_t *hp,
   uint32_t objtoff = hp->cth_objtoff;
   uint32_t funcoff = hp->cth_funcoff;
 
-  unsigned short info, vlen;
+  uint32_t info, vlen;
   Elf64_Sym sym, *gsp;
   const char *name;
 
