@@ -15,7 +15,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <dlfcn.h>
 #include <endian.h>
 #include <gelf.h>
 #include <zlib.h>
