@@ -340,6 +340,9 @@ extern int ctf_write (ctf_file_t *, int);
 extern int ctf_gzwrite (ctf_file_t * fp, gzFile fd);
 extern int ctf_compress_write (ctf_file_t * fp, int fd);
 
+extern void ctf_setdebug (int debug);
+extern int ctf_getdebug (void);
+
 #ifdef	__cplusplus
 }
 #endif

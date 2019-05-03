@@ -32,6 +32,7 @@ ctf_create (int *errp)
   ctf_sect_t cts;
   ctf_file_t *fp;
 
+  libctf_init_debug();
   dthash = ctf_dynhash_create (ctf_hash_integer, ctf_hash_eq_integer,
 			       NULL, NULL);
   if (dthash == NULL)

@@ -24,13 +24,25 @@
 static size_t _PAGESIZE;
 static size_t _PAGEMASK;
 
-_libctf_constructor_(_libctf_init)
-static void _libctf_init (void)
+static void
+maybe_init_pagemask (void)
 {
-  _libctf_debug = getenv ("LIBCTF_DEBUG") != NULL;
+  if (_PAGESIZE == 0)
+    {
+      _PAGESIZE = getpagesize();
+      _PAGEMASK = ~(_PAGESIZE - 1);
+    }
+}
 
-  _PAGESIZE = getpagesize ();
-  _PAGEMASK = ~(_PAGESIZE - 1);
+void
+libctf_init_debug (void)
+{
+  static int inited;
+  if (!inited)
+    {
+      _libctf_debug = getenv ("LIBCTF_DEBUG") != NULL;
+      inited = 1;
+    }
 }
 
 /* Convert a 32-bit ELF file header into GElf.  */
@@ -80,6 +92,8 @@ shdr_to_gelf (const Elf32_Shdr *src, GElf_Shdr *dst)
 const void *
 ctf_sect_mmap (ctf_sect_t *sp, int fd)
 {
+  maybe_init_pagemask();
+
 #ifdef HAVE_MMAP
   size_t pageoff = sp->cts_offset & ~_PAGEMASK;
 
@@ -100,6 +114,8 @@ ctf_sect_mmap (ctf_sect_t *sp, int fd)
 void
 ctf_sect_munmap (const ctf_sect_t *sp)
 {
+  maybe_init_pagemask();
+
 #ifdef HAVE_MMAP
   uintptr_t addr = (uintptr_t) sp->cts_data;
   uintptr_t pageoff = addr & ~_PAGEMASK;
@@ -134,6 +150,9 @@ ctf_fdopen (int fd, int *errp)
   memset (&symsect, 0, sizeof (ctf_sect_t));
   memset (&strsect, 0, sizeof (ctf_sect_t));
   memset (&hdr.ctf, 0, sizeof (hdr));
+
+  libctf_init_debug();
+  maybe_init_pagemask();
 
   if (fstat (fd, &st) == -1)
     return (ctf_set_open_errno (errp, errno));

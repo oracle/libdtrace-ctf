@@ -1233,6 +1233,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   int foreign_endian = 0;
   int err;
 
+  libctf_init_debug();
   if (ctfsect == NULL || ((symsect == NULL) != (strsect == NULL)))
     return (ctf_set_open_errno (errp, EINVAL));
 

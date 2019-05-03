@@ -155,6 +155,21 @@ ctf_strerror (int err)
   return (const char *) (strerror (err));
 }
 
+void ctf_setdebug (int debug)
+{
+  /* Ensure that libctf_init_debug() has been called, so that we don't get our
+     debugging-on-or-off smashed by the next call.  */
+
+  libctf_init_debug();
+  _libctf_debug = debug;
+  ctf_dprintf ("CTF debugging set to %i\n", debug);
+}
+
+int ctf_getdebug (void)
+{
+  return _libctf_debug;
+}
+
 _libctf_printflike_ (1, 2)
 void ctf_dprintf (const char *format, ...)
 {

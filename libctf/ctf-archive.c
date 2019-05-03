@@ -305,6 +305,7 @@ ctf_arc_open (const char *filename, int *errp)
   struct stat s;
   ctf_archive_t *arc;		/* (Actually the whole file.)  */
 
+  libctf_init_debug();
   if ((fd = open (filename, O_RDONLY)) < 0)
     {
       errmsg = "ctf_arc_open(): cannot open %s: %s\n";

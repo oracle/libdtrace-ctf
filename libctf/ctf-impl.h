@@ -40,8 +40,6 @@ extern "C"
    macros glibc may introduce, which have names of the pattern
    __attribute_blah__.  */
 
-#define _libctf_constructor_(x) __attribute__ ((__constructor__))
-#define _libctf_destructor_(x) __attribute__ ((__destructor__))
 #define _libctf_printflike_(string_index,first_to_check) \
     __attribute__ ((__format__ (__printf__, (string_index), (first_to_check))))
 #define _libctf_unlikely_(x) __builtin_expect ((x), 0)
@@ -379,6 +377,7 @@ extern int ctf_type_kind_unsliced (ctf_file_t *, ctf_id_t);
 
 _libctf_printflike_ (1, 2)
 extern void ctf_dprintf (const char *, ...);
+extern void libctf_init_debug (void);
 
 extern Elf64_Sym *ctf_sym_to_gelf (const Elf32_Sym *src, Elf64_Sym *dst);
 extern const char *ctf_lookup_symbol_name (ctf_file_t *fp, unsigned long symidx);
