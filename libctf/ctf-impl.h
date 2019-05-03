@@ -363,6 +363,9 @@ extern void *ctf_data_alloc (size_t);
 extern void ctf_data_free (void *, size_t);
 extern void ctf_data_protect (void *, size_t);
 
+extern void *ctf_mmap (size_t length, size_t offset, int fd);
+extern void ctf_munmap (void *, size_t);
+
 extern void *ctf_alloc (size_t);
 extern void ctf_free (void *, size_t);
 

@@ -8,7 +8,6 @@
    COPYING in the top level of this tree.  */
 
 #include <ctf-impl.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <elf.h>
@@ -18,6 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef HAVE_MMAP
+#include <sys/mman.h>
 
 static off_t arc_write_one_ctf (ctf_file_t * f, int fd, size_t threshold);
 static ctf_file_t *ctf_arc_open_by_offset (const ctf_archive_t * arc,
@@ -413,6 +415,43 @@ ctf_arc_open_by_offset (const ctf_archive_t * arc, size_t offset, int *errp)
     ctf_setmodel (fp, le64toh (arc->ctfa_model));
   return fp;
 }
+#else                                    /* !HAVE_MMAP */
+int
+ctf_arc_write (const char *file _libctf_unused_,
+	       ctf_file_t ** ctf_files _libctf_unused_,
+	       size_t ctf_file_cnt _libctf_unused_,
+	       const char **names _libctf_unused_,
+	       size_t threshold _libctf_unused_)
+{
+  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
+  return -ECTF_MMAP;
+}
+ctf_archive_t *
+ctf_arc_open (const char *filename _libctf_unused_, int *errp _libctf_unused_)
+{
+  if (errp)
+    *errp = ECTF_MMAP;
+  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
+  return NULL;
+}
+
+ctf_file_t *
+ctf_arc_open_by_name (const ctf_archive_t * arc _libctf_unused_,
+		      const char *name _libctf_unused_,
+		      int *errp _libctf_unused_)
+{
+  if (errp)
+    *errp = ECTF_MMAP;
+  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
+  return NULL;
+}
+
+void
+ctf_arc_close (ctf_archive_t * arc _libctf_unused_)
+{
+  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
+}
+#endif	                                 /* HAVE_MMAP */
 
 /* Iterate over all CTF files in an archive.  We pass the raw data for all CTF
    files in turn to the specified callback function.  */

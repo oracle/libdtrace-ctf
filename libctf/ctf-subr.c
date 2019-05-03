@@ -8,21 +8,73 @@
    COPYING in the top level of this tree.  */
 
 #include <ctf-impl.h>
+#ifdef HAVE_MMAP
 #include <sys/mman.h>
+#endif
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 void *
 ctf_data_alloc (size_t size)
 {
-  return (mmap (NULL, size, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_ANON, -1, 0));
+  void *ret;
+
+#ifdef HAVE_MMAP
+  ret = mmap (NULL, size, PROT_READ | PROT_WRITE,
+	      MAP_PRIVATE | MAP_ANON, -1, 0);
+  if (ret == MAP_FAILED)
+    ret = NULL;
+#else
+  ret = malloc (size);
+#endif
+  return ret;
 }
 
 void
-ctf_data_free (void *buf, size_t size)
+ctf_data_free (void *buf, size_t size _libctf_unused_)
 {
+#ifdef HAVE_MMAP
   (void) munmap (buf, size);
+#else
+  free (buf);
+#endif
+}
+
+/* Private, read-only mmap from a file, with fallback to copying.
+
+   No handling of page-offset issues at all: the caller must allow for that. */
+
+void *
+ctf_mmap (size_t length, size_t offset, int fd)
+{
+  void *data;
+
+#ifdef HAVE_MMAP
+  data = mmap (NULL, length, PROT_READ, MAP_PRIVATE, fd, offset);
+  if (data == MAP_FAILED)
+    data = NULL;
+#else
+  if ((data = malloc (length)) != NULL)
+    {
+      if (pread (fd, data, size, offset) <= 0)
+	{
+	  free (data);
+	  data = NULL;
+	}
+    }
+#endif
+  return data;
+}
+
+void
+ctf_munmap (void *buf, size_t length _libctf_unused_)
+{
+#ifdef HAVE_MMAP
+  (void) munmap (buf, length);
+#else
+  free (buf);
+#endif
 }
 
 void

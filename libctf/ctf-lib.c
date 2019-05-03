@@ -10,7 +10,9 @@
 #include <ctf-impl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef HAVE_MMAP
 #include <sys/mman.h>
+#endif
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
@@ -69,13 +71,16 @@ shdr_to_gelf (const Elf32_Shdr *src, GElf_Shdr *dst)
   dst->sh_entsize = src->sh_entsize;
 }
 
-/* In order to mmap a section from the ELF file, we must round down sh_offset
-   to the previous page boundary, and mmap the surrounding page.  We store
-   the pointer to the start of the actual section data back into sp->cts_data.  */
+/* In order to mmap a section from the ELF file, we must round down sh_offset to
+   the previous page boundary, and mmap the surrounding page.  We store the
+   pointer to the start of the actual section data back into sp->cts_data.
+
+   Fall back to copying when mmap() is not available.  */
 
 const void *
 ctf_sect_mmap (ctf_sect_t *sp, int fd)
 {
+#ifdef HAVE_MMAP
   size_t pageoff = sp->cts_offset & ~_PAGEMASK;
 
   caddr_t base = mmap (NULL, sp->cts_size + pageoff, PROT_READ,
@@ -83,8 +88,10 @@ ctf_sect_mmap (ctf_sect_t *sp, int fd)
 
   if (base != MAP_FAILED)
     sp->cts_data = base + pageoff;
-
   return base;
+#else
+  return (ctf_mmap (sp->cts_size, sp->cts_offset, fd));
+#endif
 }
 
 /* Since sp->cts_data has the adjusted offset, we have to again round down
@@ -93,10 +100,14 @@ ctf_sect_mmap (ctf_sect_t *sp, int fd)
 void
 ctf_sect_munmap (const ctf_sect_t *sp)
 {
+#ifdef HAVE_MMAP
   uintptr_t addr = (uintptr_t) sp->cts_data;
   uintptr_t pageoff = addr & ~_PAGEMASK;
 
   (void) munmap ((void *) (addr - pageoff), sp->cts_size + pageoff);
+#else
+  free (sp->cts_data);
+#endif
 }
 
 /* Open the specified file descriptor and return a pointer to a CTF container.
@@ -142,9 +153,7 @@ ctf_fdopen (int fd, int *errp)
       if (hdr.ctf.ctp_version > CTF_VERSION)
 	return (ctf_set_open_errno (errp, ECTF_CTFVERS));
 
-      data = mmap (NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-
-      if (data == MAP_FAILED)
+      if ((data = ctf_mmap (st.st_size, 0, fd)) == NULL)
 	return (ctf_set_open_errno (errp, errno));
 
       ctfsect.cts_name = _CTF_SECTION;
@@ -243,8 +252,8 @@ ctf_fdopen (int fd, int *errp)
       strs_mapsz = sp[hdr.e64.e_shstrndx].sh_size +
 	(sp[hdr.e64.e_shstrndx].sh_offset & ~_PAGEMASK);
 
-      strs_map = mmap (NULL, strs_mapsz, PROT_READ, MAP_PRIVATE,
-		       fd, sp[hdr.e64.e_shstrndx].sh_offset & _PAGEMASK);
+      strs_map = ctf_mmap (strs_mapsz, fd,
+			   sp[hdr.e64.e_shstrndx].sh_offset & _PAGEMASK);
 
       strs = (const char *) strs_map
 	+ (sp[hdr.e64.e_shstrndx].sh_offset & ~_PAGEMASK);
@@ -303,7 +312,7 @@ ctf_fdopen (int fd, int *errp)
 
       if (ctfsect.cts_type == SHT_NULL)
 	{
-	  (void) munmap (strs_map, strs_mapsz);
+	  ctf_munmap (strs_map, strs_mapsz);
 	  return (ctf_set_open_errno (errp, ECTF_NOCTFDATA));
 	}
 
@@ -312,7 +321,7 @@ ctf_fdopen (int fd, int *errp)
 
       if (ctf_sect_mmap (&ctfsect, fd) == MAP_FAILED)
 	{
-	  (void) munmap (strs_map, strs_mapsz);
+	  ctf_munmap (strs_map, strs_mapsz);
 	  return (ctf_set_open_errno (errp, ECTF_MMAP));
 	}
 
@@ -340,7 +349,7 @@ ctf_fdopen (int fd, int *errp)
       else
 	fp->ctf_flags |= LCTF_MMAP;
 
-      (void) munmap (strs_map, strs_mapsz);
+      ctf_munmap (strs_map, strs_mapsz);
       return fp;
     }
 

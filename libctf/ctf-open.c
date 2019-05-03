@@ -12,7 +12,6 @@
 #include <sys/types.h>
 #include <assert.h>
 #include <gelf.h>
-#include <sys/mman.h>
 #include <byteswap.h>
 #include <zlib.h>
 
@@ -450,7 +449,7 @@ upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
      version number unchanged, so that LCTF_INFO_* still works on the
      as-yet-untranslated type info.  */
 
-  if ((ctf_base = ctf_data_alloc (fp->ctf_size + increase)) == MAP_FAILED)
+  if ((ctf_base = ctf_data_alloc (fp->ctf_size + increase)) == NULL)
     return ECTF_ZALLOC;
 
   memcpy (ctf_base, fp->ctf_base, sizeof (ctf_header_t) + cth->cth_typeoff);
@@ -1340,7 +1339,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
       const void *src;
       int rc = Z_OK;
 
-      if ((base = ctf_data_alloc (size + hdrsz)) == MAP_FAILED)
+      if ((base = ctf_data_alloc (size + hdrsz)) == NULL)
 	return (ctf_set_open_errno (errp, ECTF_ZALLOC));
 
       memcpy (base, ctfsect->cts_data, hdrsz);
@@ -1369,7 +1368,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     }
   else if (foreign_endian)
     {
-      if ((base = ctf_data_alloc (size + hdrsz)) == MAP_FAILED)
+      if ((base = ctf_data_alloc (size + hdrsz)) == NULL)
 	return (ctf_set_open_errno (errp, ECTF_ZALLOC));
     }
   else
