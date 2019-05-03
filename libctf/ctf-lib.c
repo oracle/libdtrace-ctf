@@ -29,7 +29,7 @@ maybe_init_pagemask (void)
 {
   if (_PAGESIZE == 0)
     {
-      _PAGESIZE = getpagesize();
+      _PAGESIZE = sysconf(_SC_PAGESIZE);
       _PAGEMASK = ~(_PAGESIZE - 1);
     }
 }
