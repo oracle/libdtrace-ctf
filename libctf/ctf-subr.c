@@ -35,9 +35,9 @@ ctf_data_alloc (size_t size)
 	ret = NULL;
     }
   else
-    ret = malloc (size);
+    ret = calloc (1, size);
 #else
-  ret = malloc (size);
+  ret = calloc (1, size);
 #endif
   return ret;
 }
