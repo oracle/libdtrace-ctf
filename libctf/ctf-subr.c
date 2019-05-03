@@ -16,16 +16,26 @@
 #include <string.h>
 #include <unistd.h>
 
+static size_t _PAGESIZE;
+
 void *
 ctf_data_alloc (size_t size)
 {
   void *ret;
 
 #ifdef HAVE_MMAP
-  ret = mmap (NULL, size, PROT_READ | PROT_WRITE,
-	      MAP_PRIVATE | MAP_ANON, -1, 0);
-  if (ret == MAP_FAILED)
-    ret = NULL;
+  if (_PAGESIZE == 0)
+    _PAGESIZE = sysconf(_SC_PAGESIZE);
+
+  if (size > _PAGESIZE)
+    {
+      ret = mmap (NULL, size, PROT_READ | PROT_WRITE,
+		  MAP_PRIVATE | MAP_ANON, -1, 0);
+      if (ret == MAP_FAILED)
+	ret = NULL;
+    }
+  else
+    ret = malloc (size);
 #else
   ret = malloc (size);
 #endif
@@ -36,7 +46,12 @@ void
 ctf_data_free (void *buf, size_t size _libctf_unused_)
 {
 #ifdef HAVE_MMAP
-  (void) munmap (buf, size);
+  /* Must be the same as the check in ctf_data_alloc().  */
+
+  if (size > _PAGESIZE)
+    (void) munmap (buf, size);
+  else
+    free (buf);
 #else
   free (buf);
 #endif
@@ -81,7 +96,10 @@ ctf_munmap (void *buf, size_t length _libctf_unused_)
 void
 ctf_data_protect (void *buf, size_t size)
 {
-  (void) mprotect (buf, size, PROT_READ);
+  /* Must be the same as the check in ctf_data_alloc().  */
+
+  if (size > _PAGESIZE)
+    (void) mprotect (buf, size, PROT_READ);
 }
 
 void *
