@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <assert.h>
 #include <gelf.h>
-#include <byteswap.h>
+#include "swap.h"
 #include <zlib.h>
 
 static const ctf_dmodel_t _libctf_models[] = {

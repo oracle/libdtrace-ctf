@@ -62,3 +62,4 @@ $(CONFIG_H):
 
 $(eval $(call check-symbol-rule,MMAP,mmap,c))
 $(eval $(call check-symbol-rule,PREAD,pread,c))
+$(eval $(call check-header-rule,BYTESWAP,byteswap.h))
