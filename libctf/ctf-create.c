@@ -9,7 +9,6 @@
 
 #include <ctf-impl.h>
 #include <sys/param.h>
-#include <sys/mman.h>
 #include <assert.h>
 #include <gelf.h>
 #include <string.h>
@@ -300,7 +299,7 @@ ctf_update (ctf_file_t *fp)
 
   buf_size = sizeof (ctf_header_t) + hdr.cth_stroff + hdr.cth_strlen;
 
-  if ((buf = ctf_data_alloc (buf_size)) == MAP_FAILED)
+  if ((buf = ctf_data_alloc (buf_size)) == NULL)
     return (ctf_set_errno (fp, EAGAIN));
 
   memcpy (buf, &hdr, sizeof (ctf_header_t));
