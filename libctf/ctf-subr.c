@@ -18,7 +18,7 @@
 
 static size_t _PAGESIZE;
 
-void *
+_libctf_malloc_ void *
 ctf_data_alloc (size_t size)
 {
   void *ret;
@@ -61,7 +61,7 @@ ctf_data_free (void *buf, size_t size _libctf_unused_)
 
    No handling of page-offset issues at all: the caller must allow for that. */
 
-void *
+_libctf_malloc_ void *
 ctf_mmap (size_t length, size_t offset, int fd)
 {
   void *data;
@@ -102,7 +102,7 @@ ctf_data_protect (void *buf, size_t size)
     (void) mprotect (buf, size, PROT_READ);
 }
 
-void *
+_libctf_malloc_ void *
 ctf_alloc (size_t size)
 {
   return (malloc (size));

@@ -44,6 +44,7 @@ extern "C"
     __attribute__ ((__format__ (__printf__, (string_index), (first_to_check))))
 #define _libctf_unlikely_(x) __builtin_expect ((x), 0)
 #define _libctf_unused_ __attribute__ ((__unused__))
+#define _libctf_malloc_ __attribute__((__malloc__))
 
 #endif
 
@@ -357,17 +358,21 @@ extern long ctf_set_errno (ctf_file_t *, int);
 extern const void *ctf_sect_mmap (ctf_sect_t *, int);
 extern void ctf_sect_munmap (const ctf_sect_t *);
 
+_libctf_malloc_
 extern void *ctf_data_alloc (size_t);
 extern void ctf_data_free (void *, size_t);
 extern void ctf_data_protect (void *, size_t);
 
+_libctf_malloc_
 extern void *ctf_mmap (size_t length, size_t offset, int fd);
 extern void ctf_munmap (void *, size_t);
 extern ssize_t ctf_pread (int fd, void *buf, ssize_t count, off_t offset);
 
+_libctf_malloc_
 extern void *ctf_alloc (size_t);
 extern void ctf_free (void *);
 
+_libctf_malloc_
 extern char *ctf_strdup (const char *);
 extern char *ctf_str_append (char *, const char *);
 extern const char *ctf_strerror (int);

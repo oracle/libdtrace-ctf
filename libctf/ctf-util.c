@@ -109,7 +109,7 @@ ctf_strptr (ctf_file_t *fp, uint32_t name)
 
 /* Same as strdup(3C), but use ctf_alloc() to do the memory allocation. */
 
-char *
+_libctf_malloc_ char *
 ctf_strdup (const char *s1)
 {
   char *s2 = ctf_alloc (strlen (s1) + 1);
