@@ -17,10 +17,10 @@
    previous and next pointers set to NULL, respectively.  */
 
 void
-ctf_list_append (ctf_list_t *lp, void *new)
+ctf_list_append (ctf_list_t *lp, void *newp)
 {
   ctf_list_t *p = lp->l_prev;	/* p = tail list element.  */
-  ctf_list_t *q = new;		/* q = new list element.  */
+  ctf_list_t *q = newp;		/* q = new list element.  */
 
   lp->l_prev = q;
   q->l_prev = p;
@@ -36,9 +36,9 @@ ctf_list_append (ctf_list_t *lp, void *new)
    existing pointer should be pointing at a struct with embedded ctf_list_t.  */
 
 void
-ctf_list_prepend (ctf_list_t * lp, void *new)
+ctf_list_prepend (ctf_list_t * lp, void *newp)
 {
-  ctf_list_t *p = new;		/* p = new list element.  */
+  ctf_list_t *p = newp;		/* p = new list element.  */
   ctf_list_t *q = lp->l_next;	/* q = head list element.  */
 
   lp->l_next = p;
