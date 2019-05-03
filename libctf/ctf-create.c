@@ -533,7 +533,6 @@ void
 ctf_dtd_delete (ctf_file_t *fp, ctf_dtdef_t *dtd)
 {
   ctf_dmdef_t *dmd, *nmd;
-  size_t len;
   int kind = LCTF_INFO_KIND (fp, dtd->dtd_data.ctt_info);
 
   ctf_dynhash_remove (fp->ctf_dthash, (void *) dtd->dtd_type);
@@ -548,17 +547,15 @@ ctf_dtd_delete (ctf_file_t *fp, ctf_dtdef_t *dtd)
 	{
 	  if (dmd->dmd_name != NULL)
 	    {
-	      len = strlen (dmd->dmd_name) + 1;
-	      ctf_free (dmd->dmd_name, len);
-	      fp->ctf_dtvstrlen -= len;
+	      ctf_free (dmd->dmd_name);
+	      fp->ctf_dtvstrlen -= strlen (dmd->dmd_name) + 1;
 	    }
 	  nmd = ctf_list_next (dmd);
-	  ctf_free (dmd, sizeof (ctf_dmdef_t));
+	  ctf_free (dmd);
 	}
       break;
     case CTF_K_FUNCTION:
-      ctf_free (dtd->dtd_u.dtu_argv, sizeof (ctf_id_t) *
-		LCTF_INFO_VLEN (fp, dtd->dtd_data.ctt_info));
+      ctf_free (dtd->dtd_u.dtu_argv);
       break;
     }
 
@@ -570,13 +567,12 @@ ctf_dtd_delete (ctf_file_t *fp, ctf_dtdef_t *dtd)
       ctf_dynhash_remove (fp->ctf_dtbyname, name);
       free (name);
 
-      len = strlen (dtd->dtd_name) + 1;
-      ctf_free (dtd->dtd_name, len);
-      fp->ctf_dtvstrlen -= len;
+      ctf_free (dtd->dtd_name);
+      fp->ctf_dtvstrlen -= strlen (dtd->dtd_name) + 1;
     }
 
   ctf_list_delete (&fp->ctf_dtdefs, dtd);
-  ctf_free (dtd, sizeof (ctf_dtdef_t));
+  ctf_free (dtd);
 }
 
 ctf_dtdef_t *
@@ -626,14 +622,13 @@ ctf_dvd_insert (ctf_file_t *fp, ctf_dvdef_t *dvd)
 void
 ctf_dvd_delete (ctf_file_t *fp, ctf_dvdef_t *dvd)
 {
-  size_t len = strlen (dvd->dvd_name);
   ctf_dynhash_remove (fp->ctf_dvhash, dvd->dvd_name);
 
-  ctf_free (dvd->dvd_name, len + 1);
-  fp->ctf_dtvstrlen -= len + 1;
+  ctf_free (dvd->dvd_name);
+  fp->ctf_dtvstrlen -= strlen (dvd->dvd_name) + 1;
 
   ctf_list_delete (&fp->ctf_dvdefs, dvd);
-  ctf_free (dvd, sizeof (ctf_dvdef_t));
+  ctf_free (dvd);
 }
 
 ctf_dvdef_t *
@@ -742,7 +737,7 @@ ctf_add_generic (ctf_file_t *fp, uint32_t flag, const char *name,
 
   if (name != NULL && (s = ctf_strdup (name)) == NULL)
     {
-      ctf_free (dtd, sizeof (ctf_dtdef_t));
+      ctf_free (dtd);
       return (ctf_set_errno (fp, EAGAIN));
     }
 
@@ -963,7 +958,7 @@ ctf_add_function (ctf_file_t *fp, uint32_t flag,
 
   if ((type = ctf_add_generic (fp, flag, NULL, &dtd)) == CTF_ERR)
     {
-      ctf_free (vdat, sizeof (ctf_id_t) * vlen);
+      ctf_free (vdat);
       return CTF_ERR;		   /* errno is set for us.  */
     }
 
@@ -1244,7 +1239,7 @@ ctf_add_enumerator (ctf_file_t *fp, ctf_id_t enid, const char *name,
 
   if ((s = ctf_strdup (name)) == NULL)
     {
-      ctf_free (dmd, sizeof (ctf_dmdef_t));
+      ctf_free (dmd);
       return (ctf_set_errno (fp, EAGAIN));
     }
 
@@ -1308,7 +1303,7 @@ ctf_add_member_offset (ctf_file_t *fp, ctf_id_t souid, const char *name,
 
   if (name != NULL && (s = ctf_strdup (name)) == NULL)
     {
-      ctf_free (dmd, sizeof (ctf_dmdef_t));
+      ctf_free (dmd);
       return (ctf_set_errno (fp, EAGAIN));
     }
 
@@ -1428,7 +1423,7 @@ ctf_add_variable (ctf_file_t *fp, const char *name, ctf_id_t ref)
 
   if (name != NULL && (dvd->dvd_name = ctf_strdup (name)) == NULL)
     {
-      ctf_free (dvd, sizeof (ctf_dvdef_t));
+      ctf_free (dvd);
       return (ctf_set_errno (fp, EAGAIN));
     }
   dvd->dvd_type = ref;
@@ -1503,7 +1498,7 @@ membadd (const char *name, ctf_id_t type, unsigned long offset, void *arg)
 
   if (name != NULL && (s = ctf_strdup (name)) == NULL)
     {
-      ctf_free (dmd, sizeof (ctf_dmdef_t));
+      ctf_free (dmd);
       return (ctf_set_errno (ctb->ctb_file, EAGAIN));
     }
 

@@ -366,7 +366,7 @@ extern void ctf_munmap (void *, size_t);
 extern ssize_t ctf_pread (int fd, void *buf, ssize_t count, off_t offset);
 
 extern void *ctf_alloc (size_t);
-extern void ctf_free (void *, size_t);
+extern void ctf_free (void *);
 
 extern char *ctf_strdup (const char *);
 extern char *ctf_str_append (char *, const char *);

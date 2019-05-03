@@ -1539,7 +1539,7 @@ ctf_close (ctf_file_t *fp)
     }
 
   if (fp->ctf_dynparname != NULL)
-    ctf_free (fp->ctf_dynparname, strlen (fp->ctf_dynparname) + 1);
+    ctf_free (fp->ctf_dynparname);
 
   if (fp->ctf_parent != NULL)
     ctf_close (fp->ctf_parent);
@@ -1559,7 +1559,7 @@ ctf_close (ctf_file_t *fp)
     }
   ctf_dynhash_destroy (fp->ctf_dvhash);
 
-  ctf_free (fp->ctf_tmp_typeslice, fp->ctf_tmp_typeslicelen);
+  ctf_free (fp->ctf_tmp_typeslice);
 
   if (fp->ctf_flags & LCTF_MMAP)
     {
@@ -1572,36 +1572,33 @@ ctf_close (ctf_file_t *fp)
     }
 
   if (fp->ctf_data.cts_name != _CTF_NULLSTR && fp->ctf_data.cts_name != NULL)
-      ctf_free ((char *) fp->ctf_data.cts_name,
-		strlen (fp->ctf_data.cts_name) + 1);
+    ctf_free ((char *) fp->ctf_data.cts_name);
 
   if (fp->ctf_symtab.cts_name != _CTF_NULLSTR &&
       fp->ctf_symtab.cts_name != NULL)
-      ctf_free ((char *) fp->ctf_symtab.cts_name,
-		strlen (fp->ctf_symtab.cts_name) + 1);
+    ctf_free ((char *) fp->ctf_symtab.cts_name);
 
   if (fp->ctf_strtab.cts_name != _CTF_NULLSTR &&
       fp->ctf_strtab.cts_name != NULL)
-      ctf_free ((char *) fp->ctf_strtab.cts_name,
-		strlen (fp->ctf_strtab.cts_name) + 1);
+    ctf_free ((char *) fp->ctf_strtab.cts_name);
 
   ctf_free_base (fp, NULL, 0);
 
   if (fp->ctf_sxlate != NULL)
-    ctf_free (fp->ctf_sxlate, sizeof (uint32_t) * fp->ctf_nsyms);
+    ctf_free (fp->ctf_sxlate);
 
   if (fp->ctf_txlate != NULL)
-      ctf_free (fp->ctf_txlate, sizeof (uint32_t) * (fp->ctf_typemax + 1));
+    ctf_free (fp->ctf_txlate);
 
   if (fp->ctf_ptrtab != NULL)
-      ctf_free (fp->ctf_ptrtab, sizeof (uint32_t) * (fp->ctf_typemax + 1));
+    ctf_free (fp->ctf_ptrtab);
 
   ctf_hash_destroy (fp->ctf_structs);
   ctf_hash_destroy (fp->ctf_unions);
   ctf_hash_destroy (fp->ctf_enums);
   ctf_hash_destroy (fp->ctf_names);
 
-  ctf_free (fp, sizeof (ctf_file_t));
+  ctf_free (fp);
 }
 
 /* Return the ctfsect out of the core ctf_impl.  Useful for freeing the
@@ -1637,7 +1634,7 @@ void
 ctf_parent_name_set (ctf_file_t *fp, const char *name)
 {
   if (fp->ctf_dynparname != NULL)
-    ctf_free (fp->ctf_dynparname, strlen (fp->ctf_dynparname) + 1);
+    ctf_free (fp->ctf_dynparname);
 
   fp->ctf_dynparname = ctf_strdup (name);
   fp->ctf_parname = fp->ctf_dynparname;

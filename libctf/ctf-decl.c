@@ -55,7 +55,7 @@ ctf_decl_fini (ctf_decl_t *cd)
       for (cdp = ctf_list_next (&cd->cd_nodes[i]); cdp != NULL; cdp = ndp)
 	{
 	  ndp = ctf_list_next (cdp);
-	  ctf_free (cdp, sizeof (ctf_decl_node_t));
+	  ctf_free (cdp);
 	}
     }
 }

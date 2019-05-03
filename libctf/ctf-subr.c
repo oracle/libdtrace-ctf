@@ -109,7 +109,7 @@ ctf_alloc (size_t size)
 }
 
 void
-ctf_free (void *buf, size_t size _libctf_unused_)
+ctf_free (void *buf)
 {
   free (buf);
 }

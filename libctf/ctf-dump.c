@@ -63,7 +63,7 @@ ctf_dump_free (ctf_dump_state_t *state)
     {
       free (cdi->cdi_item);
       next_cdi = ctf_list_next (cdi);
-      ctf_free (cdi, sizeof (struct ctf_dump_item));
+      ctf_free (cdi);
     }
 }
 
@@ -578,7 +578,7 @@ ctf_dump (ctf_file_t *fp, ctf_dump_state_t **statep, ctf_sect_names_t sect,
 
  end:
   ctf_dump_free (state);
-  ctf_free (state, sizeof (struct ctf_dump_state));
+  ctf_free (state);
   ctf_set_errno (fp, 0);
   *statep = NULL;
   return NULL;
