@@ -138,7 +138,7 @@ ctf_fdopen (int fd, int *errp)
   if (fstat (fd, &st) == -1)
     return (ctf_set_open_errno (errp, errno));
 
-  if ((nbytes = pread (fd, &hdr.ctf, sizeof (hdr), 0)) <= 0)
+  if ((nbytes = ctf_pread (fd, &hdr.ctf, sizeof (hdr), 0)) <= 0)
     return (ctf_set_open_errno (errp, nbytes < 0 ? errno : ECTF_FMT));
 
   /*
@@ -226,7 +226,7 @@ ctf_fdopen (int fd, int *errp)
 
 	  nbytes = sizeof (Elf32_Shdr) * n;
 
-	  if ((sp32 = malloc (nbytes)) == NULL || pread (fd, sp32, nbytes,
+	  if ((sp32 = malloc (nbytes)) == NULL || ctf_pread (fd, sp32, nbytes,
 							 hdr.e64.e_shoff) !=
 	      nbytes)
 	    {
@@ -240,7 +240,7 @@ ctf_fdopen (int fd, int *errp)
 	  free (sp32);
 
 	}
-      else if (pread (fd, sp, nbytes, hdr.e64.e_shoff) != nbytes)
+      else if (ctf_pread (fd, sp, nbytes, hdr.e64.e_shoff) != nbytes)
 	{
 	  free (sp);
 	  return (ctf_set_open_errno (errp, errno));

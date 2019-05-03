@@ -41,3 +41,4 @@ $(CONFIG_H):
 	cat $(objdir)/.config/*.h >> $(objdir)/config.h 2>/dev/null || true
 
 $(eval $(call check-symbol-rule,MMAP,mmap,c))
+$(eval $(call check-symbol-rule,PREAD,pread,c))

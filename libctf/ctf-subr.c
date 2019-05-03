@@ -11,6 +11,7 @@
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
+#include <sys/types.h>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
@@ -57,7 +58,7 @@ ctf_mmap (size_t length, size_t offset, int fd)
 #else
   if ((data = malloc (length)) != NULL)
     {
-      if (pread (fd, data, size, offset) <= 0)
+      if (ctf_pread (fd, data, size, offset) <= 0)
 	{
 	  free (data);
 	  data = NULL;
@@ -93,6 +94,59 @@ void
 ctf_free (void *buf, size_t size _libctf_unused_)
 {
   free (buf);
+}
+
+ssize_t
+ctf_pread (int fd, void *buf, ssize_t count, off_t offset)
+{
+  ssize_t len;
+  size_t acc = 0;
+  char *data = (char *) buf;
+
+#ifdef HAVE_PREAD
+  while (count > 0)
+    {
+      if ((len = pread (fd, data, count, offset)) < 0)
+	  return len;
+      if (len == EINTR)
+	continue;
+
+      acc += len;
+      if (len == 0)				/* EOF.  */
+	return acc;
+
+      count -= len;
+      offset += len;
+      data += len;
+    }
+  return acc;
+#else
+  off_t orig_off;
+
+  if ((orig_off = lseek (fd, 0, SEEK_CUR)) < 0)
+    return -1;
+  if ((lseek (fd, offset, SEEK_SET)) < 0)
+    return -1;
+
+  while (count > 0)
+    {
+      if ((len = read (fd, data, count)) < 0)
+	  return len;
+      if (len == EINTR)
+	continue;
+
+      acc += len;
+      if (len == 0)				/* EOF.  */
+	break;
+
+      count -= len;
+      data += len;
+    }
+  if ((lseek (fd, orig_off, SEEK_SET)) < 0)
+    return -1;					/* offset is smashed.  */
+#endif
+
+  return acc;
 }
 
 const char *
