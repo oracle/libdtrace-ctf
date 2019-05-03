@@ -32,6 +32,26 @@ $(objdir)/.config/config.$(1).h: $(objdir)/.config/.dir.stamp
 $(CONFIG_H): $(objdir)/.config/config.$(1).h
 endef
 
+# Generate a makefile rule to check for the presence of HEADER
+# and emit an appropriate header file fragment into a file
+# under $(objdir)/.config.
+#
+# The first argument must be suitable for a filename fragment,
+# for a makefile rule name and for a #define.
+#
+# Syntax: $(call check-header-rule,name,header)
+define check-header-rule
+$(objdir)/.config/config.$(1).h: $(objdir)/.config/.dir.stamp
+	if echo '#include <$(2)>' | \
+		$(CC) $(CFLAGS) $(LDFLAGS) -c -o /dev/null -x c - >/dev/null 2>&1; then \
+	    echo '#define HAVE_$(1)_H 1' > $(objdir)/.config/config.$(1).h; \
+	else \
+	    echo '/* #undef HAVE_$(1)_H */' > $(objdir)/.config/config.$(1).h; \
+	fi
+
+$(CONFIG_H): $(objdir)/.config/config.$(1).h
+endef
+
 $(objdir)/.config/.dir.stamp:
 	mkdir -p $(objdir)/.config
 	touch $(objdir)/.config/.dir.stamp
