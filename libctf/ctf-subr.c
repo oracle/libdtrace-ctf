@@ -196,6 +196,7 @@ void ctf_dprintf (const char *format, ...)
       va_list alist;
 
       va_start (alist, format);
+      fflush (stdout);
       (void) fputs ("libctf DEBUG: ", stderr);
       (void) vfprintf (stderr, format, alist);
       va_end (alist);
