@@ -18,13 +18,17 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifdef HAVE_MMAP
 #include <sys/mman.h>
 
 static off_t arc_write_one_ctf (ctf_file_t * f, int fd, size_t threshold);
 static ctf_file_t *ctf_arc_open_by_offset (const ctf_archive_t * arc,
 					   size_t offset, int *errp);
 static int sort_modent_by_name (const void *one, const void *two, void *n);
+static void *arc_mmap_header (int fd, size_t headersz);
+static void *arc_mmap_file (int fd, size_t size);
+static int arc_mmap_writeout (int fd, void *header, size_t headersz,
+			      const char **errmsg);
+static int arc_mmap_unmap (void *header, size_t headersz, const char **errmsg);
 
 /* bsearch() internal state.  */
 static __thread char *search_nametbl;
@@ -66,9 +70,9 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
     + (ctf_file_cnt * sizeof (uint64_t) * 2);
   ctf_dprintf ("headersz is %zi\n", headersz);
 
-  /* From now on we work in two pieces: an mmap()ed region from zero up to
-     the headersz, and a region updated via write() starting after that,
-     containing all the tables.  */
+  /* From now on we work in two pieces: an mmap()ed region from zero up to the
+     headersz, and a region updated via write() starting after that, containing
+     all the tables.  Platforms that do not support mmap() just use write().  */
   ctf_startoffs = headersz;
   if (lseek (fd, ctf_startoffs - 1, SEEK_SET) < 0)
     {
@@ -82,8 +86,7 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
       goto err_close;
     }
 
-  if ((archdr = mmap (NULL, headersz, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
-		      0)) == MAP_FAILED)
+  if ((archdr = arc_mmap_header (fd, headersz)) == NULL)
     {
       errmsg = "ctf_arc_write(): Cannot mmap() %s: %s\n";
       goto err_close;
@@ -181,12 +184,10 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
     }
   free (nametbl);
 
-  if (msync (archdr, headersz, MS_ASYNC) < 0)
-    {
-      errmsg = "ctf_arc_write(): Cannot sync after writing to %s: %s\n";
-      goto err_unmap;
-    }
-  munmap (archdr, headersz);
+  if (arc_mmap_writeout (fd, archdr, headersz, &errmsg) < 0)
+    goto err_unmap;
+  if (arc_mmap_unmap (archdr, headersz, &errmsg) < 0)
+    goto err_unlink;
   if (close (fd) < 0)
     {
       errmsg = "ctf_arc_write(): Cannot close after writing to %s: %s\n";
@@ -198,7 +199,7 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
 err_free:
   free (nametbl);
 err_unmap:
-  munmap (archdr, headersz);
+  arc_mmap_unmap (archdr, headersz, NULL);
 err_close:
   close (fd);
 err_unlink:
@@ -317,10 +318,9 @@ ctf_arc_open (const char *filename, int *errp)
       goto err_close;
     }
 
-  if ((arc = mmap (NULL, s.st_size, PROT_READ | PROT_WRITE,
-		   MAP_PRIVATE, fd, 0)) == MAP_FAILED)
+  if ((arc = arc_mmap_file (fd, s.st_size)) == NULL)
     {
-      errmsg = "ctf_arc_open(): Cannot mmap() %s: %s\n";
+      errmsg = "ctf_arc_open(): Cannot read in %s: %s\n";
       goto err_close;
     }
 
@@ -339,7 +339,7 @@ ctf_arc_open (const char *filename, int *errp)
   return arc;
 
 err_unmap:
-  munmap (NULL, s.st_size);
+  arc_mmap_unmap (arc, s.st_size, NULL);
 err_close:
   close (fd);
 err:
@@ -358,7 +358,7 @@ ctf_arc_close (ctf_archive_t * arc)
     return;
 
   /* See the comment in ctf_arc_open().  */
-  munmap (arc, arc->ctfa_magic);
+  arc_mmap_unmap (arc, arc->ctfa_magic, NULL);
 }
 
 /* Return the ctf_file_t with the given name, or NULL if none, setting 'err' if
@@ -416,43 +416,6 @@ ctf_arc_open_by_offset (const ctf_archive_t * arc, size_t offset, int *errp)
     ctf_setmodel (fp, le64toh (arc->ctfa_model));
   return fp;
 }
-#else                                    /* !HAVE_MMAP */
-int
-ctf_arc_write (const char *file _libctf_unused_,
-	       ctf_file_t ** ctf_files _libctf_unused_,
-	       size_t ctf_file_cnt _libctf_unused_,
-	       const char **names _libctf_unused_,
-	       size_t threshold _libctf_unused_)
-{
-  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
-  return -ECTF_MMAP;
-}
-ctf_archive_t *
-ctf_arc_open (const char *filename _libctf_unused_, int *errp _libctf_unused_)
-{
-  if (errp)
-    *errp = ECTF_MMAP;
-  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
-  return NULL;
-}
-
-ctf_file_t *
-ctf_arc_open_by_name (const ctf_archive_t * arc _libctf_unused_,
-		      const char *name _libctf_unused_,
-		      int *errp _libctf_unused_)
-{
-  if (errp)
-    *errp = ECTF_MMAP;
-  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
-  return NULL;
-}
-
-void
-ctf_arc_close (ctf_archive_t * arc _libctf_unused_)
-{
-  ctf_dprintf ("mmap() support is needed for CTF archives.\n");
-}
-#endif	                                 /* HAVE_MMAP */
 
 /* Iterate over all CTF files in an archive.  We pass the raw data for all CTF
    files in turn to the specified callback function.  */
@@ -519,3 +482,124 @@ ctf_archive_iter (const ctf_archive_t * arc, ctf_archive_member_f * func,
     }
   return 0;
 }
+
+#ifdef HAVE_MMAP
+/* Map the header in.  Only used on new, empty files.  */
+static void *arc_mmap_header (int fd, size_t headersz)
+{
+  void *hdr;
+  if ((hdr = mmap (NULL, headersz, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+		   0)) == MAP_FAILED)
+    return NULL;
+  return hdr;
+}
+
+/* mmap() the whole file, for reading only.  (Map it writably, but privately: we
+   need to modify the region, but don't need anyone else to see the
+   modifications.)  */
+static void *arc_mmap_file (int fd, size_t size)
+{
+  void *arc;
+  if ((arc = mmap (NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE,
+		   fd, 0)) == MAP_FAILED)
+    return NULL;
+  return arc;
+}
+
+/* Persist the header to disk.  */
+static int arc_mmap_writeout (int fd _libctf_unused_, void *header,
+			      size_t headersz, const char **errmsg)
+{
+    if (msync (header, headersz, MS_ASYNC) < 0)
+    {
+      if (errmsg)
+	*errmsg = "arc_mmap_writeout(): Cannot sync after writing to %s: %s\n";
+      return -1;
+    }
+    return 0;
+}
+
+/* Unmap the region.  */
+static int arc_mmap_unmap (void *header, size_t headersz, const char **errmsg)
+{
+  if (munmap (header, headersz) < 0)
+    {
+      if (errmsg)
+	*errmsg = "arc_mmap_munmap(): Cannot unmap after writing to %s: %s\n";
+      return -1;
+    }
+    return 0;
+}
+#else
+/* Map the header in.  Only used on new, empty files.  */
+static void *arc_mmap_header (int fd, size_t headersz)
+{
+  void *hdr;
+  if ((hdr = malloc (headersz)) == NULL)
+    return NULL;
+  return hdr;
+}
+
+/* Pull in the whole file, for reading only.  We assume the current file
+   position is at the start of the file.  */
+static void *arc_mmap_file (int fd, size_t size)
+{
+  char *data;
+
+  if ((data = malloc (size)) == NULL)
+    return NULL;
+
+  if (ctf_pread (fd, data, size, 0) < 0)
+    {
+      free (data);
+      return NULL;
+    }
+  return data;
+}
+
+/* Persist the header to disk.  */
+static int arc_mmap_writeout (int fd, void *header, size_t headersz,
+			      const char **errmsg)
+{
+  ssize_t len;
+  size_t acc = 0;
+  char *data = (char *) header;
+  ssize_t count = headersz;
+
+  if ((lseek (fd, 0, SEEK_SET)) < 0)
+    {
+      if (errmsg)
+	*errmsg = "arc_mmap_writeout(): Cannot seek while writing header to "
+	  "%s: %s\n";
+      return -1;
+    }
+
+  while (headersz > 0)
+    {
+      if ((len = write (fd, data, count)) < 0)
+	{
+	  if (errmsg)
+	    *errmsg = "arc_mmap_writeout(): Cannot write header to %s: %s\n";
+	  return len;
+	}
+      if (len == EINTR)
+	continue;
+
+      acc += len;
+      if (len == 0)				/* EOF.  */
+	break;
+
+      count -= len;
+      data += len;
+    }
+  return 0;
+}
+
+/* Unmap the region.  */
+static int arc_mmap_unmap (void *header, size_t headersz _libctf_unused_,
+			   const char **errmsg _libctf_unused_)
+{
+  free (header);
+  return 0;
+}
+#endif
