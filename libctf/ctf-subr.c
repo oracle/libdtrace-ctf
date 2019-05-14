@@ -16,7 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 
-static size_t _PAGESIZE;
+static size_t _PAGESIZE _libctf_unused_;
 
 _libctf_malloc_ void *
 ctf_data_alloc (size_t size)
@@ -73,7 +73,7 @@ ctf_mmap (size_t length, size_t offset, int fd)
 #else
   if ((data = malloc (length)) != NULL)
     {
-      if (ctf_pread (fd, data, size, offset) <= 0)
+      if (ctf_pread (fd, data, length, offset) <= 0)
 	{
 	  free (data);
 	  data = NULL;
@@ -96,10 +96,12 @@ ctf_munmap (void *buf, size_t length _libctf_unused_)
 void
 ctf_data_protect (void *buf, size_t size)
 {
+#ifdef HAVE_MMAP
   /* Must be the same as the check in ctf_data_alloc().  */
 
   if (size > _PAGESIZE)
     (void) mprotect (buf, size, PROT_READ);
+#endif
 }
 
 _libctf_malloc_ void *

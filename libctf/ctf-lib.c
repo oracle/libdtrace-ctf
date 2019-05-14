@@ -102,9 +102,12 @@ ctf_sect_mmap (ctf_sect_t *sp, int fd)
 
   if (base != MAP_FAILED)
     sp->cts_data = base + pageoff;
+  else
+    base = NULL;
   return base;
 #else
-  return (ctf_mmap (sp->cts_size, sp->cts_offset, fd));
+  sp->cts_data = ctf_mmap (sp->cts_size, sp->cts_offset, fd);
+  return sp->cts_data;
 #endif
 }
 
@@ -122,7 +125,7 @@ ctf_sect_munmap (const ctf_sect_t *sp)
 
   (void) munmap ((void *) (addr - pageoff), sp->cts_size + pageoff);
 #else
-  free (sp->cts_data);
+  free ((void *) sp->cts_data);
 #endif
 }
 
@@ -277,7 +280,7 @@ ctf_fdopen (int fd, int *errp)
       strs = (const char *) strs_map
 	+ (sp[hdr.e64.e_shstrndx].sh_offset & ~_PAGEMASK);
 
-      if (strs_map == MAP_FAILED)
+      if (strs_map == NULL)
 	{
 	  free (sp);
 	  return (ctf_set_open_errno (errp, ECTF_MMAP));
@@ -338,7 +341,7 @@ ctf_fdopen (int fd, int *errp)
       /* Now mmap the CTF data, symtab, and strtab sections and
 	 call ctf_bufopen() to do the rest of the work.  */
 
-      if (ctf_sect_mmap (&ctfsect, fd) == MAP_FAILED)
+      if (ctf_sect_mmap (&ctfsect, fd) == NULL)
 	{
 	  ctf_munmap (strs_map, strs_mapsz);
 	  return (ctf_set_open_errno (errp, ECTF_MMAP));
@@ -346,8 +349,8 @@ ctf_fdopen (int fd, int *errp)
 
       if (symsect.cts_type != SHT_NULL && strsect.cts_type != SHT_NULL)
 	{
-	  if (ctf_sect_mmap (&symsect, fd) == MAP_FAILED ||
-	      ctf_sect_mmap (&strsect, fd) == MAP_FAILED)
+	  if (ctf_sect_mmap (&symsect, fd) == NULL ||
+	      ctf_sect_mmap (&strsect, fd) == NULL)
 	    {
 	      (void) ctf_set_open_errno (errp, ECTF_MMAP);
 	      goto bad;
@@ -435,7 +438,7 @@ ctf_compress_write (ctf_file_t *fp, int fd)
   memcpy (hp, fp->ctf_base, header_len);
   hp->cth_flags |= CTF_F_COMPRESS;
 
-  if ((buf = ctf_data_alloc (max_compress_len)) == MAP_FAILED)
+  if ((buf = ctf_data_alloc (max_compress_len)) == NULL)
     return (ctf_set_errno (fp, ECTF_ZALLOC));
 
   compress_len = max_compress_len;
