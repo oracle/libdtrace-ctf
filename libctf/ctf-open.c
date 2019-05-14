@@ -8,6 +8,7 @@
    COPYING in the top level of this tree.  */
 
 #include <ctf-impl.h>
+#include <stddef.h>
 #include <string.h>
 #include <sys/types.h>
 #include <assert.h>
@@ -144,7 +145,8 @@ get_vbytes_common (unsigned short kind, ssize_t size _libctf_unused_,
     case CTF_K_FLOAT:
       return (sizeof (uint32_t));
     case CTF_K_SLICE:
-      return (sizeof (ctf_slice_t));
+      return (offsetof (ctf_slice_t, cts_bits) +
+	      sizeof (((ctf_slice_t *)0)->cts_bits));
     case CTF_K_ENUM:
       return (sizeof (ctf_enum_t) * vlen);
     case CTF_K_FORWARD:
