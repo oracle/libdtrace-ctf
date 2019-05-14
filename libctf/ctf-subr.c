@@ -126,9 +126,11 @@ ctf_pread (int fd, void *buf, ssize_t count, off_t offset)
 #ifdef HAVE_PREAD
   while (count > 0)
     {
-      if ((len = pread (fd, data, count, offset)) < 0)
+      errno = 0;
+      if (((len = pread (fd, data, count, offset)) < 0) &&
+	  errno != EINTR)
 	  return len;
-      if (len == EINTR)
+      if (errno == EINTR)
 	continue;
 
       acc += len;
@@ -150,9 +152,11 @@ ctf_pread (int fd, void *buf, ssize_t count, off_t offset)
 
   while (count > 0)
     {
-      if ((len = read (fd, data, count)) < 0)
+      errno = 0;
+      if (((len = read (fd, data, count)) < 0) &&
+	  errno != EINTR)
 	  return len;
-      if (len == EINTR)
+      if (errno == EINTR)
 	continue;
 
       acc += len;
