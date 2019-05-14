@@ -721,6 +721,10 @@ ctf_type_compat (ctf_file_t *lfp, ctf_id_t ltype,
     same_names = (strcmp (ctf_strptr (lfp, ltp->ctt_name),
 			  ctf_strptr (rfp, rtp->ctt_name)) == 0);
 
+  if (((lkind == CTF_K_ENUM) && (rkind == CTF_K_INTEGER)) ||
+      ((rkind == CTF_K_ENUM) && (lkind == CTF_K_INTEGER)))
+    return 1;
+
   if (lkind != rkind)
     return 0;
 
