@@ -8,13 +8,9 @@
    COPYING in the top level of this tree.  */
 
 #include <ctf-impl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <bfd.h>
 #include <zlib.h>
 
 void
@@ -26,103 +22,6 @@ libctf_init_debug (void)
       _libctf_debug = getenv ("LIBCTF_DEBUG") != NULL;
       inited = 1;
     }
-}
-
-/* Open the specified file descriptor and return a pointer to a CTF container.
-   The file can be either an ELF file or raw CTF file.  The caller is
-   responsible for closing the file descriptor when it is no longer needed.
-
-   TODO: handle CTF archives too.  */
-
-ctf_file_t *
-ctf_fdopen (int fd, const char *filename, int *errp)
-{
-  ctf_file_t *fp = NULL;
-  bfd *abfd;
-  int nfd;
-
-  struct stat st;
-  ssize_t nbytes;
-
-  ctf_preamble_t ctfhdr;
-
-  memset (&ctfhdr, 0, sizeof (ctfhdr));
-
-  libctf_init_debug();
-
-  if (fstat (fd, &st) == -1)
-    return (ctf_set_open_errno (errp, errno));
-
-  if ((nbytes = ctf_pread (fd, &ctfhdr, sizeof (ctfhdr), 0)) <= 0)
-    return (ctf_set_open_errno (errp, nbytes < 0 ? errno : ECTF_FMT));
-
-  /* If we have read enough bytes to form a CTF header and the magic
-     string matches, attempt to interpret the file as raw CTF.  */
-
-  if ((size_t) nbytes >= sizeof (ctf_preamble_t) &&
-      ctfhdr.ctp_magic == CTF_MAGIC)
-    {
-      void *data;
-
-      if (ctfhdr.ctp_version > CTF_VERSION)
-	return (ctf_set_open_errno (errp, ECTF_CTFVERS));
-
-      if ((data = ctf_mmap (st.st_size, 0, fd)) == NULL)
-	return (ctf_set_open_errno (errp, errno));
-
-      if ((fp = ctf_simple_open (data, (size_t) st.st_size, NULL, 0, 0,
-				 NULL, 0, errp)) == NULL)
-	ctf_munmap (data, (size_t) st.st_size);
-      fp->ctf_data_mmapped = data;
-      fp->ctf_data_mmapped_len = (size_t) st.st_size;
-
-      return fp;
-    }
-
-  /* Attempt to open the file with BFD.  We must dup the fd first, since bfd
-     takes ownership of the passed fd.  */
-
-  if ((nfd = dup (fd)) < 0)
-      return (ctf_set_open_errno (errp, errno));
-
-  if ((abfd = bfd_fdopenr (filename, NULL, nfd)) == NULL)
-    {
-      ctf_dprintf ("Cannot open BFD from %s: %s\n",
-		   filename ? filename : "(unknown file)",
-		   bfd_errmsg (bfd_get_error()));
-      return (ctf_set_open_errno (errp, ECTF_FMT));
-    }
-
-  if ((fp = ctf_bfdopen (abfd, errp)) == NULL)
-    {
-      if (!bfd_close_all_done (abfd))
-	ctf_dprintf ("Cannot close BFD: %s\n", bfd_errmsg (bfd_get_error()));
-      return NULL;			/* errno is set for us.  */
-    }
-
-  return fp;
-}
-
-/* Open the specified file and return a pointer to a CTF container.  The file
-   can be either an ELF file or raw CTF file.  This is just a convenient
-   wrapper around ctf_fdopen() for callers.  */
-
-ctf_file_t *
-ctf_open (const char *filename, int *errp)
-{
-  ctf_file_t *fp;
-  int fd;
-
-  if ((fd = open (filename, O_RDONLY)) == -1)
-    {
-      if (errp != NULL)
-	*errp = errno;
-      return NULL;
-    }
-
-  fp = ctf_fdopen (fd, filename, errp);
-  (void) close (fd);
-  return fp;
 }
 
 /* Write the compressed CTF data stream to the specified gzFile descriptor.

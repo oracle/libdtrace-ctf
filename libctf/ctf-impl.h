@@ -223,6 +223,7 @@ struct ctf_file
   unsigned long ctf_snapshot_lu;  /* ctf_snapshot() call count at last update.  */
   char *ctf_tmp_typeslice;	  /* Storage for slicing up type names.  */
   size_t ctf_tmp_typeslicelen;	  /* Size of the typeslice.  */
+  void (*ctf_bfd_close) (struct ctf_file *); /* Frees BFD bits on close.  */
   void *ctf_specific;		  /* Data for ctf_get/setspecific().  */
 };
 
@@ -257,10 +258,9 @@ static inline ssize_t ctf_get_ctt_size (const ctf_file_t *fp,
   return (fp->ctf_fileops->ctfo_get_ctt_size (fp, tp, sizep, incrementp));
 }
 
-#define LCTF_FREEBFD	0x0001	/* libctf should free BFD stuff on close.  */
-#define LCTF_CHILD	0x0002	/* CTF container is a child */
-#define LCTF_RDWR	0x0004	/* CTF container is writable */
-#define LCTF_DIRTY	0x0008	/* CTF container has been modified */
+#define LCTF_CHILD	0x0001	/* CTF container is a child */
+#define LCTF_RDWR	0x0002	/* CTF container is writable */
+#define LCTF_DIRTY	0x0004	/* CTF container has been modified */
 
 extern const ctf_type_t *ctf_lookup_by_id (ctf_file_t **, ctf_id_t);
 
