@@ -42,6 +42,8 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
   bfd_byte *contents;
   ctf_sect_t ctfsect;
 
+  libctf_init_debug();
+
   if ((ctf_asect = bfd_get_section_by_name (abfd, _CTF_SECTION)) == NULL)
     {
       return (ctf_set_open_errno (errp, ECTF_NOCTFDATA));
