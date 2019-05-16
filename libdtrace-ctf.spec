@@ -1,6 +1,6 @@
 # spec file for package libdtrace-ctf
 #
-# Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
@@ -12,8 +12,8 @@ BuildRequires: rpm
 Name:         libdtrace-ctf
 License:      GPLv2
 Group:        Development/Libraries
-Requires:     gcc elfutils-libelf zlib glib2
-BuildRequires: elfutils-libelf-devel kernel-headers glibc-headers glib2-devel zlib-devel
+Requires:     gcc binutils zlib glib2
+BuildRequires: binutils-devel kernel-headers glibc-headers glib2-devel zlib-devel
 Summary:      Compact Type Format library.
 Version:      1.2.0
 Release:      0.1%{?dist}

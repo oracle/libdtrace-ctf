@@ -20,7 +20,8 @@
 #include <stdint.h>
 #include <limits.h>
 #include <ctype.h>
-#include <gelf.h>
+#include <elf.h>
+#include <bfd.h>
 
 #ifdef	__cplusplus
 extern "C"
@@ -175,9 +176,15 @@ typedef struct ctf_bundle
 struct ctf_file
 {
   const ctf_fileops_t *ctf_fileops; /* Version-specific file operations.  */
+  bfd *ctf_abfd;		    /* Optional source of section data.  */
   ctf_sect_t ctf_data;		    /* CTF data from object file.  */
   ctf_sect_t ctf_symtab;	    /* Symbol table from object file.  */
   ctf_sect_t ctf_strtab;	    /* String table from object file.  */
+  void *ctf_data_alloced;	    /* CTF data we allocated, to free later.  */
+  void *ctf_data_mmapped;	    /* CTF data we mmapped, to free later.  */
+  size_t ctf_data_mmapped_len;	    /* Length of CTF data we mmapped.  */
+  void *ctf_symtab_alloced;	    /* symtab data we allocated.  */
+  void *ctf_strtab_alloced;	    /* symtab data we allocated.  */
   ctf_hash_t *ctf_structs;	    /* Hash table of struct types.  */
   ctf_hash_t *ctf_unions;	    /* Hash table of union types.  */
   ctf_hash_t *ctf_enums;	    /* Hash table of enum types.  */
@@ -250,7 +257,7 @@ static inline ssize_t ctf_get_ctt_size (const ctf_file_t *fp,
   return (fp->ctf_fileops->ctfo_get_ctt_size (fp, tp, sizep, incrementp));
 }
 
-#define LCTF_MMAP	0x0001	/* libctf should munmap buffers on close.  */
+#define LCTF_FREEBFD	0x0001	/* libctf should free BFD stuff on close.  */
 #define LCTF_CHILD	0x0002	/* CTF container is a child */
 #define LCTF_RDWR	0x0004	/* CTF container is writable */
 #define LCTF_DIRTY	0x0008	/* CTF container has been modified */
@@ -310,6 +317,8 @@ extern const char *ctf_strptr (ctf_file_t *, uint32_t);
 
 extern ctf_file_t *ctf_set_open_errno (int *, int);
 extern long ctf_set_errno (ctf_file_t *, int);
+extern ctf_file_t *ctf_bfdopen_ctfsect (struct bfd *, const ctf_sect_t *,
+					int *);
 
 extern const void *ctf_sect_mmap (ctf_sect_t *, int);
 extern void ctf_sect_munmap (const ctf_sect_t *);
@@ -340,7 +349,7 @@ _libctf_printflike_ (1, 2)
 extern void ctf_dprintf (const char *, ...);
 extern void libctf_init_debug (void);
 
-extern Elf64_Sym *ctf_sym_to_gelf (const Elf32_Sym *src, Elf64_Sym *dst);
+extern Elf64_Sym *ctf_sym_to_elf64 (const Elf32_Sym *src, Elf64_Sym *dst);
 extern const char *ctf_lookup_symbol_name (ctf_file_t *fp, unsigned long symidx);
 
 /* Variables, all underscore-prepended. */

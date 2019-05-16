@@ -11,10 +11,17 @@
 #include <stddef.h>
 #include <string.h>
 #include <sys/types.h>
+#include <elf.h>
 #include <assert.h>
-#include <gelf.h>
 #include "swap.h"
+#include <bfd.h>
 #include <zlib.h>
+
+#ifdef BFD_ONLY
+#include "elf-bfd.h"
+#else
+#define SHN_EXTABS SHN_ABS
+#endif
 
 static const ctf_dmodel_t _libctf_models[] = {
   {"ILP32", CTF_MODEL_ILP32, 4, 1, 2, 4, 4},
@@ -254,7 +261,7 @@ init_symtab (ctf_file_t *fp, const ctf_header_t *hp,
   for (; xp < xend; xp++, symp += sp->cts_entsize)
     {
       if (sp->cts_entsize == sizeof (Elf32_Sym))
-	gsp = ctf_sym_to_gelf ((Elf32_Sym *) (uintptr_t) symp, &sym);
+	gsp = ctf_sym_to_elf64 ((Elf32_Sym *) (uintptr_t) symp, &sym);
       else
 	gsp = (Elf64_Sym *) (uintptr_t) symp;
 
@@ -274,7 +281,7 @@ init_symtab (ctf_file_t *fp, const ctf_header_t *hp,
 	{
 	case STT_OBJECT:
 	  if (objtoff >= hp->cth_funcoff
-	      || (gsp->st_shndx == SHN_ABS && gsp->st_value == 0))
+	      || (gsp->st_shndx == SHN_EXTABS && gsp->st_value == 0))
 	    {
 	      *xp = -1u;
 	      break;
@@ -1218,9 +1225,137 @@ ctf_file_t *ctf_simple_open (const char *ctfsect, size_t ctfsect_size,
   return ctf_bufopen (ctfsectp, symsectp, strsectp, errp);
 }
 
-/* Decode the specified CTF buffer and optional symbol table and create a new
-   CTF container representing the symbolic debugging information.  This code
-   can be used directly by the debugger, or it can be used as the engine for
+/* Open a CTF file given the specified BFD.  */
+
+ctf_file_t *
+ctf_bfdopen (struct bfd *abfd, int *errp)
+{
+  ctf_file_t *fp;
+  asection *ctf_asect;
+  bfd_byte *contents;
+  ctf_sect_t ctfsect;
+
+  if ((ctf_asect = bfd_get_section_by_name (abfd, _CTF_SECTION)) == NULL)
+    {
+      return (ctf_set_open_errno (errp, ECTF_NOCTFDATA));
+    }
+
+  if (!bfd_malloc_and_get_section (abfd, ctf_asect, &contents))
+    {
+      ctf_dprintf ("ctf_bfdopen(): cannot malloc CTF section: %s\n",
+		   bfd_errmsg (bfd_get_error()));
+      return (ctf_set_open_errno (errp, ECTF_FMT));
+    }
+
+  ctfsect.cts_name = _CTF_SECTION;
+  ctfsect.cts_type = SHT_PROGBITS;
+  ctfsect.cts_flags = 0;
+  ctfsect.cts_entsize = 1;
+  ctfsect.cts_offset = 0;
+  ctfsect.cts_size = bfd_section_size (abfd, ctf_asect);
+  ctfsect.cts_data = contents;
+
+  if ((fp = ctf_bfdopen_ctfsect (abfd, &ctfsect, errp)) != NULL)
+    {
+      fp->ctf_data_alloced = (void *) ctfsect.cts_data;
+      return fp;
+    }
+
+  free (contents);
+  return NULL;					/* errno is set for us.  */
+}
+
+/* Open a CTF file given the specified BFD and CTF section.  */
+
+ctf_file_t *
+ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
+{
+  ctf_file_t *fp;
+  ctf_sect_t *symsectp = NULL;
+  ctf_sect_t *strsectp = NULL;
+  const char *bfderrstr = NULL;
+
+#ifdef BFD_ONLY
+  asection *sym_asect;
+  ctf_sect_t symsect, strsect;
+  /* TODO: handle SYMTAB_SHNDX.  */
+
+  if ((sym_asect = bfd_section_from_elf_index (abfd,
+					       elf_onesymtab (abfd))) != NULL)
+    {
+      Elf_Internal_Shdr *symhdr = &elf_symtab_hdr (abfd);
+      asection *str_asect = NULL;
+      bfd_byte *contents;
+
+      if (symhdr->sh_link != SHN_UNDEF &&
+	  symhdr->sh_link <= elf_numsections (abfd))
+	str_asect = bfd_section_from_elf_index (abfd, symhdr->sh_link);
+
+      Elf_Internal_Shdr *strhdr = elf_elfsections (abfd)[symhdr->sh_link];
+
+      if (sym_asect && str_asect)
+	{
+	  if (!bfd_malloc_and_get_section (abfd, str_asect, &contents))
+	    {
+	      bfderrstr = "Cannot malloc string table";
+	      free (contents);
+	      goto err;
+	    }
+	  strsect.cts_data = contents;
+	  strsect.cts_name = (char *) strsect.cts_data + strhdr->sh_name;
+	  strsect.cts_type = strhdr->sh_type;
+	  strsect.cts_flags = strhdr->sh_flags;
+	  strsect.cts_entsize = strhdr->sh_size;
+	  strsect.cts_offset = strhdr->sh_offset;
+	  strsectp = &strsect;
+
+	  if (!bfd_malloc_and_get_section (abfd, sym_asect, &contents))
+	    {
+	      bfderrstr = "Cannot malloc symbol table";
+	      free (contents);
+	      goto err_free_str;
+	    }
+
+	  symsect.cts_name = (char *) strsect.cts_data + symhdr->sh_name;
+	  symsect.cts_type = symhdr->sh_type;
+	  symsect.cts_flags = symhdr->sh_flags;
+	  symsect.cts_entsize = symhdr->sh_size;
+	  symsect.cts_data = contents;
+	  symsect.cts_offset = symhdr->sh_offset;
+	  symsectp = &symsect;
+	}
+    }
+#endif
+
+  if ((fp = ctf_bufopen (ctfsect, symsectp, strsectp, errp)) != NULL)
+    {
+      if (symsectp)
+	fp->ctf_symtab_alloced = (void *) symsectp->cts_data;
+      if (strsectp)
+	fp->ctf_strtab_alloced = (void *) strsectp->cts_data;
+      fp->ctf_flags |= LCTF_FREEBFD;
+      return fp;
+    }
+  ctf_dprintf ("ctf_internal_open(): cannot open CTF: %s\n",
+	       ctf_errmsg (*errp));
+
+#ifdef BFD_ONLY
+err_free_str:
+  free ((void *) strsect.cts_data);
+#endif
+err: _libctf_unused_;
+  if (bfderrstr)
+    {
+      ctf_dprintf ("ctf_bfdopen(): %s: %s\n", bfderrstr,
+		   bfd_errmsg (bfd_get_error()));
+      ctf_set_open_errno (errp, ECTF_FMT);
+    }
+  return NULL;
+}
+
+/* Decode the specified CTF buffer and optional symbol table, and create a new
+   CTF container representing the symbolic debugging information.  This code can
+   be used directly by the debugger, or it can be used as the engine for
    ctf_fdopen() or ctf_open(), below.  */
 
 ctf_file_t *
@@ -1236,6 +1371,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   int err;
 
   libctf_init_debug();
+
   if (ctfsect == NULL || ((symsect == NULL) != (strsect == NULL)))
     return (ctf_set_open_errno (errp, EINVAL));
 
@@ -1454,7 +1590,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 
   /* The ctf region may have been reallocated by init_types(), but now
      that is done, it will not move again, so we can protect it, as long
-     as it didn't come from the ctfsect, wihcih might have been allocated
+     as it didn't come from the ctfsect, which might have been allocated
      with malloc().  */
 
   if (fp->ctf_base != (void *) ctfsect->cts_data)
@@ -1563,17 +1699,8 @@ ctf_close (ctf_file_t *fp)
 
   ctf_free (fp->ctf_tmp_typeslice);
 
-  if (fp->ctf_flags & LCTF_MMAP)
-    {
-      if (fp->ctf_data.cts_data != NULL)
-	ctf_sect_munmap (&fp->ctf_data);
-      if (fp->ctf_symtab.cts_data != NULL)
-	ctf_sect_munmap (&fp->ctf_symtab);
-      if (fp->ctf_strtab.cts_data != NULL)
-	ctf_sect_munmap (&fp->ctf_strtab);
-    }
-
-  if (fp->ctf_data.cts_name != _CTF_NULLSTR && fp->ctf_data.cts_name != NULL)
+  if (fp->ctf_data.cts_name != _CTF_NULLSTR &&
+      fp->ctf_data.cts_name != NULL)
     ctf_free ((char *) fp->ctf_data.cts_name);
 
   if (fp->ctf_symtab.cts_name != _CTF_NULLSTR &&
@@ -1583,6 +1710,22 @@ ctf_close (ctf_file_t *fp)
   if (fp->ctf_strtab.cts_name != _CTF_NULLSTR &&
       fp->ctf_strtab.cts_name != NULL)
     ctf_free ((char *) fp->ctf_strtab.cts_name);
+
+  if (fp->ctf_data_alloced)
+    free (fp->ctf_data_alloced);
+  else if (fp->ctf_data_mmapped)
+    ctf_munmap (fp->ctf_data_mmapped, fp->ctf_data_mmapped_len);
+
+  if (fp->ctf_symtab_alloced)
+    free (fp->ctf_symtab_alloced);
+
+  if (fp->ctf_strtab_alloced)
+    free (fp->ctf_strtab_alloced);
+
+  if (fp->ctf_abfd != NULL &&
+      fp->ctf_flags & LCTF_FREEBFD)
+    if (!bfd_close_all_done (fp->ctf_abfd))
+      ctf_dprintf ("Cannot close BFD: %s\n", bfd_errmsg (bfd_get_error()));
 
   ctf_free_base (fp, NULL, 0);
 

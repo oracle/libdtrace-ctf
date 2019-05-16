@@ -11,9 +11,9 @@
 
 static const char *const _ctf_errlist[] = {
   "File is not in CTF or ELF format",		     /* ECTF_FMT */
-  "File uses more recent ELF version than libctf",   /* ECTF_ELFVERS */
+  "BFD error",					     /* ECTF_BFDERR */
   "File uses more recent CTF version than libctf",   /* ECTF_CTFVERS */
-  "File is a different endian-ness than libctf",     /* ECTF_ENDIAN */
+  "Unused error",				     /* ECTF_UNUSED1 */
   "Symbol table uses invalid entry size",	     /* ECTF_SYMTAB */
   "Symbol table data buffer is not valid",	     /* ECTF_SYMBAD */
   "String table data buffer is not valid",	     /* ECTF_STRBAD */
@@ -23,7 +23,7 @@ static const char *const _ctf_errlist[] = {
   "Symbol table information is not available",	     /* ECTF_NOSYMTAB */
   "Type information is in parent and unavailable",   /* ECTF_NOPARENT */
   "Cannot import types with different data model",   /* ECTF_DMODEL */
-  "Failed to mmap a needed data section",	     /* ECTF_MMAP */
+  "Unused error",				     /* ECTF_UNUSED2 */
   "Failed to allocate (de)compression buffer",	     /* ECTF_ZALLOC */
   "Failed to decompress CTF data",		     /* ECTF_DECOMPRESS */
   "External string table is not available",	     /* ECTF_STRTAB */

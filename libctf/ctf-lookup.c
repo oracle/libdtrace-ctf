@@ -8,7 +8,7 @@
    COPYING in the top level of this tree.  */
 
 #include <ctf-impl.h>
-#include <gelf.h>
+#include <elf.h>
 #include <string.h>
 
 /* Compare the given input string and length against a table of known C storage
@@ -246,7 +246,7 @@ ctf_lookup_symbol_name (ctf_file_t *fp, unsigned long symidx)
   if (sp->cts_entsize == sizeof (Elf32_Sym))
     {
       const Elf32_Sym *symp = (Elf32_Sym *) sp->cts_data + symidx;
-      gsp = ctf_sym_to_gelf (symp, &sym);
+      gsp = ctf_sym_to_elf64 (symp, &sym);
     }
   else
       gsp = (Elf64_Sym *) sp->cts_data + symidx;

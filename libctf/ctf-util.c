@@ -70,10 +70,10 @@ ctf_list_delete (ctf_list_t *lp, void *existing)
     lp->l_prev = p->l_prev;
 }
 
-/* Convert a 32-bit ELF symbol into GElf (Elf64) and return a pointer to it.  */
+/* Convert a 32-bit ELF symbol into Elf64 and return a pointer to it.  */
 
 Elf64_Sym *
-ctf_sym_to_gelf (const Elf32_Sym *src, Elf64_Sym *dst)
+ctf_sym_to_elf64 (const Elf32_Sym *src, Elf64_Sym *dst)
 {
   dst->st_name = src->st_name;
   dst->st_value = src->st_value;

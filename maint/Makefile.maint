@@ -61,4 +61,4 @@ _subst:
 __one_subst:
 	awk -f $(topdir)/maint/comment-change.awk -v topdir=$(topdir) | \
 		sed 's,<sys/ctf,<ctf,g' > $(OUT)
-	unifdef -x 2 -m -DNO_COMPAT $(OUT)
+	unifdef -x 2 -m -DNO_COMPAT -DBFD_ONLY $(OUT)

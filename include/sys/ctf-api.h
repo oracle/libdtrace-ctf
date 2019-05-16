@@ -34,6 +34,11 @@ typedef struct ctf_file ctf_file_t;
 typedef struct ctf_archive ctf_archive_t;
 typedef long ctf_id_t;
 
+/* This opaque definition allows libctf to accept BFD data structures without
+   importing all the BFD noise into users' namespaces.  */
+
+struct bfd;
+
 /* If the debugger needs to provide the CTF library with a set of raw buffers
    for use as the CTF data, symbol table, and string table, it can do so by
    filling in ctf_sect_t structures and passing them to ctf_bufopen().
@@ -123,9 +128,9 @@ typedef struct ctf_snapshot_id
 enum
   {
    ECTF_FMT = ECTF_BASE,	/* File is not in CTF or ELF format.  */
-   ECTF_ELFVERS,		/* ELF version is more recent than libctf.  */
+   ECTF_BFDERR,			/* BFD error.  */
    ECTF_CTFVERS,		/* CTF version is more recent than libctf.  */
-   ECTF_ENDIAN,			/* Data is different endian-ness than lib.  */
+   ECTF_UNUSED1,		/* Unused error.  */
    ECTF_SYMTAB,			/* Symbol table uses invalid entry size.  */
    ECTF_SYMBAD,			/* Symbol table data buffer invalid.  */
    ECTF_STRBAD,			/* String table data buffer invalid.  */
@@ -135,7 +140,7 @@ enum
    ECTF_NOSYMTAB,		/* Symbol table data is not available.  */
    ECTF_NOPARENT,		/* Parent CTF container is not available.  */
    ECTF_DMODEL,			/* Data model mismatch.  */
-   ECTF_MMAP,			/* Failed to mmap a data section.  */
+   ECTF_UNUSED2,		/* Unused error.  */
    ECTF_ZALLOC,			/* Failed to allocate (de)compression buffer.  */
    ECTF_DECOMPRESS,		/* Failed to decompress CTF data.  */
    ECTF_STRTAB,			/* String table for this string is missing.  */
@@ -213,9 +218,10 @@ typedef struct ctf_dump_state ctf_dump_state_t;
 
 extern ctf_file_t *ctf_simple_open (const char *, size_t, const char *, size_t,
 				   size_t, const char *, size_t, int *);
+extern ctf_file_t *ctf_bfdopen (struct bfd *, int *);
 extern ctf_file_t *ctf_bufopen (const ctf_sect_t *, const ctf_sect_t *,
 				const ctf_sect_t *, int *);
-extern ctf_file_t *ctf_fdopen (int, int *);
+extern ctf_file_t *ctf_fdopen (int, const char *, int *);
 extern ctf_file_t *ctf_open (const char *, int *);
 extern ctf_file_t *ctf_create (int *);
 extern void ctf_close (ctf_file_t *);

@@ -10,7 +10,6 @@
 #include <ctf-impl.h>
 #include <sys/param.h>
 #include <assert.h>
-#include <gelf.h>
 #include <string.h>
 
 /* To create an empty CTF container, we just declare a zeroed header and call

@@ -9,7 +9,7 @@ Untested features:
   - the ELF string table (CTF_STRTAB_1)
   - the function info section and symbol table handling: ctf_add_function(),
     ctf_func_info(), ctf_func_args(), ctf_lookup_by_symbol(), init_symtab(),
-    sym_to_gelf(), ctf_nsyms, ctf_sxlate
+    sym_to_elf64(), ctf_nsyms, ctf_sxlate
   - ctf_add_type() of enums; ctf_enum_name() and ctf_enum_value()
   - declarator handling around the restrict qualifier
   - some codepaths to do with anonymous struct/union members

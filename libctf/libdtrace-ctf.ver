@@ -141,6 +141,7 @@ LIBDTRACE_CTF_1.6 {
 	ctf_type_aname;
 	ctf_dump;
 	ctf_simple_open;
+	ctf_bfdopen;
 	ctf_setdebug;
 	ctf_getdebug;
 } LIBDTRACE_CTF_1.5;
