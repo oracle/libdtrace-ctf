@@ -393,7 +393,7 @@ ctf_arc_open_by_name (const ctf_archive_t * arc, const char *name, int *errp)
 /* Return the ctf_file_t at the given ctfa_ctfs-relative offset, or NULL if
    none, setting 'err' if non-NULL.  */
 static ctf_file_t *
-ctf_arc_open_by_offset (const ctf_archive_t * arc, size_t offset, int *errp)
+ctf_arc_open_by_offset (const ctf_archive_t *arc, size_t offset, int *errp)
 {
   ctf_sect_t ctfsect;
   ctf_file_t *fp;
