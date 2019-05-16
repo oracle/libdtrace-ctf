@@ -32,9 +32,6 @@ static const ctf_dmodel_t _libctf_models[] = {
 const char _CTF_SECTION[] = ".ctf";
 const char _CTF_NULLSTR[] = "";
 
-int _libctf_version = CTF_VERSION;	      /* Library client version.  */
-int _libctf_debug = 0;			      /* Debugging messages enabled.  */
-
 /* Version-sensitive accessors.  (In the !NO_COMPAT case, there are many of
    these, one per version per field and sometimes more.)  */
 
