@@ -145,7 +145,6 @@ typedef struct ctf_header
 /* Data format version number.  */
 
 #ifndef NO_COMPAT
-
 /* v1 upgraded to v2 is not quite the same as native v2 (the boundary between
    parent and child types is different), and you can write it out again via
    ctf_compress_write(), so we must track whether the thing was originally v1 or
@@ -182,6 +181,7 @@ typedef struct ctf_varent
    Types larger than this must be stored in the ctf_lsize member of a
    ctf_type_t.  Use of this member is indicated by the presence of
    CTF_LSIZE_SENT in ctt_size.  */
+
 #ifndef NO_COMPAT
 /* In v1, the same applies, only the limit is (USHRT_MAX - 1) and
    CTF_MAX_SIZE_V1, and CTF_LSIZE_SENT_V1 is the sentinel.  */
@@ -467,7 +467,6 @@ typedef struct ctf_array
 #define CTF_LSTRUCT_THRESH	536870912
 
 #ifndef NO_COMPAT
-
 /* In v1, the same is true, except that lmembers are used for structs >= 8192
    bytes in size.  (The ordering of members in the ctf_member_* structures is
    different to improve padding.)  */

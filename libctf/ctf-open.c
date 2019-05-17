@@ -393,14 +393,13 @@ ctf_set_version (ctf_file_t * fp, ctf_header_t * cth, int ctf_version)
 }
 
 #ifndef NO_COMPAT
-/*
- * Upgrade the type table to CTF_VERSION_3 (really CTF_VERSION_1_UPGRADED_3).
- *
- * The upgrade is not done in-place: the ctf_base is moved.  ctf_strptr() must
- * not be called before reallocation is complete.
- *
- * Type kinds not checked here due to nonexistence in older formats: CTF_K_SLICE
- */
+/* Upgrade the type table to CTF_VERSION_3 (really CTF_VERSION_1_UPGRADED_3).
+
+   The upgrade is not done in-place: the ctf_base is moved.  ctf_strptr() must
+   not be called before reallocation is complete.
+
+   Type kinds not checked here due to nonexistence in older formats:
+      CTF_K_SLICE.  */
 static int
 upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
 {
