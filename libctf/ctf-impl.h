@@ -319,10 +319,6 @@ extern ctf_file_t *ctf_set_open_errno (int *, int);
 extern long ctf_set_errno (ctf_file_t *, int);
 extern ctf_file_t *ctf_bfdopen_ctfsect (struct bfd *, const ctf_sect_t *,
 					int *);
-
-extern const void *ctf_sect_mmap (ctf_sect_t *, int);
-extern void ctf_sect_munmap (const ctf_sect_t *);
-
 _libctf_malloc_
 extern void *ctf_data_alloc (size_t);
 extern void ctf_data_free (void *, size_t);
