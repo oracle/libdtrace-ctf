@@ -13,11 +13,11 @@
 #include <limits.h>
 #include <stdint.h>
 
-#ifndef NO_COMPAT
+#ifndef BFD_ONLY
 /* Types used only for backward-compatibility with old callers. */
 
 #include <sys/ctf_types.h>
-#endif /* !NO_COMPAT */
+#endif /* !BFD_ONLY */
 
 #ifdef	__cplusplus
 extern "C"

@@ -1620,11 +1620,11 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		 even if there is no conflict: we must check the contained type
 		 too.  */
 
-#ifndef NO_COMPAT
+#ifndef BFD_ONLY
 	      /* Do not report a conflict if the source type is a 1- or 4-bit
 		 root-visible int: this works around CTF damage in old kernels
 		 before UEK4 4.1.12-99.  */
-#endif /* !NO_COMPAT */
+#endif /* !BFD_ONLY */
 	      if (ctf_type_encoding (dst_fp, dst_type, &dst_en) != 0)
 		return CTF_ERR;			/* errno set for us.  */
 
@@ -1634,12 +1634,12 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		    return dst_type;
 		}
 	      else
-#ifndef NO_COMPAT
+#ifndef BFD_ONLY
 		if (!(strcmp (name, "int") == 0
 			 && (flag & CTF_ADD_ROOT)
 			 && (CTF_INT_BITS (src_tp->ctt_type) == 4 ||
 			     CTF_INT_BITS (src_tp->ctt_type) == 1)))
-#endif /* !NO_COMPAT */
+#endif /* !BFD_ONLY */
 		  {
 		    return (ctf_set_errno (dst_fp, ECTF_CONFLICT));
 		  }
@@ -1692,24 +1692,24 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 		 found.  Note: slices are not certain to match even if there is
 		 no conflict: we must check the contained type too. */
 
-#ifndef NO_COMPAT
+#ifndef BFD_ONLY
 	      /* If there's no match then keep looking unless both types are
 		 root-visible, in which case we report a conflict.  Do not
 		 report a conflict if the source type is a 1- or 4-bit
 		 root-visible int: this works around CTF damage in old kernels <
 		 UEK4 4.1.12-99.  */
-#endif /* !NO_COMPAT */
+#endif /* !BFD_ONLY */
 	      if (match && sroot == droot)
 		{
 		  if (kind != CTF_K_SLICE)
 		    return dtd->dtd_type;
 		}
 	      else if (!match && sroot && droot)
-#ifndef NO_COMPAT
+#ifndef BFD_ONLY
 		if (!(strcmp (name, "int") == 0 && sroot
 		      && (CTF_INT_BITS (src_tp->ctt_type) == 4 ||
 			  CTF_INT_BITS (src_tp->ctt_type) == 1)))
-#endif /* !NO_COMPAT */
+#endif /* !BFD_ONLY */
 		{
 		  return (ctf_set_errno (dst_fp, ECTF_CONFLICT));
 		}

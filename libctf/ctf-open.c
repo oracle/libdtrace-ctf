@@ -32,8 +32,7 @@ static const ctf_dmodel_t _libctf_models[] = {
 const char _CTF_SECTION[] = ".ctf";
 const char _CTF_NULLSTR[] = "";
 
-/* Version-sensitive accessors.  (In the !NO_COMPAT case, there are many of
-   these, one per version per field and sometimes more.)  */
+/* Version-sensitive accessors.  */
 
 #ifndef NO_COMPAT
 static uint32_t
