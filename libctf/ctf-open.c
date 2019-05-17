@@ -380,8 +380,8 @@ ctf_free_base (ctf_file_t *fp, unsigned char *ctf_base, size_t ctf_size)
 
 #ifndef NO_COMPAT
 /* When this is reset, LCTF_* changes behaviour, but there is no guarantee that
-   the variable data list associated with each type has been upgraded: this is
-   tracked on a per-type basis via bit vectors such as ctf_v1 in the fp.  */
+   the variable data list associated with each type has been upgraded: the
+   caller must ensure this has been done in advance.  */
 #endif /* !NO_COMPAT */
 
 static void
