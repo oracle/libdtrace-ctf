@@ -228,6 +228,14 @@ ctf_fdopen (int fd, const char *filename, int *errp)
       return (ctf_set_open_errno (errp, ECTF_FMT));
     }
 
+  if (!bfd_check_format (abfd, bfd_object))
+    {
+      ctf_dprintf ("BFD format problem in %s: %s\n",
+		   filename ? filename : "(unknown file)",
+		   bfd_errmsg (bfd_get_error()));
+      return (ctf_set_open_errno (errp, ECTF_FMT));
+    }
+
   if ((fp = ctf_bfdopen (abfd, errp)) == NULL)
     {
       if (!bfd_close_all_done (abfd))
