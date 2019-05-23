@@ -195,7 +195,7 @@ ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
     }
   arci = ctf_new_archive_internal (is_archive, arc, fp, symsectp, strsectp,
 				   errp);
-  arci->ctf_data = (void *) ctfsect->cts_data;
+  arci->ctfi_data = (void *) ctfsect->cts_data;
 
   if (arci)
     return arci;

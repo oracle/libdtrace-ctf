@@ -395,7 +395,7 @@ ctf_arc_close (ctf_archive_t *arc)
     ctf_file_close (arc->ctfi_file);
   free ((void *) arc->ctfi_symsect.cts_data);
   free ((void *) arc->ctfi_strsect.cts_data);
-  free (arc->ctf_data);
+  free (arc->ctfi_data);
   free (arc);
 }
 

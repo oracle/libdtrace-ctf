@@ -235,7 +235,7 @@ struct ctf_archive_internal
   struct ctf_archive *ctfi_archive;
   ctf_sect_t ctfi_symsect;
   ctf_sect_t ctfi_strsect;
-  void *ctf_data;
+  void *ctfi_data;
   bfd *ctfi_abfd;		    /* Optional source of section data.  */
   void (*ctfi_bfd_close) (struct ctf_archive_internal *);
 };
@@ -324,8 +324,6 @@ extern void ctf_decl_push (ctf_decl_t *, ctf_file_t *, ctf_id_t);
 _libctf_printflike_ (2, 3)
 extern void ctf_decl_sprintf (ctf_decl_t *, const char *, ...);
 extern char *ctf_decl_buf (ctf_decl_t *cd);
-
-
 
 extern const char *ctf_strraw (ctf_file_t *, uint32_t);
 extern const char *ctf_strptr (ctf_file_t *, uint32_t);
