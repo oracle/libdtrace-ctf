@@ -23,21 +23,58 @@
 #define SHN_EXTABS SHN_ABS
 #endif
 
-/* Free the BFD bits of a CTF file on ctf_close().  */
-static void
-ctf_bfdclose (ctf_file_t *fp)
+/* Make a new struct ctf_archive_internal wrapper for a ctf_archive or a
+   ctf_file.  Closes ARC and/or FP on error.  Arrange to free the SYMSECT and
+   STRSECT interior on close.  */
+
+static struct ctf_archive_internal *
+ctf_new_archive_internal (int is_archive, struct ctf_archive *arc,
+			  ctf_file_t *fp, const ctf_sect_t *symsect,
+			  const ctf_sect_t *strsect,
+			  int *errp)
 {
-  if (fp->ctf_abfd != NULL)
-    if (!bfd_close_all_done (fp->ctf_abfd))
+  struct ctf_archive_internal *arci;
+
+  if ((arci = calloc (1, sizeof (struct ctf_archive_internal))) == NULL)
+    {
+      if (is_archive)
+	ctf_arc_close_internal (arc);
+      else
+	ctf_file_close (fp);
+      return (ctf_set_open_errno (errp, errno));
+    }
+  arci->ctfi_is_archive = is_archive;
+  if (is_archive)
+    arci->ctfi_archive = arc;
+  else
+    arci->ctfi_file = fp;
+#ifndef BFD_ONLY
+  arci->ctfi_magic = CTFI_MAGIC;
+#endif
+  if (symsect)
+     memcpy (&arci->ctfi_symsect, symsect, sizeof (struct ctf_sect));
+  if (strsect)
+     memcpy (&arci->ctfi_strsect, strsect, sizeof (struct ctf_sect));
+
+  return arci;
+}
+
+/* Free the BFD bits of a CTF file on ctf_file_close().  */
+
+static void
+ctf_bfdclose (struct ctf_archive_internal *arci)
+{
+  if (arci->ctfi_abfd != NULL)
+    if (!bfd_close_all_done (arci->ctfi_abfd))
       ctf_dprintf ("Cannot close BFD: %s\n", bfd_errmsg (bfd_get_error()));
 }
 
 /* Open a CTF file given the specified BFD.  */
 
-ctf_file_t *
+ctf_archive_t *
 ctf_bfdopen (struct bfd *abfd, int *errp)
 {
-  ctf_file_t *fp;
+  ctf_archive_t *arc;
   asection *ctf_asect;
   bfd_byte *contents;
   ctf_sect_t ctfsect;
@@ -64,25 +101,27 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
   ctfsect.cts_size = bfd_section_size (abfd, ctf_asect);
   ctfsect.cts_data = contents;
 
-  if ((fp = ctf_bfdopen_ctfsect (abfd, &ctfsect, errp)) != NULL)
-    {
-      fp->ctf_data_alloced = (void *) ctfsect.cts_data;
-      return fp;
-    }
+  if ((arc = ctf_bfdopen_ctfsect (abfd, &ctfsect, errp)) != NULL)
+      return arc;
 
   free (contents);
-  return NULL;					/* errno is set for us.  */
+  return NULL;				/* errno is set for us.  */
 }
 
-/* Open a CTF file given the specified BFD and CTF section.  */
+/* Open a CTF file given the specified BFD and CTF section (which may contain a
+   CTF archive or a file).  Takes ownership of the ctfsect, and frees it
+   later.  */
 
-ctf_file_t *
+ctf_archive_t *
 ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
 {
-  ctf_file_t *fp;
+  struct ctf_archive *arc = NULL;
+  ctf_archive_t *arci;
+  ctf_file_t *fp = NULL;
   ctf_sect_t *symsectp = NULL;
   ctf_sect_t *strsectp = NULL;
   const char *bfderrstr = NULL;
+  int is_archive;
 
 #ifdef BFD_ONLY
   asection *sym_asect;
@@ -136,19 +175,33 @@ ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
     }
 #endif
 
-  if ((fp = ctf_bufopen (ctfsect, symsectp, strsectp, errp)) != NULL)
+  if (ctfsect->cts_size > sizeof (uint64_t) &&
+      ((*(uint64_t *) ctfsect->cts_data) == CTFA_MAGIC))
     {
-      if (symsectp)
-	fp->ctf_symtab_alloced = (void *) symsectp->cts_data;
-      if (strsectp)
-	fp->ctf_strtab_alloced = (void *) strsectp->cts_data;
-      fp->ctf_bfd_close = ctf_bfdclose;
-      return fp;
+      is_archive = 1;
+      if ((arc = ctf_arc_bufopen ((void *) ctfsect->cts_data,
+				  ctfsect->cts_size, errp)) == NULL)
+	goto err_free_sym;
     }
-  ctf_dprintf ("ctf_internal_open(): cannot open CTF: %s\n",
-	       ctf_errmsg (*errp));
+  else
+    {
+      is_archive = 0;
+      if ((fp = ctf_bufopen (ctfsect, symsectp, strsectp, errp)) == NULL)
+	{
+	  ctf_dprintf ("ctf_internal_open(): cannot open CTF: %s\n",
+		       ctf_errmsg (*errp));
+	  goto err_free_sym;
+	}
+    }
+  arci = ctf_new_archive_internal (is_archive, arc, fp, symsectp, strsectp,
+				   errp);
+  arci->ctf_data = (void *) ctfsect->cts_data;
 
+  if (arci)
+    return arci;
+ err_free_sym:
 #ifdef BFD_ONLY
+  free ((void *) symsect.cts_data);
 err_free_str:
   free ((void *) strsect.cts_data);
 #endif
@@ -162,17 +215,16 @@ err: _libctf_unused_;
   return NULL;
 }
 
+/* Open the specified file descriptor and return a pointer to a CTF archive that
+   contains one or more CTF containers.  The file can be an ELF file, a raw CTF
+   file, or a CTF archive.  The caller is responsible for closing the file
+   descriptor when it is no longer needed.  If this is an ELF file, TARGET, if
+   non-NULL, should be the name of a suitable BFD target.  */
 
-/* Open the specified file descriptor and return a pointer to a CTF container.
-   The file can be either an ELF file or raw CTF file.  The caller is
-   responsible for closing the file descriptor when it is no longer needed.
-
-   TODO: handle CTF archives too.  */
-
-ctf_file_t *
-ctf_fdopen (int fd, const char *filename, int *errp)
+ctf_archive_t *
+ctf_fdopen (int fd, const char *filename, const char *target, int *errp)
 {
-  ctf_file_t *fp = NULL;
+  ctf_archive_t *arci;
   bfd *abfd;
   int nfd;
 
@@ -180,6 +232,7 @@ ctf_fdopen (int fd, const char *filename, int *errp)
   ssize_t nbytes;
 
   ctf_preamble_t ctfhdr;
+  uint64_t arc_magic;
 
   memset (&ctfhdr, 0, sizeof (ctfhdr));
 
@@ -197,6 +250,7 @@ ctf_fdopen (int fd, const char *filename, int *errp)
   if ((size_t) nbytes >= sizeof (ctf_preamble_t) &&
       ctfhdr.ctp_magic == CTF_MAGIC)
     {
+      ctf_file_t *fp = NULL;
       void *data;
 
       if (ctfhdr.ctp_version > CTF_VERSION)
@@ -211,7 +265,20 @@ ctf_fdopen (int fd, const char *filename, int *errp)
       fp->ctf_data_mmapped = data;
       fp->ctf_data_mmapped_len = (size_t) st.st_size;
 
-      return fp;
+      return ctf_new_archive_internal (0, NULL, fp, NULL, NULL, errp);
+    }
+
+  if ((nbytes = ctf_pread (fd, &arc_magic, sizeof (arc_magic), 0)) <= 0)
+    return (ctf_set_open_errno (errp, nbytes < 0 ? errno : ECTF_FMT));
+
+  if ((size_t) nbytes >= sizeof (uint64_t) && arc_magic == CTFA_MAGIC)
+    {
+      struct ctf_archive *arc;
+
+      if ((arc = ctf_arc_open_internal (filename, errp)) == NULL)
+	return NULL;			/* errno is set for us.  */
+
+      return ctf_new_archive_internal (1, arc, NULL, NULL, NULL, errp);
     }
 
   /* Attempt to open the file with BFD.  We must dup the fd first, since bfd
@@ -220,7 +287,7 @@ ctf_fdopen (int fd, const char *filename, int *errp)
   if ((nfd = dup (fd)) < 0)
       return (ctf_set_open_errno (errp, errno));
 
-  if ((abfd = bfd_fdopenr (filename, NULL, nfd)) == NULL)
+  if ((abfd = bfd_fdopenr (filename, target, nfd)) == NULL)
     {
       ctf_dprintf ("Cannot open BFD from %s: %s\n",
 		   filename ? filename : "(unknown file)",
@@ -239,25 +306,26 @@ ctf_fdopen (int fd, const char *filename, int *errp)
 	return (ctf_set_open_errno (errp, ECTF_FMT));
     }
 
-  if ((fp = ctf_bfdopen (abfd, errp)) == NULL)
+  if ((arci = ctf_bfdopen (abfd, errp)) == NULL)
     {
       if (!bfd_close_all_done (abfd))
 	ctf_dprintf ("Cannot close BFD: %s\n", bfd_errmsg (bfd_get_error()));
       return NULL;			/* errno is set for us.  */
     }
-  fp->ctf_abfd = abfd;
+  arci->ctfi_bfd_close = ctf_bfdclose;
+  arci->ctfi_abfd = abfd;
 
-  return fp;
+  return arci;
 }
 
 /* Open the specified file and return a pointer to a CTF container.  The file
    can be either an ELF file or raw CTF file.  This is just a convenient
    wrapper around ctf_fdopen() for callers.  */
 
-ctf_file_t *
-ctf_open (const char *filename, int *errp)
+ctf_archive_t *
+ctf_open (const char *filename, const char *target, int *errp)
 {
-  ctf_file_t *fp;
+  ctf_archive_t *arc;
   int fd;
 
   if ((fd = open (filename, O_RDONLY)) == -1)
@@ -267,7 +335,16 @@ ctf_open (const char *filename, int *errp)
       return NULL;
     }
 
-  fp = ctf_fdopen (fd, filename, errp);
+  arc = ctf_fdopen (fd, filename, target, errp);
   (void) close (fd);
-  return fp;
+  return arc;
+}
+
+/* Public entry point: open a CTF archive, or CTF file.  Returns the archive, or
+   NULL and an error in *err.  Despite the fact that this uses CTF archives, it
+   must be in this file to avoid dragging in BFD into non-BFD-using programs.  */
+ctf_archive_t *
+ctf_arc_open (const char *filename, int *errp)
+{
+  return ctf_open (filename, NULL, errp);
 }

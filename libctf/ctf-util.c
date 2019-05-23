@@ -147,7 +147,7 @@ ctf_str_append (char *s, const char *append)
 /* Store the specified error code into errp if it is non-NULL, and then
    return NULL for the benefit of the caller.  */
 
-ctf_file_t *
+void *
 ctf_set_open_errno (int *errp, int error)
 {
   if (errp != NULL)

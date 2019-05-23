@@ -1517,25 +1517,25 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   return fp;
 
 bad:
-  ctf_close (fp);
+  ctf_file_close (fp);
   return NULL;
 }
 
 /* Close the specified CTF container and free associated data structures.  Note
-   that ctf_close() is a reference counted operation: if the specified file is
-   the parent of other active containers, its reference count will be greater
+   that ctf_file_close() is a reference counted operation: if the specified file
+   is the parent of other active containers, its reference count will be greater
    than one and it will be freed later when no active children exist.  */
 
 void
-ctf_close (ctf_file_t *fp)
+ctf_file_close (ctf_file_t *fp)
 {
   ctf_dtdef_t *dtd, *ntd;
   ctf_dvdef_t *dvd, *nvd;
 
   if (fp == NULL)
-    return;		   /* Allow ctf_close(NULL) to simplify caller code.  */
+    return;		   /* Allow ctf_file_close(NULL) to simplify caller code.  */
 
-  ctf_dprintf ("ctf_close(%p) refcnt=%u\n", (void *) fp, fp->ctf_refcnt);
+  ctf_dprintf ("ctf_file_close(%p) refcnt=%u\n", (void *) fp, fp->ctf_refcnt);
 
   if (fp->ctf_refcnt > 1)
     {
@@ -1547,7 +1547,7 @@ ctf_close (ctf_file_t *fp)
     ctf_free (fp->ctf_dynparname);
 
   if (fp->ctf_parent != NULL)
-    ctf_close (fp->ctf_parent);
+    ctf_file_close (fp->ctf_parent);
 
   for (dtd = ctf_list_next (&fp->ctf_dtdefs); dtd != NULL; dtd = ntd)
     {
@@ -1578,19 +1578,8 @@ ctf_close (ctf_file_t *fp)
       fp->ctf_strtab.cts_name != NULL)
     ctf_free ((char *) fp->ctf_strtab.cts_name);
 
-  if (fp->ctf_data_alloced)
-    free (fp->ctf_data_alloced);
   else if (fp->ctf_data_mmapped)
     ctf_munmap (fp->ctf_data_mmapped, fp->ctf_data_mmapped_len);
-
-  if (fp->ctf_symtab_alloced)
-    free (fp->ctf_symtab_alloced);
-
-  if (fp->ctf_strtab_alloced)
-    free (fp->ctf_strtab_alloced);
-
-  if (fp->ctf_bfd_close)
-    fp->ctf_bfd_close (fp);
 
   ctf_free_base (fp, NULL, 0);
 
@@ -1611,11 +1600,35 @@ ctf_close (ctf_file_t *fp)
   ctf_free (fp);
 }
 
+#ifndef BFD_ONLY
+/* libdtrace-ctf supports a ctf_close() that works on both CTF archives from
+   ctf_open() and ctf_files, by inspection of magic.  */
+void
+ctf_close (ctf_file_t *fp)
+{
+  struct ctf_archive_internal *arc = (struct ctf_archive_internal *)fp;
+  if (fp == NULL)
+    return;
+  if (arc->ctfi_magic == CTFI_MAGIC)
+    ctf_arc_close (arc);
+  else
+    ctf_file_close (fp);
+}
+#else
+/* The converse of ctf_open().  ctf_open() disguises whatever it opens as an
+   archive, so closing one is just like closing an archive.  */
+void
+ctf_close (ctf_archive_t *arc)
+{
+  ctf_arc_close (arc);
+}
+#endif
+
 /* Return the ctfsect out of the core ctf_impl.  Useful for freeing the
-   ctfsect's data * after ctf_close(), which is why we return the actual
+   ctfsect's data * after ctf_file_close(), which is why we return the actual
    structure, not a pointer to it, since that is likely to become a pointer to
    freed data before the return value is used under the expected use case of
-   ctf_getsect()/ ctf_close()/free().  */
+   ctf_getsect()/ ctf_file_close()/free().  */
 extern ctf_sect_t
 ctf_getdatasect (const ctf_file_t *fp)
 {
@@ -1663,7 +1676,7 @@ ctf_import (ctf_file_t *fp, ctf_file_t *pfp)
     return (ctf_set_errno (fp, ECTF_DMODEL));
 
   if (fp->ctf_parent != NULL)
-    ctf_close (fp->ctf_parent);
+    ctf_file_close (fp->ctf_parent);
 
   if (pfp != NULL)
     {

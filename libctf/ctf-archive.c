@@ -23,7 +23,9 @@
 #endif
 
 static off_t arc_write_one_ctf (ctf_file_t * f, int fd, size_t threshold);
-static ctf_file_t *ctf_arc_open_by_offset (const ctf_archive_t * arc,
+static ctf_file_t *ctf_arc_open_by_offset (const struct ctf_archive *arc,
+					   const ctf_sect_t *symsect,
+					   const ctf_sect_t *strsect,
 					   size_t offset, int *errp);
 static int sort_modent_by_name (const void *one, const void *two, void *n);
 static void *arc_mmap_header (int fd, size_t headersz);
@@ -298,15 +300,32 @@ search_modent_by_name (const void *key, const void *ent)
   return strcmp (k, &search_nametbl[le64toh (v->name_offset)]);
 }
 
+/* A trivial wrapper: open a CTF archive, from data in a buffer (which the
+   caller must preserve until ctf_arc_close() time).  Returns the archive, or
+   NULL and an error in *err (if not NULL).  */
+struct ctf_archive *
+ctf_arc_bufopen (const void *buf, size_t size _libctf_unused_, int *errp)
+{
+  struct ctf_archive *arc = (struct ctf_archive *) buf;
+
+  if (le64toh (arc->ctfa_magic) != CTFA_MAGIC)
+    {
+      if (errp)
+	*errp = ECTF_FMT;
+      return NULL;
+    }
+  return arc;
+}
+
 /* Open a CTF archive.  Returns the archive, or NULL and an error in *err (if
    not NULL).  */
-ctf_archive_t *
-ctf_arc_open (const char *filename, int *errp)
+struct ctf_archive *
+ctf_arc_open_internal (const char *filename, int *errp)
 {
   const char *errmsg;
   int fd;
   struct stat s;
-  ctf_archive_t *arc;		/* (Actually the whole file.)  */
+  struct ctf_archive *arc;		/* (Actually the whole file.)  */
 
   libctf_init_debug();
   if ((fd = open (filename, O_RDONLY)) < 0)
@@ -354,7 +373,7 @@ err:
 
 /* Close an archive.  */
 void
-ctf_arc_close (ctf_archive_t * arc)
+ctf_arc_close_internal (struct ctf_archive *arc)
 {
   if (arc == NULL)
     return;
@@ -363,12 +382,35 @@ ctf_arc_close (ctf_archive_t * arc)
   arc_mmap_unmap (arc, arc->ctfa_magic, NULL);
 }
 
+/* Public entry point: close an archive, or CTF file.  */
+void
+ctf_arc_close (ctf_archive_t *arc)
+{
+  if (arc == NULL)
+    return;
+
+  if (arc->ctfi_is_archive)
+    ctf_arc_close_internal (arc->ctfi_archive);
+  else
+    ctf_file_close (arc->ctfi_file);
+  free ((void *) arc->ctfi_symsect.cts_data);
+  free ((void *) arc->ctfi_strsect.cts_data);
+  free (arc->ctf_data);
+  free (arc);
+}
+
 /* Return the ctf_file_t with the given name, or NULL if none, setting 'err' if
-   non-NULL.  */
-ctf_file_t *
-ctf_arc_open_by_name (const ctf_archive_t * arc, const char *name, int *errp)
+   non-NULL.  A name of NULL means to open the default file.  */
+static ctf_file_t *
+ctf_arc_open_by_name_internal (const struct ctf_archive *arc,
+			       const ctf_sect_t *symsect,
+			       const ctf_sect_t *strsect,
+			       const char *name, int *errp)
 {
   struct ctf_archive_modent *modent;
+
+  if (name == NULL)
+    name = _CTF_SECTION;		 /* The default name.  */
 
   ctf_dprintf ("ctf_arc_open_by_name(%s): opening\n", name);
 
@@ -389,13 +431,63 @@ ctf_arc_open_by_name (const ctf_archive_t * arc, const char *name, int *errp)
       return NULL;
     }
 
-  return ctf_arc_open_by_offset (arc, le64toh (modent->ctf_offset), errp);
+  return ctf_arc_open_by_offset (arc, symsect, strsect,
+				 le64toh (modent->ctf_offset), errp);
+}
+
+/* Return the ctf_file_t with the given name, or NULL if none, setting 'err' if
+   non-NULL.  A name of NULL means to open the default file.
+
+   Use the specified string and symbol table sections.
+
+   Public entry point.  */
+ctf_file_t *
+ctf_arc_open_by_name_sections (const ctf_archive_t *arc,
+			       const ctf_sect_t *symsect,
+			       const ctf_sect_t *strsect,
+			       const char *name,
+			       int *errp)
+{
+  if (arc->ctfi_is_archive)
+    return ctf_arc_open_by_name_internal (arc->ctfi_archive, symsect, strsect,
+					  name, errp);
+
+  if ((name != NULL) && (strcmp (name, _CTF_SECTION) != 0))
+    {
+      if (errp)
+	*errp = ECTF_ARNNAME;
+      return NULL;
+    }
+  /* Bump the refcount so that the user can ctf_file_close() it.  */
+  arc->ctfi_file->ctf_refcnt++;
+  return arc->ctfi_file;
+}
+
+/* Return the ctf_file_t with the given name, or NULL if none, setting 'err' if
+   non-NULL.  A name of NULL means to open the default file.
+
+   Public entry point.  */
+ctf_file_t *
+ctf_arc_open_by_name (const ctf_archive_t *arc, const char *name, int *errp)
+{
+  const ctf_sect_t *symsect = &arc->ctfi_symsect;
+  const ctf_sect_t *strsect = &arc->ctfi_strsect;
+
+  if (symsect->cts_name == NULL)
+    symsect = NULL;
+  if (strsect->cts_name == NULL)
+    strsect = NULL;
+
+  return ctf_arc_open_by_name_sections (arc, symsect, strsect, name, errp);
 }
 
 /* Return the ctf_file_t at the given ctfa_ctfs-relative offset, or NULL if
    none, setting 'err' if non-NULL.  */
 static ctf_file_t *
-ctf_arc_open_by_offset (const ctf_archive_t *arc, size_t offset, int *errp)
+ctf_arc_open_by_offset (const struct ctf_archive *arc,
+			const ctf_sect_t *symsect,
+			const ctf_sect_t *strsect, size_t offset,
+			int *errp)
 {
   ctf_sect_t ctfsect;
   ctf_file_t *fp;
@@ -413,17 +505,17 @@ ctf_arc_open_by_offset (const ctf_archive_t *arc, size_t offset, int *errp)
   ctfsect.cts_entsize = 1;
   ctfsect.cts_offset = 0;
   ctfsect.cts_data = (void *) ((char *) arc + offset + sizeof (uint64_t));
-  fp = ctf_bufopen (&ctfsect, NULL, NULL, errp);
+  fp = ctf_bufopen (&ctfsect, symsect, strsect, errp);
   if (fp)
     ctf_setmodel (fp, le64toh (arc->ctfa_model));
   return fp;
 }
 
-/* Iterate over all CTF files in an archive.  We pass the raw data for all CTF
-   files in turn to the specified callback function.  */
-int
-ctf_archive_raw_iter (const ctf_archive_t * arc,
-		      ctf_archive_raw_member_f * func, void *data)
+/* Raw iteration over all CTF files in an archive.  We pass the raw data for all
+   CTF files in turn to the specified callback function.  */
+static int
+ctf_archive_raw_iter_internal (const struct ctf_archive *arc,
+			       ctf_archive_raw_member_f *func, void *data)
 {
   int rc;
   size_t i;
@@ -450,11 +542,26 @@ ctf_archive_raw_iter (const ctf_archive_t * arc,
   return 0;
 }
 
+/* Raw iteration over all CTF files in an archive: public entry point.
+
+   Returns -EINVAL if not supported for this sort of archive.  */
+int
+ctf_archive_raw_iter (const ctf_archive_t *arc,
+		      ctf_archive_raw_member_f * func, void *data)
+{
+  if (arc->ctfi_is_archive)
+    return ctf_archive_raw_iter_internal (arc->ctfi_archive, func, data);
+
+  return -EINVAL;			 /* Not supported. */
+}
+
 /* Iterate over all CTF files in an archive.  We pass all CTF files in turn to
    the specified callback function.  */
-int
-ctf_archive_iter (const ctf_archive_t * arc, ctf_archive_member_f * func,
-		  void *data)
+static int
+ctf_archive_iter_internal (const struct ctf_archive *arc,
+			   const ctf_sect_t *symsect,
+			   const ctf_sect_t *strsect,
+			   ctf_archive_member_f *func, void *data)
 {
   int rc;
   size_t i;
@@ -471,18 +578,40 @@ ctf_archive_iter (const ctf_archive_t * arc, ctf_archive_member_f * func,
       const char *name;
 
       name = &nametbl[le64toh (modent[i].name_offset)];
-      if ((f = ctf_arc_open_by_name (arc, name, &rc)) == NULL)
+      if ((f = ctf_arc_open_by_name_internal (arc, symsect, strsect,
+					      name, &rc)) == NULL)
 	return rc;
 
       if ((rc = func (f, name, data)) != 0)
 	{
-	  ctf_close (f);
+	  ctf_file_close (f);
 	  return rc;
 	}
 
-      ctf_close (f);
+      ctf_file_close (f);
     }
   return 0;
+}
+
+/* Iterate over all CTF files in an archive: public entry point.  We pass all
+   CTF files in turn to the specified callback function.  */
+int
+ctf_archive_iter (const ctf_archive_t * arc, ctf_archive_member_f * func,
+		  void *data)
+{
+  const ctf_sect_t *symsect = &arc->ctfi_symsect;
+  const ctf_sect_t *strsect = &arc->ctfi_strsect;
+
+  if (symsect->cts_name == NULL)
+    symsect = NULL;
+  if (strsect->cts_name == NULL)
+    strsect = NULL;
+
+  if (arc->ctfi_is_archive)
+    return ctf_archive_iter_internal (arc->ctfi_archive, symsect, strsect,
+				      func, data);
+
+  return func (arc->ctfi_file, _CTF_SECTION, data);
 }
 
 #ifdef HAVE_MMAP

@@ -23,7 +23,7 @@ static const char *const _ctf_errlist[] = {
   "Symbol table information is not available",	     /* ECTF_NOSYMTAB */
   "Type information is in parent and unavailable",   /* ECTF_NOPARENT */
   "Cannot import types with different data model",   /* ECTF_DMODEL */
-  "Unused error",				     /* ECTF_UNUSED2 */
+  "Unused error",				     /* ECTF_UNUSED */
   "Failed to allocate (de)compression buffer",	     /* ECTF_ZALLOC */
   "Failed to decompress CTF data",		     /* ECTF_DECOMPRESS */
   "External string table is not available",	     /* ECTF_STRTAB */

@@ -176,15 +176,11 @@ typedef struct ctf_bundle
 struct ctf_file
 {
   const ctf_fileops_t *ctf_fileops; /* Version-specific file operations.  */
-  bfd *ctf_abfd;		    /* Optional source of section data.  */
   ctf_sect_t ctf_data;		    /* CTF data from object file.  */
   ctf_sect_t ctf_symtab;	    /* Symbol table from object file.  */
   ctf_sect_t ctf_strtab;	    /* String table from object file.  */
-  void *ctf_data_alloced;	    /* CTF data we allocated, to free later.  */
   void *ctf_data_mmapped;	    /* CTF data we mmapped, to free later.  */
   size_t ctf_data_mmapped_len;	    /* Length of CTF data we mmapped.  */
-  void *ctf_symtab_alloced;	    /* symtab data we allocated.  */
-  void *ctf_strtab_alloced;	    /* symtab data we allocated.  */
   ctf_hash_t *ctf_structs;	    /* Hash table of struct types.  */
   ctf_hash_t *ctf_unions;	    /* Hash table of union types.  */
   ctf_hash_t *ctf_enums;	    /* Hash table of enum types.  */
@@ -223,8 +219,25 @@ struct ctf_file
   unsigned long ctf_snapshot_lu;  /* ctf_snapshot() call count at last update.  */
   char *ctf_tmp_typeslice;	  /* Storage for slicing up type names.  */
   size_t ctf_tmp_typeslicelen;	  /* Size of the typeslice.  */
-  void (*ctf_bfd_close) (struct ctf_file *); /* Frees BFD bits on close.  */
   void *ctf_specific;		  /* Data for ctf_get/setspecific().  */
+};
+
+/* An abstraction over both a ctf_file_t and a ctf_archive_t.  */
+
+struct ctf_archive_internal
+{
+#ifndef BFD_ONLY
+  #define CTFI_MAGIC 0x4ac1ba723d04eabb		/* Random.  */
+  uint64_t ctfi_magic;
+#endif
+  int ctfi_is_archive;
+  ctf_file_t *ctfi_file;
+  struct ctf_archive *ctfi_archive;
+  ctf_sect_t ctfi_symsect;
+  ctf_sect_t ctfi_strsect;
+  void *ctf_data;
+  bfd *ctfi_abfd;		    /* Optional source of section data.  */
+  void (*ctfi_bfd_close) (struct ctf_archive_internal *);
 };
 
 /* Return x rounded up to an alignment boundary.
@@ -312,13 +325,18 @@ _libctf_printflike_ (2, 3)
 extern void ctf_decl_sprintf (ctf_decl_t *, const char *, ...);
 extern char *ctf_decl_buf (ctf_decl_t *cd);
 
+
+
 extern const char *ctf_strraw (ctf_file_t *, uint32_t);
 extern const char *ctf_strptr (ctf_file_t *, uint32_t);
 
-extern ctf_file_t *ctf_set_open_errno (int *, int);
+extern struct ctf_archive *ctf_arc_open_internal (const char *, int *);
+extern struct ctf_archive *ctf_arc_bufopen (const void *, size_t, int *);
+extern void ctf_arc_close_internal (struct ctf_archive *);
+extern void *ctf_set_open_errno (int *, int);
 extern long ctf_set_errno (ctf_file_t *, int);
-extern ctf_file_t *ctf_bfdopen_ctfsect (struct bfd *, const ctf_sect_t *,
-					int *);
+extern ctf_archive_t *ctf_bfdopen_ctfsect (struct bfd *, const ctf_sect_t *,
+					   int *);
 
 _libctf_malloc_
 extern void *ctf_data_alloc (size_t);

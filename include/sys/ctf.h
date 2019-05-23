@@ -527,7 +527,10 @@ typedef struct ctf_enum
    The code relies on the fact that everything in this header is a uint64_t
    and thus the header needs no padding (in particular, that no padding is
    needed between ctfa_ctfs and the unnamed ctfa_archive_modent array
-   that follows it).  */
+   that follows it).
+
+   This is *not* the same as the data structure returned by the ctf_arc_*()
+   functions:  this is the low-level on-disk representation.  */
 
 #define CTFA_MAGIC 0x8b47f2a4d7623eeb	/* Random.  */
 struct ctf_archive

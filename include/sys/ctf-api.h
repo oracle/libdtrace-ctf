@@ -31,7 +31,7 @@ extern "C"
    These opaque definitions allow libctf to evolve without breaking clients.  */
 
 typedef struct ctf_file ctf_file_t;
-typedef struct ctf_archive ctf_archive_t;
+typedef struct ctf_archive_internal ctf_archive_t;
 typedef long ctf_id_t;
 
 /* This opaque definition allows libctf to accept BFD data structures without
@@ -140,7 +140,7 @@ enum
    ECTF_NOSYMTAB,		/* Symbol table data is not available.  */
    ECTF_NOPARENT,		/* Parent CTF container is not available.  */
    ECTF_DMODEL,			/* Data model mismatch.  */
-   ECTF_UNUSED2,		/* Unused error.  */
+   ECTF_UNUSED,			/* Unused error.  */
    ECTF_ZALLOC,			/* Failed to allocate (de)compression buffer.  */
    ECTF_DECOMPRESS,		/* Failed to decompress CTF data.  */
    ECTF_STRTAB,			/* String table for this string is missing.  */
@@ -216,23 +216,47 @@ typedef char *ctf_dump_decorate_f (ctf_sect_names_t sect,
 
 typedef struct ctf_dump_state ctf_dump_state_t;
 
-extern ctf_file_t *ctf_simple_open (const char *, size_t, const char *, size_t,
-				   size_t, const char *, size_t, int *);
-extern ctf_file_t *ctf_bfdopen (struct bfd *, int *);
-extern ctf_file_t *ctf_bufopen (const ctf_sect_t *, const ctf_sect_t *,
-				const ctf_sect_t *, int *);
-extern ctf_file_t *ctf_fdopen (int, const char *, int *);
-extern ctf_file_t *ctf_open (const char *, int *);
-extern ctf_file_t *ctf_create (int *);
-extern void ctf_close (ctf_file_t *);
-extern ctf_sect_t ctf_getdatasect (const ctf_file_t *);
+/* Opening.  These mostly return an abstraction over both CTF files and CTF
+   archives: so they can be used to open both.  CTF files will appear to be an
+   archive with one member named '.ctf'.  The low-level functions
+   ctf_simple_open() and ctf_bufopen() return ctf_file_t's directly, and cannot
+   be used on CTF archives.  */
 
-extern int ctf_arc_write (const char *, ctf_file_t **, size_t,
-			  const char **, size_t);
+extern ctf_archive_t *ctf_bfdopen (struct bfd *, int *);
+extern ctf_archive_t *ctf_fdopen (int fd, const char *filename,
+				  const char *target, int *errp);
+extern ctf_archive_t *ctf_open (const char *filename,
+				const char *target, int *errp);
+#ifdef BFD_ONLY
+extern void ctf_close (ctf_archive_t *);
+#else
+#ifdef CTF_CLOSE_NEW_API
+extern void ctf_close (ctf_archive_t *);
+#else
+extern void ctf_close (ctf_file_t *);
+#endif
+#endif
+extern ctf_sect_t ctf_getdatasect (const ctf_file_t *);
 extern ctf_archive_t *ctf_arc_open (const char *, int *);
 extern void ctf_arc_close (ctf_archive_t *);
 extern ctf_file_t *ctf_arc_open_by_name (const ctf_archive_t *,
 					 const char *, int *);
+extern ctf_file_t *ctf_arc_open_by_name_sections (const ctf_archive_t *,
+						  const ctf_sect_t *,
+						  const ctf_sect_t *,
+						  const char *, int *);
+
+/* The next functions return or close real CTF files, or write out CTF archives,
+   not opaque containers around either.  */
+
+extern ctf_file_t *ctf_simple_open (const char *, size_t, const char *, size_t,
+				   size_t, const char *, size_t, int *);
+extern ctf_file_t *ctf_bufopen (const ctf_sect_t *, const ctf_sect_t *,
+				const ctf_sect_t *, int *);
+extern void ctf_file_close (ctf_file_t *);
+
+extern int ctf_arc_write (const char *, ctf_file_t **, size_t,
+			  const char **, size_t);
 
 extern ctf_file_t *ctf_parent_file (ctf_file_t *);
 extern const char *ctf_parent_name (ctf_file_t *);
@@ -292,6 +316,10 @@ extern int ctf_label_iter (ctf_file_t *, ctf_label_f *, void *);
 extern int ctf_variable_iter (ctf_file_t *, ctf_variable_f *, void *);
 extern int ctf_archive_iter (const ctf_archive_t *, ctf_archive_member_f *,
 			     void *);
+/* This function alone does not currently operate on CTF files masquerading
+   as archives, and returns -EINVAL: the raw data is no longer available.  It is
+   expected to be used only by archiving tools, in any case, which have no need
+   to deal with non-archives at all.  */
 extern int ctf_archive_raw_iter (const ctf_archive_t *,
 				 ctf_archive_raw_member_f *, void *);
 extern char *ctf_dump (ctf_file_t *, ctf_dump_state_t **state,
@@ -338,6 +366,7 @@ extern int ctf_add_variable (ctf_file_t *, const char *, ctf_id_t);
 
 extern int ctf_set_array (ctf_file_t *, ctf_id_t, const ctf_arinfo_t *);
 
+extern ctf_file_t *ctf_create (int *);
 extern int ctf_update (ctf_file_t *);
 extern ctf_snapshot_id_t ctf_snapshot (ctf_file_t *);
 extern int ctf_rollback (ctf_file_t *, ctf_snapshot_id_t);

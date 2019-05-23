@@ -486,7 +486,7 @@ ctf_update (ctf_file_t *fp)
   fp->ctf_lookups[3].ctl_hash = fp->ctf_names;
 
   nfp->ctf_refcnt = 1;		/* Force nfp to be freed.  */
-  ctf_close (nfp);
+  ctf_file_close (nfp);
 
   return 0;
 }
