@@ -130,7 +130,7 @@ enum
    ECTF_FMT = ECTF_BASE,	/* File is not in CTF or ELF format.  */
    ECTF_BFDERR,			/* BFD error.  */
    ECTF_CTFVERS,		/* CTF version is more recent than libctf.  */
-   ECTF_UNUSED1,		/* Unused error.  */
+   ECTF_BFD_AMBIGUOUS,		/* Ambiguous BFD target.  */
    ECTF_SYMTAB,			/* Symbol table uses invalid entry size.  */
    ECTF_SYMBAD,			/* Symbol table data buffer invalid.  */
    ECTF_STRBAD,			/* String table data buffer invalid.  */

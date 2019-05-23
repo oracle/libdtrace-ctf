@@ -233,7 +233,10 @@ ctf_fdopen (int fd, const char *filename, int *errp)
       ctf_dprintf ("BFD format problem in %s: %s\n",
 		   filename ? filename : "(unknown file)",
 		   bfd_errmsg (bfd_get_error()));
-      return (ctf_set_open_errno (errp, ECTF_FMT));
+      if (bfd_get_error() == bfd_error_file_ambiguously_recognized)
+	return (ctf_set_open_errno (errp, ECTF_BFD_AMBIGUOUS));
+      else
+	return (ctf_set_open_errno (errp, ECTF_FMT));
     }
 
   if ((fp = ctf_bfdopen (abfd, errp)) == NULL)

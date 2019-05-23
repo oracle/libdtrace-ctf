@@ -13,7 +13,7 @@ static const char *const _ctf_errlist[] = {
   "File is not in CTF or ELF format",		     /* ECTF_FMT */
   "BFD error",					     /* ECTF_BFDERR */
   "File uses more recent CTF version than libctf",   /* ECTF_CTFVERS */
-  "Unused error",				     /* ECTF_UNUSED1 */
+  "Ambiguous BFD target",			     /* ECTF_BFD_AMBIGUOUS */
   "Symbol table uses invalid entry size",	     /* ECTF_SYMTAB */
   "Symbol table data buffer is not valid",	     /* ECTF_SYMBAD */
   "String table data buffer is not valid",	     /* ECTF_STRBAD */
