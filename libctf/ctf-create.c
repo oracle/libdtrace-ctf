@@ -547,8 +547,8 @@ ctf_dtd_delete (ctf_file_t *fp, ctf_dtdef_t *dtd)
 	{
 	  if (dmd->dmd_name != NULL)
 	    {
-	      ctf_free (dmd->dmd_name);
 	      fp->ctf_dtvstrlen -= strlen (dmd->dmd_name) + 1;
+	      ctf_free (dmd->dmd_name);
 	    }
 	  nmd = ctf_list_next (dmd);
 	  ctf_free (dmd);
@@ -567,8 +567,8 @@ ctf_dtd_delete (ctf_file_t *fp, ctf_dtdef_t *dtd)
       ctf_dynhash_remove (fp->ctf_dtbyname, name);
       free (name);
 
-      ctf_free (dtd->dtd_name);
       fp->ctf_dtvstrlen -= strlen (dtd->dtd_name) + 1;
+      ctf_free (dtd->dtd_name);
     }
 
   ctf_list_delete (&fp->ctf_dtdefs, dtd);
@@ -624,8 +624,8 @@ ctf_dvd_delete (ctf_file_t *fp, ctf_dvdef_t *dvd)
 {
   ctf_dynhash_remove (fp->ctf_dvhash, dvd->dvd_name);
 
-  ctf_free (dvd->dvd_name);
   fp->ctf_dtvstrlen -= strlen (dvd->dvd_name) + 1;
+  ctf_free (dvd->dvd_name);
 
   ctf_list_delete (&fp->ctf_dvdefs, dvd);
   ctf_free (dvd);
