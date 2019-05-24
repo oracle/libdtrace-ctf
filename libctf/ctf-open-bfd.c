@@ -102,7 +102,10 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
   ctfsect.cts_data = contents;
 
   if ((arc = ctf_bfdopen_ctfsect (abfd, &ctfsect, errp)) != NULL)
+    {
+      arc->ctfi_data = (void *) ctfsect.cts_data;
       return arc;
+    }
 
   free (contents);
   return NULL;				/* errno is set for us.  */
@@ -195,7 +198,6 @@ ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
     }
   arci = ctf_new_archive_internal (is_archive, arc, fp, symsectp, strsectp,
 				   errp);
-  arci->ctfi_data = (void *) ctfsect->cts_data;
 
   if (arci)
     return arci;
