@@ -449,8 +449,14 @@ ctf_arc_open_by_name_sections (const ctf_archive_t *arc,
 			       int *errp)
 {
   if (arc->ctfi_is_archive)
-    return ctf_arc_open_by_name_internal (arc->ctfi_archive, symsect, strsect,
-					  name, errp);
+    {
+      ctf_file_t *ret;
+      ret = ctf_arc_open_by_name_internal (arc->ctfi_archive, symsect, strsect,
+					   name, errp);
+      if (ret)
+	ret->ctf_archive = (ctf_archive_t *) arc;
+      return ret;
+    }
 
   if ((name != NULL) && (strcmp (name, _CTF_SECTION) != 0))
     {
@@ -458,6 +464,8 @@ ctf_arc_open_by_name_sections (const ctf_archive_t *arc,
 	*errp = ECTF_ARNNAME;
       return NULL;
     }
+  arc->ctfi_file->ctf_archive = (ctf_archive_t *) arc;
+
   /* Bump the refcount so that the user can ctf_file_close() it.  */
   arc->ctfi_file->ctf_refcnt++;
   return arc->ctfi_file;
@@ -558,7 +566,8 @@ ctf_archive_raw_iter (const ctf_archive_t *arc,
 /* Iterate over all CTF files in an archive.  We pass all CTF files in turn to
    the specified callback function.  */
 static int
-ctf_archive_iter_internal (const struct ctf_archive *arc,
+ctf_archive_iter_internal (const ctf_archive_t *wrapper,
+			   const struct ctf_archive *arc,
 			   const ctf_sect_t *symsect,
 			   const ctf_sect_t *strsect,
 			   ctf_archive_member_f *func, void *data)
@@ -582,6 +591,7 @@ ctf_archive_iter_internal (const struct ctf_archive *arc,
 					      name, &rc)) == NULL)
 	return rc;
 
+      f->ctf_archive = (ctf_archive_t *) wrapper;
       if ((rc = func (f, name, data)) != 0)
 	{
 	  ctf_file_close (f);
@@ -596,7 +606,7 @@ ctf_archive_iter_internal (const struct ctf_archive *arc,
 /* Iterate over all CTF files in an archive: public entry point.  We pass all
    CTF files in turn to the specified callback function.  */
 int
-ctf_archive_iter (const ctf_archive_t * arc, ctf_archive_member_f * func,
+ctf_archive_iter (const ctf_archive_t *arc, ctf_archive_member_f *func,
 		  void *data)
 {
   const ctf_sect_t *symsect = &arc->ctfi_symsect;
@@ -608,7 +618,7 @@ ctf_archive_iter (const ctf_archive_t * arc, ctf_archive_member_f * func,
     strsect = NULL;
 
   if (arc->ctfi_is_archive)
-    return ctf_archive_iter_internal (arc->ctfi_archive, symsect, strsect,
+    return ctf_archive_iter_internal (arc, arc->ctfi_archive, symsect, strsect,
 				      func, data);
 
   return func (arc->ctfi_file, _CTF_SECTION, data);

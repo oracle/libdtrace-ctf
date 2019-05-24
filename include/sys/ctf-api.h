@@ -237,6 +237,7 @@ extern void ctf_close (ctf_file_t *);
 #endif
 #endif
 extern ctf_sect_t ctf_getdatasect (const ctf_file_t *);
+extern ctf_archive_t *ctf_get_arc (const ctf_file_t *);
 extern ctf_archive_t *ctf_arc_open (const char *, int *);
 extern void ctf_arc_close (ctf_archive_t *);
 extern ctf_file_t *ctf_arc_open_by_name (const ctf_archive_t *,

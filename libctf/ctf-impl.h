@@ -217,6 +217,7 @@ struct ctf_file
   unsigned long ctf_dtoldid;	  /* Oldest id that has been committed.  */
   unsigned long ctf_snapshots;	  /* ctf_snapshot() plus ctf_update() count.  */
   unsigned long ctf_snapshot_lu;  /* ctf_snapshot() call count at last update.  */
+  ctf_archive_t *ctf_archive;	  /* Archive this ctf_file_t came from.  */
   char *ctf_tmp_typeslice;	  /* Storage for slicing up type names.  */
   size_t ctf_tmp_typeslicelen;	  /* Size of the typeslice.  */
   void *ctf_specific;		  /* Data for ctf_get/setspecific().  */
