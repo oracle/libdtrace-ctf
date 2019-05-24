@@ -223,6 +223,8 @@ typedef struct ctf_dump_state ctf_dump_state_t;
    be used on CTF archives.  */
 
 extern ctf_archive_t *ctf_bfdopen (struct bfd *, int *);
+extern ctf_archive_t *ctf_bfdopen_ctfsect (struct bfd *, const ctf_sect_t *,
+					   int *);
 extern ctf_archive_t *ctf_fdopen (int fd, const char *filename,
 				  const char *target, int *errp);
 extern ctf_archive_t *ctf_open (const char *filename,

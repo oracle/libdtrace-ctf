@@ -147,4 +147,5 @@ LIBDTRACE_CTF_1.6 {
 	ctf_file_close;
 	ctf_get_arc;
 	ctf_arc_open_by_name_sections;
+	ctf_bfdopen_ctfsect;
 } LIBDTRACE_CTF_1.5;

@@ -334,8 +334,6 @@ extern struct ctf_archive *ctf_arc_bufopen (const void *, size_t, int *);
 extern void ctf_arc_close_internal (struct ctf_archive *);
 extern void *ctf_set_open_errno (int *, int);
 extern long ctf_set_errno (ctf_file_t *, int);
-extern ctf_archive_t *ctf_bfdopen_ctfsect (struct bfd *, const ctf_sect_t *,
-					   int *);
 
 _libctf_malloc_
 extern void *ctf_data_alloc (size_t);
