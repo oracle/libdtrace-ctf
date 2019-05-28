@@ -116,7 +116,8 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
    later.  */
 
 ctf_archive_t *
-ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
+ctf_bfdopen_ctfsect (struct bfd *abfd _libctf_unused_,
+		     const ctf_sect_t *ctfsect, int *errp)
 {
   struct ctf_archive *arc = NULL;
   ctf_archive_t *arci;
@@ -126,7 +127,7 @@ ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
   const char *bfderrstr = NULL;
   int is_archive;
 
-#ifdef BFD_ONLY
+#ifdef HAVE_BFD_ELF
   asection *sym_asect;
   ctf_sect_t symsect, strsect;
   /* TODO: handle SYMTAB_SHNDX.  */
@@ -202,7 +203,7 @@ ctf_bfdopen_ctfsect (struct bfd *abfd, const ctf_sect_t *ctfsect, int *errp)
   if (arci)
     return arci;
  err_free_sym:
-#ifdef BFD_ONLY
+#ifdef HAVE_BFD_ELF
   free ((void *) symsect.cts_data);
 err_free_str:
   free ((void *) strsect.cts_data);
