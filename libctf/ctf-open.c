@@ -1722,12 +1722,15 @@ ctf_getmodel (ctf_file_t *fp)
   return fp->ctf_dmodel->ctd_code;
 }
 
+/* The caller can hang an arbitrary pointer off each ctf_file_t using this
+   function.  */
 void
 ctf_setspecific (ctf_file_t *fp, void *data)
 {
   fp->ctf_specific = data;
 }
 
+/* Retrieve the arbitrary pointer again.  */
 void *
 ctf_getspecific (ctf_file_t *fp)
 {
