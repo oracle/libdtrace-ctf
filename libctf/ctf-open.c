@@ -517,7 +517,7 @@ upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
 	case CTF_K_UNION:
 	case CTF_K_ENUM:
 	case CTF_K_UNKNOWN:
-	  if (size <= CTF_MAX_SIZE)
+	  if ((size_t) size <= CTF_MAX_SIZE)
 	    t2p->ctt_size = size;
 	  else
 	    {
@@ -1341,7 +1341,8 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 
   if (hp.cth_flags & CTF_F_COMPRESS)
     {
-      size_t srclen, dstlen;
+      size_t srclen;
+      uLongf dstlen;
       const void *src;
       int rc = Z_OK;
 
@@ -1363,7 +1364,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	  return (ctf_set_open_errno (errp, ECTF_DECOMPRESS));
 	}
 
-      if (dstlen != size)
+      if ((size_t) dstlen != size)
 	{
 	  ctf_dprintf ("zlib inflate short -- got %lu of %lu "
 		       "bytes\n", (unsigned long) dstlen, (unsigned long) size);

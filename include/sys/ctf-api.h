@@ -36,7 +36,7 @@ extern "C"
 
 typedef struct ctf_file ctf_file_t;
 typedef struct ctf_archive_internal ctf_archive_t;
-typedef long ctf_id_t;
+typedef unsigned long ctf_id_t;
 
 /* This opaque definition allows libctf to accept BFD data structures without
    importing all the BFD noise into users' namespaces.  */
@@ -118,9 +118,10 @@ typedef struct ctf_snapshot_id
 
 #define	CTF_FUNC_VARARG	0x1	/* Function arguments end with varargs.  */
 
-/* Functions that return integer status or a ctf_id_t use the following value
-   to indicate failure.  ctf_errno() can be used to obtain an error code.  */
-#define	CTF_ERR	(-1L)
+/* Functions that return a ctf_id_t use the following value to indicate failure.
+   ctf_errno() can be used to obtain an error code.  Functions that return
+   a straight integral -1 also use ctf_errno().  */
+#define	CTF_ERR	((ctf_id_t) -1L)
 
 #define	ECTF_BASE	1000	/* Base value for libctf errnos.  */
 
