@@ -82,5 +82,6 @@ $(CONFIG_H):
 
 $(eval $(call check-symbol-rule,MMAP,mmap,c))
 $(eval $(call check-symbol-rule,PREAD,pread,c))
+$(eval $(call check-type-rule,OFF64_T,sys/types.h,off64_t))
 $(eval $(call check-header-rule,BYTESWAP,byteswap.h))
 $(eval $(call check-header-rule,ENDIAN,endian.h))

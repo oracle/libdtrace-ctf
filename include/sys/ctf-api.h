@@ -18,6 +18,10 @@
 #include <sys/ctf.h>
 #include <zlib.h>
 
+#ifndef HAVE_OFF64_T
+#define off64_t off_t
+#endif
+
 #ifdef	__cplusplus
 extern "C"
   {
