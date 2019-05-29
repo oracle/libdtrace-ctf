@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include <errno.h>
+#include "ctf-decls.h"
 #include <sys/ctf-api.h>
 #include <sys/types.h>
 #include <stdlib.h>
