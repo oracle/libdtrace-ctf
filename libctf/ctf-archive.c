@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <elf.h>
-#include <endian.h>
+#include "ctf-endian.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
