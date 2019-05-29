@@ -140,7 +140,6 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
       strcpy (&nametbl[namesz], names[i]);
 
       off = arc_write_one_ctf (ctf_files[i], fd, threshold);
-      ctf_dprintf ("Written %s, offset now %zi\n", names[i], off);
       if ((off < 0) && (off > -ECTF_BASE))
 	{
 	  errmsg = "ctf_arc_write(): Cannot determine file "
