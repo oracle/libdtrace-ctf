@@ -502,7 +502,7 @@ ctf_arc_open_by_offset (const struct ctf_archive *arc,
 
   ctf_dprintf ("ctf_arc_open_by_offset(%zi): opening\n", offset);
 
-  bzero (&ctfsect, sizeof (ctf_sect_t));
+  memset (&ctfsect, 0, sizeof (ctf_sect_t));
 
   offset += le64toh (arc->ctfa_ctfs);
 

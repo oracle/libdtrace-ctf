@@ -11,7 +11,7 @@
 #define	_CTF_IMPL_H
 
 #include "config.h"
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/ctf-api.h>
 #include <sys/types.h>
 #include <stdlib.h>

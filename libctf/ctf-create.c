@@ -13,6 +13,10 @@
 #include <string.h>
 #include <zlib.h>
 
+#ifndef roundup
+#define roundup(x, y)  ((((x) + ((y) - 1)) / (y)) * (y))
+#endif
+
 /* To create an empty CTF container, we just declare a zeroed header and call
    ctf_bufopen() on it.  If ctf_bufopen succeeds, we mark the new container r/w
    and initialize the dynamic members.  We set dtvstrlen to 1 to reserve the
