@@ -506,11 +506,8 @@ ctf_arc_open_by_offset (const struct ctf_archive *arc,
   offset += le64toh (arc->ctfa_ctfs);
 
   ctfsect.cts_name = _CTF_SECTION;
-  ctfsect.cts_type = SHT_PROGBITS;
-  ctfsect.cts_flags = SHF_ALLOC;
   ctfsect.cts_size = le64toh (*((uint64_t *) ((char *) arc + offset)));
   ctfsect.cts_entsize = 1;
-  ctfsect.cts_offset = 0;
   ctfsect.cts_data = (void *) ((char *) arc + offset + sizeof (uint64_t));
   fp = ctf_bufopen (&ctfsect, symsect, strsect, errp);
   if (fp)

@@ -1187,10 +1187,7 @@ ctf_file_t *ctf_simple_open (const char *ctfsect, size_t ctfsect_size,
   ctf_sect_t *strsectp = NULL;
 
   skeleton.cts_name = _CTF_SECTION;
-  skeleton.cts_type = SHT_PROGBITS;
-  skeleton.cts_flags = 0;
   skeleton.cts_entsize = 1;
-  skeleton.cts_offset = 0;
 
   if (ctfsect)
     {

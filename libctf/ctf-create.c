@@ -61,12 +61,9 @@ ctf_create (int *errp)
     }
 
   cts.cts_name = _CTF_SECTION;
-  cts.cts_type = SHT_PROGBITS;
-  cts.cts_flags = 0;
   cts.cts_data = &hdr;
   cts.cts_size = sizeof (hdr);
   cts.cts_entsize = 1;
-  cts.cts_offset = 0;
 
   if ((fp = ctf_bufopen (&cts, NULL, NULL, errp)) == NULL)
       goto err_dtbyname;
