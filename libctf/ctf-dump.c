@@ -263,7 +263,6 @@ ctf_dump_funcs (ctf_file_t *fp, ctf_dump_state_t *state)
 	goto err;
 
       str = ctf_str_append (str, " ");
-      free (bit);
 
       /* Function name.  */
 
@@ -280,6 +279,7 @@ ctf_dump_funcs (ctf_file_t *fp, ctf_dump_state_t *state)
 	}
       str = ctf_str_append (str, bit);
       str = ctf_str_append (str, " (");
+      free (bit);
 
       /* Function arguments.  */
 
