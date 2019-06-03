@@ -49,14 +49,14 @@ struct bfd;
 typedef struct ctf_sect
 {
   const char *cts_name;		  /* Section name (if any).  */
-#ifdef IN_LIBDTRACE_CTF
+#ifndef BFD_ONLY
   unsigned long cts_type;	  /* Section type (ELF SHT_... value).  */
   unsigned long cts_flags;	  /* Section flags (ELF SHF_... value).  */
 #endif
   const void *cts_data;		  /* Pointer to section data.  */
   size_t cts_size;		  /* Size of data in bytes.  */
   size_t cts_entsize;		  /* Size of each section entry (symtab only).  */
-#ifdef IN_LIBDTRACE_CTF
+#ifndef BFD_ONLY
   off64_t cts_offset;		  /* File offset of this section (if any).  */
 #endif
 } ctf_sect_t;
