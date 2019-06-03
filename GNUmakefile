@@ -25,7 +25,7 @@ $(if $(subst Linux,,$(shell uname -s)), \
 
 CFLAGS ?= -O2 -g -Wall -pedantic -Wno-unknown-pragmas
 LDFLAGS ?=
-INVARIANT_CFLAGS := -std=gnu11 -D_GNU_SOURCE $(DTO)
+INVARIANT_CFLAGS := -std=gnu11 -D_GNU_SOURCE -DPACKAGE=\"libctf\" $(DTO)
 CPPFLAGS += -Iinclude -I$(objdir)
 CC = gcc
 override CFLAGS += $(INVARIANT_CFLAGS)
