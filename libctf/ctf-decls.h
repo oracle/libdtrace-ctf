@@ -14,6 +14,7 @@
 
 #include "config.h"
 
-/* Nothing here in libdtrace-ctf.  */
+#define ctf_qsort_r(base, nmemb, size, compar, arg)	\
+  qsort_r ((base), (nmemb), (size), (compar), (arg))
 
 #endif
