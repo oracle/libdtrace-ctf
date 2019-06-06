@@ -13,8 +13,11 @@
 #define	_CTF_DECLS_H
 
 #include "config.h"
+#include <string.h>
 
 #define ctf_qsort_r(base, nmemb, size, compar, arg)	\
   qsort_r ((base), (nmemb), (size), (compar), (arg))
+
+#define xstrndup(str, n) strndup (str, n)
 
 #endif
