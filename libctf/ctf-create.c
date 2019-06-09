@@ -74,8 +74,6 @@ ctf_create (int *errp)
   fp->ctf_dtoldid = 0;
   fp->ctf_snapshots = 0;
   fp->ctf_snapshot_lu = 0;
-  if (ctf_str_create_atoms (fp) < 0)
-    goto err_dtbyname;
 
   return fp;
 

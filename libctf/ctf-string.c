@@ -63,7 +63,7 @@ int
 ctf_str_create_atoms (ctf_file_t *fp)
 {
   fp->ctf_str_atoms = ctf_dynhash_create (ctf_hash_string, ctf_hash_eq_string,
-					  free, ctf_str_free_atom);
+					  ctf_free, ctf_str_free_atom);
   if (fp->ctf_str_atoms == NULL)
     return -ENOMEM;
 
