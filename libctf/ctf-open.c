@@ -1380,6 +1380,12 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
       buf = (unsigned char *) base + hdrsz;
     }
 
+  /* Flip the endianness of the copy of the header in the section, to avoid
+     ending up with a partially-endian-flipped file.  */
+
+  if (foreign_endian)
+    flip_header ((ctf_header_t *) base);
+
   /* Once we have uncompressed and validated the CTF data buffer, we can
      proceed with allocating a ctf_file_t and initializing it.
 
