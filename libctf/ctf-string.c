@@ -82,7 +82,7 @@ ctf_str_free_atoms (ctf_file_t *fp)
    if present, copying the passed-in string.  Returns NULL only when out of
    memory (and do not touch the passed-in string in that case).  Possibly
    augment the ref list with the passed-in ref.  */
-const char *
+static const char *
 ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
 			  int add_ref, uint32_t *ref)
 {
