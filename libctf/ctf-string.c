@@ -159,7 +159,8 @@ ctf_str_add_ref (ctf_file_t *fp, const char *str, uint32_t *ref)
 
 /* An adaptor around ctf_purge_atom_refs.  */
 static void
-ctf_str_purge_one_atom_refs (void *key, void *value, void *arg)
+ctf_str_purge_one_atom_refs (void *key _libctf_unused_, void *value,
+			     void *arg _libctf_unused_)
 {
   ctf_str_atom_t *atom = (ctf_str_atom_t *) value;
   ctf_str_purge_atom_refs (atom);
