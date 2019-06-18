@@ -1225,7 +1225,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   const ctf_preamble_t *pp;
   ctf_header_t hp;
   ctf_file_t *fp;
-  void *buf, *base;
+  void *base;
   size_t size, hdrsz;
   int foreign_endian = 0;
   int err;
@@ -1341,6 +1341,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
       uLongf dstlen;
       const void *src;
       int rc = Z_OK;
+      void *buf;
 
       if ((base = ctf_alloc (size + hdrsz)) == NULL)
 	return (ctf_set_open_errno (errp, ECTF_ZALLOC));
@@ -1376,10 +1377,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
       memcpy (base, ctfsect->cts_data, size + hdrsz);
     }
   else
-    {
-      base = (void *) ctfsect->cts_data;
-      buf = (unsigned char *) base + hdrsz;
-    }
+    base = (void *) ctfsect->cts_data;
 
   /* Flip the endianness of the copy of the header in the section, to avoid
      ending up with a partially-endian-flipped file.  */
