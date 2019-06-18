@@ -1373,6 +1373,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     {
       if ((base = ctf_alloc (size + hdrsz)) == NULL)
 	return (ctf_set_open_errno (errp, ECTF_ZALLOC));
+      memcpy (base, ctfsect->cts_data, size + hdrsz);
     }
   else
     {
