@@ -1084,7 +1084,6 @@ flip_types (void *start, size_t len)
 
 	    ctf_slice_t *s = (ctf_slice_t *) t;
 
-	    assert (vbytes == sizeof (ctf_slice_t));
 	    swap_thing (s->cts_type);
 	    swap_thing (s->cts_offset);
 	    swap_thing (s->cts_bits);
