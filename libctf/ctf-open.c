@@ -148,8 +148,7 @@ get_vbytes_common (unsigned short kind, ssize_t size _libctf_unused_,
     case CTF_K_FLOAT:
       return (sizeof (uint32_t));
     case CTF_K_SLICE:
-      return (offsetof (ctf_slice_t, cts_bits) +
-	      sizeof (((ctf_slice_t *)0)->cts_bits));
+      return (sizeof (ctf_slice_t));
     case CTF_K_ENUM:
       return (sizeof (ctf_enum_t) * vlen);
     case CTF_K_FORWARD:
@@ -1084,6 +1083,7 @@ flip_types (void *start, size_t len)
 
 	    ctf_slice_t *s = (ctf_slice_t *) t;
 
+	    assert (vbytes == sizeof (ctf_slice_t));
 	    swap_thing (s->cts_type);
 	    swap_thing (s->cts_offset);
 	    swap_thing (s->cts_bits);
