@@ -128,8 +128,8 @@ ctf_realloc (ctf_file_t *fp, void *ptr, size_t size)
 {
   if (fp->ctf_str_num_refs > 0)
     {
-      ctf_dprintf ("%p: attempt to realloc() string table with %li active refs\n",
-		   (void *) fp, fp->ctf_str_num_refs);
+      ctf_dprintf ("%p: attempt to realloc() string table with %lu active refs\n",
+		   (void *) fp, (unsigned long) fp->ctf_str_num_refs);
       return NULL;
     }
   return realloc (ptr, size);
