@@ -120,7 +120,6 @@ ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
   if (ctf_dynhash_insert (fp->ctf_str_atoms, newstr, atom) < 0)
     goto oom;
 
-  ctf_list_append (&fp->ctf_str_atoms_ordered, atom);
   atom->csa_str = newstr;
   if (add_ref)
     {
@@ -185,6 +184,52 @@ ctf_str_update_refs (ctf_str_atom_t *refs, uint32_t value)
       *(ref->caf_ref) = value;
 }
 
+typedef struct ctf_strtab_write_state
+{
+  ctf_strs_writable_t *strtab;
+  size_t strtab_count;
+  ctf_str_atom_t **sorttab;
+  size_t i;
+  ctf_str_atom_t *nullstr;
+} ctf_strtab_write_state_t;
+
+/* Count the number of entries in the strtab, and its length.  */
+static void
+ctf_str_count_strtab (void *key _libctf_unused_, void *value,
+	      void *arg)
+{
+  ctf_str_atom_t *atom = (ctf_str_atom_t *) value;
+  ctf_strtab_write_state_t *s = (ctf_strtab_write_state_t *) arg;
+
+  s->strtab->cts_len += strlen (atom->csa_str) + 1;
+  s->strtab_count++;
+}
+
+/* Populate the sorttab with pointers to the strtab atoms.  */
+static void
+ctf_str_populate_sorttab (void *key _libctf_unused_, void *value,
+		  void *arg)
+{
+  ctf_str_atom_t *atom = (ctf_str_atom_t *) value;
+  ctf_strtab_write_state_t *s = (ctf_strtab_write_state_t *) arg;
+
+  /* Skip the null string.  */
+  if (s->nullstr == atom)
+    return;
+
+  s->sorttab[s->i++] = atom;
+}
+
+/* Sort the strtab.  */
+static int
+ctf_str_sort_strtab (const void *a, const void *b)
+{
+  ctf_str_atom_t **one = (ctf_str_atom_t **) a;
+  ctf_str_atom_t **two = (ctf_str_atom_t **) b;
+
+  return (strcmp ((*one)->csa_str, (*two)->csa_str));
+}
+
 /* Write out and return a strtab containing all strings with recorded refs,
    adjusting the refs to refer to the corresponding string.  The returned
    strtab may be NULL on error.  */
@@ -193,10 +238,14 @@ ctf_str_write_strtab (ctf_file_t *fp)
 {
   ctf_strs_writable_t strtab;
   ctf_str_atom_t *nullstr;
-  ctf_str_atom_t *i;
   uint32_t cur_stroff = 0;
+  ctf_strtab_write_state_t s;
+  ctf_str_atom_t **sorttab;
+  size_t i;
 
   memset (&strtab, 0, sizeof (struct ctf_strs_writable));
+  memset (&s, 0, sizeof (struct ctf_strtab_write_state));
+  s.strtab = &strtab;
 
   nullstr = ctf_dynhash_lookup (fp->ctf_str_atoms, "");
   if (!nullstr)
@@ -206,24 +255,39 @@ ctf_str_write_strtab (ctf_file_t *fp)
       return strtab;
     }
 
-  for (i = ctf_list_next (&fp->ctf_str_atoms_ordered); i != NULL;
-       i = ctf_list_next (i))
-    strtab.cts_len += strlen (i->csa_str) + 1;
+  ctf_dynhash_iter (fp->ctf_str_atoms, ctf_str_count_strtab, &s);
 
   ctf_dprintf ("%lu bytes of strings in strtab.\n",
 	       (unsigned long) strtab.cts_len);
 
+  /* Sort the strtab.  Force the null string to be first.  */
+  sorttab = calloc (s.strtab_count, sizeof (ctf_str_atom_t *));
+  if (!sorttab)
+      return strtab;
+
+  sorttab[0] = nullstr;
+  s.i = 1;
+  s.sorttab = sorttab;
+  s.nullstr = nullstr;
+  ctf_dynhash_iter (fp->ctf_str_atoms, ctf_str_populate_sorttab, &s);
+
+  qsort (&sorttab[1], s.strtab_count - 1, sizeof (ctf_str_atom_t *),
+	 ctf_str_sort_strtab);
+
   if ((strtab.cts_strs = ctf_alloc (strtab.cts_len)) == NULL)
-    return strtab;
+    {
+      free (sorttab);
+      return strtab;
+    }
 
   /* Update the strtab, and all refs.  */
-  for (i = ctf_list_next (&fp->ctf_str_atoms_ordered); i != NULL;
-       i = ctf_list_next (i))
+  for (i = 0; i < s.strtab_count; i++)
     {
-      strcpy (&strtab.cts_strs[cur_stroff], i->csa_str);
-      ctf_str_update_refs (i, cur_stroff);
-      cur_stroff += strlen (i->csa_str) + 1;
+      strcpy (&strtab.cts_strs[cur_stroff], sorttab[i]->csa_str);
+      ctf_str_update_refs (sorttab[i], cur_stroff);
+      cur_stroff += strlen (sorttab[i]->csa_str) + 1;
     }
+  free (sorttab);
 
   return strtab;
 }

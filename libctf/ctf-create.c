@@ -450,7 +450,6 @@ ctf_update (ctf_file_t *fp)
   fp->ctf_dthash = NULL;
   ctf_str_free_atoms (nfp);
   nfp->ctf_str_atoms = fp->ctf_str_atoms;
-  nfp->ctf_str_atoms_ordered = fp->ctf_str_atoms_ordered;
   fp->ctf_str_atoms = NULL;
   memset (&fp->ctf_dtdefs, 0, sizeof (ctf_list_t));
 

@@ -180,7 +180,6 @@ typedef struct ctf_bundle
 
 typedef struct ctf_str_atom
 {
-  ctf_list_t csa_list;		/* The strings, in insertion order.  */
   const char *csa_str;		/* Backpointer to string (hash key).  */
   ctf_list_t csa_refs;		/* This string's refs.  */
 } ctf_str_atom_t;
@@ -219,7 +218,6 @@ struct ctf_file
   ctf_lookup_t ctf_lookups[5];	    /* Pointers to hashes for name lookup.  */
   ctf_strs_t ctf_str[2];	    /* Array of string table base and bounds.  */
   ctf_dynhash_t *ctf_str_atoms;	  /* Hash table of ctf_str_atoms_t.  */
-  ctf_list_t ctf_str_atoms_ordered; /* Atoms in insertion order.  */
   uint64_t ctf_str_num_refs;	  /* Number of refs to cts_str_atoms.  */
   const unsigned char *ctf_base;  /* Base of CTF header + uncompressed buffer.  */
   const unsigned char *ctf_buf;	  /* Uncompressed CTF data buffer.  */
