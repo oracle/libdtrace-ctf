@@ -86,12 +86,11 @@ static const char *
 ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
 			  int add_ref, uint32_t *ref)
 {
-  char *orig_str;
   char *newstr = NULL;
   ctf_str_atom_t *atom = NULL;
   ctf_str_atom_ref_t *aref = NULL;
 
-  atom = ctf_dynhash_lookup_key (fp->ctf_str_atoms, str, (void **) &orig_str);
+  atom = ctf_dynhash_lookup (fp->ctf_str_atoms, str);
 
   if (add_ref)
     {
@@ -107,7 +106,7 @@ ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
 	  ctf_list_append (&atom->csa_refs, aref);
 	  fp->ctf_str_num_refs++;
 	}
-      return orig_str;
+      return atom->csa_str;
     }
 
   if ((atom = ctf_alloc (sizeof (struct ctf_str_atom))) == NULL)

@@ -333,8 +333,6 @@ extern ctf_dynhash_t *ctf_dynhash_create (ctf_hash_fun, ctf_hash_eq_fun,
 extern int ctf_dynhash_insert (ctf_dynhash_t *, void *, void *);
 extern void ctf_dynhash_remove (ctf_dynhash_t *, const void *);
 extern void *ctf_dynhash_lookup (ctf_dynhash_t *, const void *);
-extern void *ctf_dynhash_lookup_key (ctf_dynhash_t *, const void *key,
-				     void **orig_key);
 extern void ctf_dynhash_destroy (ctf_dynhash_t *);
 extern void ctf_dynhash_iter (ctf_dynhash_t *, ctf_hash_iter_f,
 			      void *arg);

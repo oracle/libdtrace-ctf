@@ -89,16 +89,6 @@ ctf_dynhash_lookup (ctf_dynhash_t *hp, const void *key)
   return g_hash_table_lookup ((GHashTable *) hp, key);
 }
 
-void *
-ctf_dynhash_lookup_key (ctf_dynhash_t *hp, const void *key, void **orig_key)
-{
-  void *value;
-
-  if (!g_hash_table_lookup_extended ((GHashTable *) hp, key, orig_key, &value))
-    return NULL;
-  return value;
-}
-
 void
 ctf_dynhash_iter (ctf_dynhash_t *hp, ctf_hash_iter_f fun, void *arg)
 {
