@@ -96,6 +96,13 @@ ctf_dynhash_iter (ctf_dynhash_t *hp, ctf_hash_iter_f fun, void *arg)
 }
 
 void
+ctf_dynhash_iter_remove (ctf_dynhash_t *hp, ctf_hash_iter_remove_f fun,
+			 void *arg)
+{
+  g_hash_table_foreach_remove ((GHashTable *)hp, fun, arg);
+}
+
+void
 ctf_dynhash_destroy (ctf_dynhash_t *hp)
 {
   if (hp != NULL)
