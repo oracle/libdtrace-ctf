@@ -183,12 +183,20 @@ ctf_str_update_refs (ctf_str_atom_t *refs, uint32_t value)
       *(ref->caf_ref) = value;
 }
 
+/* State shared across the strtab write process.  */
 typedef struct ctf_strtab_write_state
 {
+  /* Strtab we are writing, and the number of strings in it.  */
   ctf_strs_writable_t *strtab;
   size_t strtab_count;
+
+  /* Pointers to (existing) atoms in the atoms table, for qsorting.  */
   ctf_str_atom_t **sorttab;
+
+  /* Loop counter for sorttab population.  */
   size_t i;
+
+  /* The null-string atom (skipped during population).  */
   ctf_str_atom_t *nullstr;
 } ctf_strtab_write_state_t;
 
