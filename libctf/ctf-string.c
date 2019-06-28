@@ -120,6 +120,7 @@ ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
     goto oom;
 
   atom->csa_str = newstr;
+  atom->csa_snapshot_id = fp->ctf_snapshots;
   if (add_ref)
     {
       ctf_list_append (&atom->csa_refs, aref);
@@ -142,6 +143,24 @@ ctf_str_add (ctf_file_t *fp, const char *str)
   if (str)
     return ctf_str_add_ref_internal (fp, str, FALSE, 0);
   return NULL;
+}
+
+/* A ctf_dynhash_iter_remove() callback that removes atoms later than a given
+   snapshot ID.  */
+static int
+ctf_str_rollback_atom (void *key _libctf_unused_, void *value, void *arg)
+{
+  ctf_str_atom_t *atom = (ctf_str_atom_t *) value;
+  ctf_snapshot_id_t *id = (ctf_snapshot_id_t *) arg;
+
+  return (atom->csa_snapshot_id > id->snapshot_id);
+}
+
+/* Roll back, deleting all atoms created after a particular ID.  */
+void
+ctf_str_rollback (ctf_file_t *fp, ctf_snapshot_id_t id)
+{
+  ctf_dynhash_iter_remove (fp->ctf_str_atoms, ctf_str_rollback_atom, &id);
 }
 
 /* Like ctf_str_add(), but additionally augment the atom's refs list with the
@@ -172,6 +191,7 @@ ctf_str_purge_refs (ctf_file_t *fp)
     ctf_dynhash_iter (fp->ctf_str_atoms, ctf_str_purge_one_atom_refs, NULL);
   fp->ctf_str_num_refs = 0;
 }
+
 /* Update a list of refs to the specified value. */
 static void
 ctf_str_update_refs (ctf_str_atom_t *refs, uint32_t value)

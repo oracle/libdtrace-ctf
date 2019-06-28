@@ -182,6 +182,7 @@ typedef struct ctf_str_atom
 {
   const char *csa_str;		/* Backpointer to string (hash key).  */
   ctf_list_t csa_refs;		/* This string's refs.  */
+  unsigned long csa_snapshot_id; /* Snapshot ID at time of creation.  */
 } ctf_str_atom_t;
 
 /* The refs of a single string in the atoms table.  */
@@ -369,6 +370,7 @@ extern int ctf_str_create_atoms (ctf_file_t *);
 extern void ctf_str_free_atoms (ctf_file_t *);
 extern const char *ctf_str_add (ctf_file_t *, const char *);
 extern const char *ctf_str_add_ref (ctf_file_t *, const char *, uint32_t *);
+extern void ctf_str_rollback (ctf_file_t *, ctf_snapshot_id_t);
 extern void ctf_str_purge_refs (ctf_file_t *);
 extern ctf_strs_writable_t ctf_str_write_strtab (ctf_file_t *);
 
