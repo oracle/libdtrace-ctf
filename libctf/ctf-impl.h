@@ -334,8 +334,7 @@ extern int ctf_dynhash_insert (ctf_dynhash_t *, void *, void *);
 extern void ctf_dynhash_remove (ctf_dynhash_t *, const void *);
 extern void *ctf_dynhash_lookup (ctf_dynhash_t *, const void *);
 extern void ctf_dynhash_destroy (ctf_dynhash_t *);
-extern void ctf_dynhash_iter (ctf_dynhash_t *, ctf_hash_iter_f,
-			      void *arg);
+extern void ctf_dynhash_iter (ctf_dynhash_t *, ctf_hash_iter_f, void *);
 
 #define	ctf_list_prev(elem)	((void *)(((ctf_list_t *)(elem))->l_prev))
 #define	ctf_list_next(elem)	((void *)(((ctf_list_t *)(elem))->l_next))
