@@ -131,6 +131,8 @@ typedef struct ctf_header
   uint32_t cth_lbloff;		/* Offset of label section.  */
   uint32_t cth_objtoff;		/* Offset of object section.  */
   uint32_t cth_funcoff;		/* Offset of function section.  */
+  uint32_t cth_objtidxoff;	/* Offset of object index section.  */
+  uint32_t cth_funcidxoff;	/* Offset of function index section.  */
   uint32_t cth_varoff;		/* Offset of variable section.  */
   uint32_t cth_typeoff;		/* Offset of type section.  */
   uint32_t cth_stroff;		/* Offset of string section.  */
