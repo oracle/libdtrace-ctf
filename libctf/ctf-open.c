@@ -1537,11 +1537,8 @@ ctf_file_close (ctf_file_t *fp)
       return;
     }
 
-  if (fp->ctf_dynparname != NULL)
-    ctf_free (fp->ctf_dynparname);
-
-  if (fp->ctf_parent != NULL)
-    ctf_file_close (fp->ctf_parent);
+  ctf_free (fp->ctf_dynparname);
+  ctf_file_close (fp->ctf_parent);
 
   for (dtd = ctf_list_next (&fp->ctf_dtdefs); dtd != NULL; dtd = ntd)
     {
@@ -1558,19 +1555,15 @@ ctf_file_close (ctf_file_t *fp)
     }
   ctf_dynhash_destroy (fp->ctf_dvhash);
   ctf_str_free_atoms (fp);
-
   ctf_free (fp->ctf_tmp_typeslice);
 
-  if (fp->ctf_data.cts_name != _CTF_NULLSTR &&
-      fp->ctf_data.cts_name != NULL)
+  if (fp->ctf_data.cts_name != _CTF_NULLSTR)
     ctf_free ((char *) fp->ctf_data.cts_name);
 
-  if (fp->ctf_symtab.cts_name != _CTF_NULLSTR &&
-      fp->ctf_symtab.cts_name != NULL)
+  if (fp->ctf_symtab.cts_name != _CTF_NULLSTR)
     ctf_free ((char *) fp->ctf_symtab.cts_name);
 
-  if (fp->ctf_strtab.cts_name != _CTF_NULLSTR &&
-      fp->ctf_strtab.cts_name != NULL)
+  if (fp->ctf_strtab.cts_name != _CTF_NULLSTR)
     ctf_free ((char *) fp->ctf_strtab.cts_name);
 
   else if (fp->ctf_data_mmapped)
@@ -1578,14 +1571,9 @@ ctf_file_close (ctf_file_t *fp)
 
   ctf_free_base (fp, NULL);
 
-  if (fp->ctf_sxlate != NULL)
-    ctf_free (fp->ctf_sxlate);
-
-  if (fp->ctf_txlate != NULL)
-    ctf_free (fp->ctf_txlate);
-
-  if (fp->ctf_ptrtab != NULL)
-    ctf_free (fp->ctf_ptrtab);
+  ctf_free (fp->ctf_sxlate);
+  ctf_free (fp->ctf_txlate);
+  ctf_free (fp->ctf_ptrtab);
 
   ctf_hash_destroy (fp->ctf_structs);
   ctf_hash_destroy (fp->ctf_unions);
