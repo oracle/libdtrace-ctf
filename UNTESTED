@@ -13,7 +13,6 @@ Untested features:
   - ctf_add_type() of enums; ctf_enum_name() and ctf_enum_value()
   - declarator handling around the restrict qualifier
   - some codepaths to do with anonymous struct/union members
-  - ctf_fdopen() and ctf_open() and the ELF section handling cod
   - ctf_version() (which we can possibly drop? seems like it might be useful in
     future though)
   - reuse of integer/float variable names by bitfields (all dwarf2ctf's
