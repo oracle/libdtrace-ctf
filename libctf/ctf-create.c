@@ -284,6 +284,8 @@ ctf_update (ctf_file_t *fp)
   hdrp = (ctf_header_t *) buf;
   if ((fp->ctf_flags & LCTF_CHILD) && (fp->ctf_parname != NULL))
     ctf_str_add_ref (fp, fp->ctf_parname, &hdrp->cth_parname);
+  if (fp->ctf_cuname != NULL)
+    ctf_str_add_ref (fp, fp->ctf_cuname, &hdrp->cth_cuname);
 
   /* Work over the variable list, translating everything into ctf_varent_t's and
      prepping the string table.  */

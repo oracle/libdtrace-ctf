@@ -231,6 +231,8 @@ struct ctf_file
   unsigned long ctf_nvars;	  /* Number of variables in ctf_vars.  */
   unsigned long ctf_typemax;	  /* Maximum valid type ID number.  */
   const ctf_dmodel_t *ctf_dmodel; /* Data model pointer (see above).  */
+  const char *ctf_cuname;	  /* Compilation unit name (if any).  */
+  char *ctf_dyncuname;		  /* Dynamically allocated name of CU.  */
   struct ctf_file *ctf_parent;	  /* Parent CTF container (if any).  */
   const char *ctf_parlabel;	  /* Label in parent container (if any).  */
   const char *ctf_parname;	  /* Basename of parent (if any).  */

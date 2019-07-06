@@ -347,9 +347,14 @@ ctf_set_base (ctf_file_t *fp, const ctf_header_t *hp, void *base)
     fp->ctf_parlabel = ctf_strptr (fp, hp->cth_parlabel);
   if (hp->cth_parname != 0)
     fp->ctf_parname = ctf_strptr (fp, hp->cth_parname);
+  if (hp->cth_cuname != 0)
+    fp->ctf_cuname = ctf_strptr (fp, hp->cth_cuname);
 
-  ctf_dprintf ("ctf_set_base: parent name %s (label %s)\n",
-	       fp->ctf_parname ? fp->ctf_parname : "<NULL>",
+  if (fp->ctf_cuname)
+    ctf_dprintf ("ctf_set_base: CU name %s\n", ctf->cuname);
+  if (fp->ctf_parname)
+    ctf_dprintf ("ctf_set_base: parent name %s (label %s)\n",
+	       fp->ctf_parname,
 	       fp->ctf_parlabel ? fp->ctf_parlabel : "<NULL>");
 }
 
@@ -990,6 +995,7 @@ flip_header (ctf_header_t *cth)
   swap_thing (cth->cth_preamble.ctp_flags);
   swap_thing (cth->cth_parlabel);
   swap_thing (cth->cth_parname);
+  swap_thing (cth->cth_cuname);
   swap_thing (cth->cth_objtoff);
   swap_thing (cth->cth_funcoff);
   swap_thing (cth->cth_objtidxoff);
@@ -1591,6 +1597,7 @@ ctf_file_close (ctf_file_t *fp)
       return;
     }
 
+  ctf_free (fp->ctf_dyncuname);
   ctf_free (fp->ctf_dynparname);
   ctf_file_close (fp->ctf_parent);
 
@@ -1705,6 +1712,25 @@ ctf_parent_name_set (ctf_file_t *fp, const char *name)
 
   fp->ctf_dynparname = ctf_strdup (name);
   fp->ctf_parname = fp->ctf_dynparname;
+}
+
+/* Return the name of the compilation unit this CTF file applies to.  Usually
+   non-NULL only for non-parent containers.  */
+const char *
+ctf_cuname (ctf_file_t *fp)
+{
+  return fp->ctf_cuname;
+}
+
+/* Set the compilation unit name.  */
+void
+ctf_cuname_set (ctf_file_t *fp, const char *name)
+{
+  if (fp->ctf_dyncuname != NULL)
+    ctf_free (fp->ctf_dyncuname);
+
+  fp->ctf_dyncuname = ctf_strdup (name);
+  fp->ctf_cuname = fp->ctf_dyncuname;
 }
 
 /* Import the types from the specified parent container by storing a pointer

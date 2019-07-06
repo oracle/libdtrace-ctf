@@ -148,4 +148,6 @@ LIBDTRACE_CTF_1.6 {
 	ctf_get_arc;
 	ctf_arc_open_by_name_sections;
 	ctf_bfdopen_ctfsect;
+        ctf_cuname;
+        ctf_cuname_set;
 } LIBDTRACE_CTF_1.5;
