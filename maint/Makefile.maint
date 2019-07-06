@@ -4,13 +4,14 @@
 
 SHELL=/bin/bash
 OUTFILE=$(FILE)
+FORCE=
 
 topdir := $(shell pwd)
 
 all:
 	echo 'Targets:' >&2
-	printf "\tgnu GNU_DIR=/cyg/tree/root\n" >&2
-	printf "\tgnu-warnings\n" >&2
+	printf '\tgnu GNU_DIR=/cyg/tree/root [FORCE=t] \n' >&2
+	printf '\tgnu-warnings\n' >&2
 
 HEADERS := include/sys/ctf.h include/sys/ctf-api.h
 
@@ -49,9 +50,10 @@ _subst:
 	fi
 
 	mkdir -p $(GNU_DIR)/$(dir $(OUTFILE))
-	if [[ -e $(topdir)/maint/.old ]] && [[ -e $(GNU_DIR)/$(OUTFILE) ]] && \
+	if [[ -z $FORCE ]] && [[ -e $(topdir)/maint/.old ]] && [[ -e $(GNU_DIR)/$(OUTFILE) ]] && \
 	   ! cmp -s $(topdir)/maint/.old $(GNU_DIR)/$(OUTFILE); then \
 		echo "WARNING: $(GNU_DIR)/$(OUTFILE): changed in GNU tree, needs manual sync" >&2; \
+                diff -u $(topdir)/maint/.old $(GNU_DIR)/$(OUTFILE); \
 	else \
 		cat $(FILE) | $(MAKE) -f $(topdir)/maint/Makefile.maint \
 			__one_subst topdir=$(topdir) OUT=$(GNU_DIR)/$(OUTFILE); \
