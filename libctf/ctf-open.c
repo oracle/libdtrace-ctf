@@ -384,12 +384,18 @@ ctf_set_version (ctf_file_t *fp, ctf_header_t *cth, int ctf_version)
 static void
 upgrade_header (ctf_header_t *hp)
 {
-  ctf_header_v2_t *h2p = (ctf_header_v2_t *) hp;
+  ctf_header_v2_t *oldhp = (ctf_header_v2_t *) hp;
 
-  memmove (&hp->cth_varoff, &h2p->cth_varoff, sizeof (struct ctf_header_v2)
-	   - offsetof (struct ctf_header_v2, cth_varoff));
-  hp->cth_objtidxoff = hp->cth_varoff;		/* No index sections.  */
-  hp->cth_funcidxoff = hp->cth_objtidxoff;
+  hp->cth_strlen = oldhp->cth_strlen;
+  hp->cth_stroff = oldhp->cth_stroff;
+  hp->cth_typeoff = oldhp->cth_typeoff;
+  hp->cth_varoff = oldhp->cth_varoff;
+  hp->cth_funcidxoff = hp->cth_varoff;		/* No index sections.  */
+  hp->cth_objtidxoff = hp->cth_funcidxoff;
+  hp->cth_funcoff = oldhp->cth_funcoff;
+  hp->cth_objtoff = oldhp->cth_objtoff;
+  hp->cth_lbloff = oldhp->cth_lbloff;
+  hp->cth_cuname = 0;				/* No CU name.  */
 }
 
 /* Upgrade the type table to CTF_VERSION_3 (really CTF_VERSION_1_UPGRADED_3)
