@@ -323,8 +323,7 @@ init_symtab (ctf_file_t *fp, const ctf_header_t *hp,
 
    The original gap between the buf and base pointers, if any -- the original,
    unconverted CTF header -- is kept, but its contents are not specified and are
-   never used.
-*/
+   never used.  */
 
 static void
 ctf_set_base (ctf_file_t *fp, const ctf_header_t *hp, unsigned char *base)
@@ -453,14 +452,13 @@ upgrade_types_v1 (ctf_file_t *fp, ctf_header_t *cth)
   /* Allocate enough room for the new buffer, then copy everything but the type
      section into place, and reset the base accordingly.  Leave the version
      number unchanged, so that LCTF_INFO_* still works on the
-     as-yet-untranslated type info.  The size needed is reduced by the size of
-     the header we are no longer storing in the buffer (we store it separately
-     and write it back independently).  */
+     as-yet-untranslated type info.  */
 
   if ((ctf_base = ctf_alloc (fp->ctf_size + increase)) == NULL)
     return ECTF_ZALLOC;
 
-  /*  Squeeze out the original header: we never use it and it is unconverted.  */
+  /* Start at ctf_buf, not ctf_base, to squeeze out the original header: we
+     never use it and it is unconverted.  */
 
   memcpy (ctf_base, fp->ctf_buf, cth->cth_typeoff);
   memcpy (ctf_base + cth->cth_stroff + increase,
