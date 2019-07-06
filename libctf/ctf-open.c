@@ -287,7 +287,7 @@ init_symtab (ctf_file_t *fp, const ctf_header_t *hp,
 	  break;
 
 	case STT_FUNC:
-	  if (funcoff >= hp->cth_typeoff)
+	  if (funcoff >= hp->cth_objtidxoff)
 	    {
 	      *xp = -1u;
 	      break;
@@ -377,7 +377,7 @@ ctf_free_base (ctf_file_t *fp, unsigned char *ctf_base)
 #endif /* !NO_COMPAT */
 
 static void
-ctf_set_version (ctf_file_t * fp, ctf_header_t * cth, int ctf_version)
+ctf_set_version (ctf_file_t *fp, ctf_header_t *cth, int ctf_version)
 {
   fp->ctf_version = ctf_version;
   cth->cth_version = ctf_version;
@@ -385,15 +385,32 @@ ctf_set_version (ctf_file_t * fp, ctf_header_t * cth, int ctf_version)
 }
 
 #ifndef NO_COMPAT
-/* Upgrade the type table to CTF_VERSION_3 (really CTF_VERSION_1_UPGRADED_3).
+
+/* Upgrade the header to CTF_VERSION_3.  The upgrade is done in-place.  */
+static void
+upgrade_header (ctf_header_t *hp)
+{
+  ctf_header_v2_t *h2p = (ctf_header_v2_t *) hp;
+
+  memmove (&hp->cth_varoff, &h2p->cth_varoff, sizeof (struct ctf_header_v2)
+	   - offsetof (struct ctf_header_v2, cth_varoff));
+  hp->cth_objtidxoff = hp->cth_varoff;		/* No index sections.  */
+  hp->cth_funcidxoff = hp->cth_objtidxoff;
+}
+
+/* Upgrade the type table to CTF_VERSION_3 (really CTF_VERSION_1_UPGRADED_3)
+   from CTF_VERSION_1.
 
    The upgrade is not done in-place: the ctf_base is moved.  ctf_strptr() must
    not be called before reallocation is complete.
 
+   Sections not checked here due to nonexistence or nonpopulated state in older
+   formats: objtidx, funcidx.
+
    Type kinds not checked here due to nonexistence in older formats:
       CTF_K_SLICE.  */
 static int
-upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
+upgrade_types_v1 (ctf_file_t *fp, ctf_header_t *cth)
 {
   const ctf_type_v1_t *tbuf;
   const ctf_type_v1_t *tend;
@@ -616,6 +633,30 @@ upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
   ctf_free_base (fp, old_ctf_base);
   memcpy (cth, new_cth, sizeof (ctf_header_t));
 
+  return 0;
+}
+
+/* Upgrade from any earlier version.  */
+static int
+upgrade_types (ctf_file_t *fp, ctf_header_t *cth)
+{
+  switch (cth->cth_version)
+    {
+      /* v1 requires a full pass and reformatting.  */
+    case CTF_VERSION_1:
+      upgrade_types_v1 (fp, cth);
+      /* FALLTHRU */
+      /* Already-converted v1 is just like later versions except that its
+	 parent/child boundary is unchanged (and much lower).  */
+
+    case CTF_VERSION_1_UPGRADED_3:
+      fp->ctf_parmax = CTF_MAX_PTYPE_V1;
+
+      /* v2 is just the same as v3 except for new types and sections:
+	 no upgrading required. */
+    case CTF_VERSION_2: ;
+      /* FALLTHRU */
+    }
   return 0;
 }
 #endif /* !NO_COMPAT */
@@ -951,6 +992,8 @@ flip_header (ctf_header_t *cth)
   swap_thing (cth->cth_parname);
   swap_thing (cth->cth_objtoff);
   swap_thing (cth->cth_funcoff);
+  swap_thing (cth->cth_objtidxoff);
+  swap_thing (cth->cth_funcidxoff);
   swap_thing (cth->cth_varoff);
   swap_thing (cth->cth_typeoff);
   swap_thing (cth->cth_stroff);
@@ -971,10 +1014,10 @@ flip_lbls (void *start, size_t len)
     }
 }
 
-/* Flip the endianness of the data-object or function sections, an array of
-   uint32_t.  (The function section has more internal structure, but that
-   structure is an array of uint32_t, so can be treated as one big array for
-   byte-swapping.)  */
+/* Flip the endianness of the data-object or function sections or their indexes,
+   all arrays of uint32_t.  (The function section has more internal structure,
+   but that structure is an array of uint32_t, so can be treated as one big
+   array for byte-swapping.)  */
 
 static void
 flip_objts (void *start, size_t len)
@@ -1162,7 +1205,9 @@ flip_ctf (ctf_header_t *cth, unsigned char *base)
 
   flip_lbls (base + cth->cth_lbloff, cth->cth_objtoff - cth->cth_lbloff);
   flip_objts (base + cth->cth_objtoff, cth->cth_funcoff - cth->cth_objtoff);
-  flip_objts (base + cth->cth_funcoff, cth->cth_varoff - cth->cth_funcoff);
+  flip_objts (base + cth->cth_funcoff, cth->cth_objtidxoff - cth->cth_funcoff);
+  flip_objts (base + cth->cth_objtidxoff, cth->cth_funcidxoff - cth->cth_objtidxoff);
+  flip_objts (base + cth->cth_funcidxoff, cth->cth_varoff - cth->cth_funcidxoff);
   flip_vars (base + cth->cth_varoff, cth->cth_typeoff - cth->cth_varoff);
   return flip_types (base + cth->cth_typeoff, cth->cth_stroff - cth->cth_typeoff);
 }
@@ -1222,6 +1267,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 	     const ctf_sect_t *strsect, int *errp)
 {
   const ctf_preamble_t *pp;
+  size_t header_size = sizeof (ctf_header_t);
   ctf_header_t hp;
   ctf_file_t *fp;
   void *base;
@@ -1290,19 +1336,27 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
 		   "supported\n", pp->ctp_version);
       return (ctf_set_open_errno (errp, ECTF_NOTSUP));
     }
-#endif /* NO_COMPAT */
+#endif /* !NO_COMPAT */
 
-  if (ctfsect->cts_size < sizeof (ctf_header_t))
+  if (pp->ctp_version < CTF_VERSION_3)
+    header_size = sizeof (ctf_header_v2_t);
+
+  if (ctfsect->cts_size < header_size)
     return (ctf_set_open_errno (errp, ECTF_NOCTFBUF));
 
-  memcpy (&hp, ctfsect->cts_data, sizeof (hp));
+  memcpy (&hp, ctfsect->cts_data, header_size);
+#ifndef NO_COMPAT
+  if (pp->ctp_version < CTF_VERSION_3)
+    upgrade_header (&hp);
+#endif	/* !NO_COMPAT */
 
   if (foreign_endian)
     flip_header (&hp);
 
-  ctf_dprintf ("header offsets: %x/%x/%x/%x/%x/%x/%x\n",
-	       hp.cth_lbloff, hp.cth_objtoff, hp.cth_funcoff, hp.cth_varoff,
-	       hp.cth_typeoff, hp.cth_stroff, hp.cth_strlen);
+  ctf_dprintf ("header offsets: %x/%x/%x/%x/%x/%x/%x/%x/%x\n",
+	       hp.cth_lbloff, hp.cth_objtoff, hp.cth_funcoff, hp.cth_objtidxoff,
+	       hp.cth_funcidxoff, hp.cth_varoff, hp.cth_typeoff, hp.cth_stroff,
+	       hp.cth_strlen);
   hdrsz = sizeof (ctf_header_t);
 
   size = hp.cth_stroff + hp.cth_strlen;
@@ -1310,18 +1364,24 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   ctf_dprintf ("ctf_bufopen: uncompressed size=%lu\n", (unsigned long) size);
 
   if (hp.cth_lbloff > size || hp.cth_objtoff > size
-      || hp.cth_funcoff > size || hp.cth_typeoff > size || hp.cth_stroff > size)
+      || hp.cth_funcoff > size || hp.cth_objtidxoff > size
+      || hp.cth_funcidxoff > size || hp.cth_typeoff > size
+      || hp.cth_stroff > size)
     return (ctf_set_open_errno (errp, ECTF_CORRUPT));
 
   if (hp.cth_lbloff > hp.cth_objtoff
       || hp.cth_objtoff > hp.cth_funcoff
       || hp.cth_funcoff > hp.cth_typeoff
-      || hp.cth_funcoff > hp.cth_varoff
+      || hp.cth_funcoff > hp.cth_objtidxoff
+      || hp.cth_objtidxoff > hp.cth_funcidxoff
+      || hp.cth_funcidxoff > hp.cth_varoff
       || hp.cth_varoff > hp.cth_typeoff || hp.cth_typeoff > hp.cth_stroff)
     return (ctf_set_open_errno (errp, ECTF_CORRUPT));
 
-  if ((hp.cth_lbloff & 3) || (hp.cth_objtoff & 1)
-      || (hp.cth_funcoff & 1) || (hp.cth_varoff & 3) || (hp.cth_typeoff & 3))
+  if ((hp.cth_lbloff & 3) || (hp.cth_objtoff & 2)
+      || (hp.cth_funcoff & 2) || (hp.cth_objtidxoff & 2)
+      || (hp.cth_funcidxoff & 2) || (hp.cth_varoff & 3)
+      || (hp.cth_typeoff & 3))
     return (ctf_set_open_errno (errp, ECTF_CORRUPT));
 
   /* Once everything is determined to be valid, attempt to decompress the CTF
@@ -1398,15 +1458,7 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
   memset (fp, 0, sizeof (ctf_file_t));
   ctf_set_version (fp, &hp, hp.cth_version);
   ctf_str_create_atoms (fp);
-
-#ifndef NO_COMPAT
-  if (_libctf_unlikely_ (hp.cth_version < CTF_VERSION_2))
-    fp->ctf_parmax = CTF_MAX_PTYPE_V1;
-  else
-    fp->ctf_parmax = CTF_MAX_PTYPE;
-#else
   fp->ctf_parmax = CTF_MAX_PTYPE;
-#endif	/* !NO_COMPAT */
 
   memcpy (&fp->ctf_data, ctfsect, sizeof (ctf_sect_t));
 
@@ -1458,7 +1510,9 @@ ctf_bufopen (const ctf_sect_t *ctfsect, const ctf_sect_t *symsect,
     }
 
   /* If we have a symbol table section, allocate and initialize
-     the symtab translation table, pointed to by ctf_sxlate.  */
+     the symtab translation table, pointed to by ctf_sxlate.  This table may be
+     too large for the actual size of the object and function info sections: if
+     so, ctf_nsyms will be adjusted and the excess will never be used.  */
 
   if (symsect != NULL)
     {
