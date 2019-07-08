@@ -18,6 +18,7 @@
 #define ctf_qsort_r(base, nmemb, size, compar, arg)	\
   qsort_r ((base), (nmemb), (size), (compar), (arg))
 
+#define xstrdup(str) strdup (str)
 #define xstrndup(str, n) strndup (str, n)
 
 #endif

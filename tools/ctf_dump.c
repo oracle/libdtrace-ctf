@@ -107,7 +107,7 @@ static char *indent_lines (ctf_sect_names_t sect _libctf_unused_,
 static void
 dump_ctf (const char *file, ctf_file_t *fp, int quiet, const char *one_section)
 {
-  const char *things[] = {"Labels", "Data objects", "Function objects",
+  const char *things[] = {"Header", "Labels", "Data objects", "Function objects",
 			  "Variables", "Types", "Strings", ""};
   int i;
   const char **thing;
@@ -115,12 +115,16 @@ dump_ctf (const char *file, ctf_file_t *fp, int quiet, const char *one_section)
   if (!quiet)
     printf ("\nCTF file: %s\n", file);
 
-  for (i = 1, thing = things; *thing[0] ; thing++, i++)
+  for (i = 0, thing = things; *thing[0] ; thing++, i++)
     {
       ctf_dump_state_t *s = NULL;
       char *item;
 
       if (one_section && strcmp (one_section, *thing) != 0)
+	continue;
+
+      /* Only dump the header if explicitly requested.  */
+      if (!one_section && strcmp (*thing, "Header") == 0)
 	continue;
 
       printf ("\n  %s:\n", *thing);
