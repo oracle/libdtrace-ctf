@@ -169,7 +169,7 @@ ctf_dump_header_sectfield (ctf_file_t *fp, ctf_dump_state_t *state,
   char *str;
   if (nextoff - off)
     {
-      if (asprintf (&str, "%s:\t%lx -- %lx (%lx bytes)\n", sect,
+      if (asprintf (&str, "%s:\t0x%lx -- 0x%lx (0x%lx bytes)\n", sect,
 		    (unsigned long) off, (unsigned long) (nextoff - 1),
 		    (unsigned long) (nextoff - off)) < 0)
 	goto err;
@@ -222,7 +222,7 @@ ctf_dump_header (ctf_file_t *fp, ctf_dump_state_t *state)
   if (fp->ctf_openflags > 0)
     {
       if (fp->ctf_openflags)
-	if (asprintf (&str, "Flags: %x (%s)", fp->ctf_openflags,
+	if (asprintf (&str, "Flags: 0x%x (%s)", fp->ctf_openflags,
 		      fp->ctf_openflags & CTF_F_COMPRESS ? "CTF_F_COMPRESS"
 		                                         : "") < 0)
 	goto err;
