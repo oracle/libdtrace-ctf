@@ -150,4 +150,5 @@ LIBDTRACE_CTF_1.6 {
 	ctf_bfdopen_ctfsect;
         ctf_cuname;
         ctf_cuname_set;
+        ctf_arc_write_fd;
 } LIBDTRACE_CTF_1.5;
