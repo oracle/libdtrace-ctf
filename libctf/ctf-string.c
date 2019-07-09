@@ -78,11 +78,11 @@ ctf_str_free_atoms (ctf_file_t *fp)
   ctf_dynhash_destroy (fp->ctf_str_atoms);
 }
 
-/* Add a string to the atoms table and return it, or return an existing string
-   if present, copying the passed-in string.  Returns NULL only when out of
-   memory (and do not touch the passed-in string in that case).  Possibly
-   augment the ref list with the passed-in ref.  */
-static const char *
+/* Add a string to the atoms table, copying the passed-in string.  Return the
+   atom added. Return NULL only when out of memory (and do not touch the
+   passed-in string in that case).  Possibly augment the ref list with the
+   passed-in ref.  */
+static ctf_str_atom_t *
 ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
 			  int add_ref, uint32_t *ref)
 {
@@ -106,7 +106,7 @@ ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
 	  ctf_list_append (&atom->csa_refs, aref);
 	  fp->ctf_str_num_refs++;
 	}
-      return atom->csa_str;
+      return atom;
     }
 
   if ((atom = ctf_alloc (sizeof (struct ctf_str_atom))) == NULL)
@@ -126,7 +126,7 @@ ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
       ctf_list_append (&atom->csa_refs, aref);
       fp->ctf_str_num_refs++;
     }
-  return newstr;
+  return atom;
 
  oom:
   ctf_free (atom);
@@ -140,9 +140,48 @@ ctf_str_add_ref_internal (ctf_file_t *fp, const char *str,
 const char *
 ctf_str_add (ctf_file_t *fp, const char *str)
 {
-  if (str)
-    return ctf_str_add_ref_internal (fp, str, FALSE, 0);
-  return NULL;
+  ctf_str_atom_t *atom;
+  if (!str)
+    return NULL;
+
+  atom = ctf_str_add_ref_internal (fp, str, FALSE, 0);
+  if (!atom)
+    return NULL;
+
+  return atom->csa_str;
+}
+
+/* Like ctf_str_add(), but additionally augment the atom's refs list with the
+   passed-in ref, whether or not the string is already present.  There is no
+   attempt to deduplicate the refs list (but duplicates are harmless).  */
+const char *
+ctf_str_add_ref (ctf_file_t *fp, const char *str, uint32_t *ref)
+{
+  ctf_str_atom_t *atom;
+  if (!str)
+    return NULL;
+
+  atom = ctf_str_add_ref_internal (fp, str, TRUE, ref);
+  if (!atom)
+    return NULL;
+
+  return atom->csa_str;
+}
+
+/* Add an external strtab reference at OFFSET.  */
+const char *
+ctf_str_add_external (ctf_file_t *fp, const char *str, uint32_t offset)
+{
+  ctf_str_atom_t *atom;
+  if (!str)
+    return NULL;
+
+  atom = ctf_str_add_ref_internal (fp, str, FALSE, 0);
+  if (!atom)
+    return NULL;
+
+  atom->csa_offset = CTF_SET_STID (offset, CTF_STRTAB_1);
+  return atom->csa_str;
 }
 
 /* A ctf_dynhash_iter_remove() callback that removes atoms later than a given
@@ -161,17 +200,6 @@ void
 ctf_str_rollback (ctf_file_t *fp, ctf_snapshot_id_t id)
 {
   ctf_dynhash_iter_remove (fp->ctf_str_atoms, ctf_str_rollback_atom, &id);
-}
-
-/* Like ctf_str_add(), but additionally augment the atom's refs list with the
-   passed-in ref, whether or not the string is already present.  There is no
-   attempt to deduplicate the refs list (but duplicates are harmless).  */
-const char *
-ctf_str_add_ref (ctf_file_t *fp, const char *str, uint32_t *ref)
-{
-  if (str)
-    return ctf_str_add_ref_internal (fp, str, TRUE, ref);
-  return NULL;
 }
 
 /* An adaptor around ctf_purge_atom_refs.  */
@@ -228,7 +256,11 @@ ctf_str_count_strtab (void *key _libctf_unused_, void *value,
   ctf_str_atom_t *atom = (ctf_str_atom_t *) value;
   ctf_strtab_write_state_t *s = (ctf_strtab_write_state_t *) arg;
 
-  s->strtab->cts_len += strlen (atom->csa_str) + 1;
+  /* We only factor in the length of items that have no offset:
+     other items are in the external strtab.  They still contribute to the
+     total count, though, because we still have to sort them.  */
+  if (!atom->csa_offset)
+    s->strtab->cts_len += strlen (atom->csa_str) + 1;
   s->strtab_count++;
 }
 
@@ -307,12 +339,18 @@ ctf_str_write_strtab (ctf_file_t *fp)
       return strtab;
     }
 
-  /* Update the strtab, and all refs.  */
+  /* Update all refs: also update the strtab if this is not an external strtab
+     pointer.  */
   for (i = 0; i < s.strtab_count; i++)
     {
-      strcpy (&strtab.cts_strs[cur_stroff], sorttab[i]->csa_str);
-      ctf_str_update_refs (sorttab[i], cur_stroff);
-      cur_stroff += strlen (sorttab[i]->csa_str) + 1;
+      if (sorttab[i]->csa_offset)
+	ctf_str_update_refs (sorttab[i], sorttab[i]->csa_offset);
+      else
+	{
+	  ctf_str_update_refs (sorttab[i], cur_stroff);
+	  strcpy (&strtab.cts_strs[cur_stroff], sorttab[i]->csa_str);
+	  cur_stroff += strlen (sorttab[i]->csa_str) + 1;
+	}
     }
   free (sorttab);
 
