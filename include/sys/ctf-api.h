@@ -384,8 +384,9 @@ extern ctf_snapshot_id_t ctf_snapshot (ctf_file_t *);
 extern int ctf_rollback (ctf_file_t *, ctf_snapshot_id_t);
 extern int ctf_discard (ctf_file_t *);
 extern int ctf_write (ctf_file_t *, int);
-extern int ctf_gzwrite (ctf_file_t * fp, gzFile fd);
+extern int ctf_gzwrite (ctf_file_t *fp, gzFile fd);
 extern int ctf_compress_write (ctf_file_t * fp, int fd);
+extern unsigned char *ctf_write_mem (ctf_file_t *, size_t *, size_t threshold);
 
 extern void ctf_setdebug (int debug);
 extern int ctf_getdebug (void);
