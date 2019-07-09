@@ -152,4 +152,9 @@ LIBDTRACE_CTF_1.6 {
 	ctf_cuname_set;
 	ctf_arc_write_fd;
 	ctf_write_mem;
+	ctf_link_add_ctf;
+	ctf_link;
+	ctf_link_add_strtab;
+	ctf_link_shuffle_syms;
+	ctf_link_write;
 } LIBDTRACE_CTF_1.5;
