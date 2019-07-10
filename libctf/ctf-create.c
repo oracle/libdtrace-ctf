@@ -448,6 +448,7 @@ ctf_update (ctf_file_t *fp)
   nfp->ctf_specific = fp->ctf_specific;
   nfp->ctf_link_inputs = fp->ctf_link_inputs;
   nfp->ctf_link_outputs = fp->ctf_link_outputs;
+  nfp->ctf_link_type_mapping = fp->ctf_link_type_mapping;
 
   nfp->ctf_snapshot_lu = fp->ctf_snapshots;
 
@@ -459,6 +460,7 @@ ctf_update (ctf_file_t *fp)
   memset (&fp->ctf_dtdefs, 0, sizeof (ctf_list_t));
   fp->ctf_link_inputs = NULL;
   fp->ctf_link_outputs = NULL;
+  fp->ctf_link_type_mapping = NULL;
 
   fp->ctf_dvhash = NULL;
   memset (&fp->ctf_dvdefs, 0, sizeof (ctf_list_t));
@@ -1428,6 +1430,106 @@ ctf_add_variable (ctf_file_t *fp, const char *name, ctf_id_t ref)
   return 0;
 }
 
+DECL_CTF_HASH_SIZED (ctf_link_type_mapping_key_t)
+
+/* Record the correspondence between a source and ctf_add_type()-added
+   destination type: both types are translated into parent type IDs if need be,
+   so they relate to the actual container they are in.  Outside controlled
+   circumstances (like linking) it is probably not useful to do more than
+   compare these pointers, since there is nothing stopping the user closing the
+   source container whenever they want to.
+
+   Our OOM handling here is just to not do anything, because this is called deep
+   enough in the call stack that doing anything useful is painfully difficult:
+   the worst consequence if we do OOM is a bit of type duplication anyway.  */
+
+static void
+ctf_add_type_mapping (ctf_file_t *src_fp, ctf_id_t src_type,
+		      ctf_file_t *dst_fp, ctf_id_t dst_type)
+{
+  if (LCTF_TYPE_ISPARENT (src_fp, src_type) && src_fp->ctf_parent)
+    src_fp = src_fp->ctf_parent;
+
+  src_type = LCTF_TYPE_TO_INDEX(src_fp, src_type);
+
+  if (LCTF_TYPE_ISPARENT (dst_fp, dst_type) && dst_fp->ctf_parent)
+    dst_fp = dst_fp->ctf_parent;
+
+  dst_type = LCTF_TYPE_TO_INDEX(dst_fp, dst_type);
+
+  /* This dynhash is a bit tricky: it has a multivalued (structural) key, so we
+     need to use the sized-hash machinery to generate key hashing and equality
+     functions.  */
+
+  if (dst_fp->ctf_link_type_mapping == NULL)
+    {
+      ctf_hash_fun f = CTF_HASH_SIZED (ctf_link_type_mapping_key_t);
+      ctf_hash_eq_fun e = CTF_HASH_EQ_SIZED (ctf_link_type_mapping_key_t);
+
+      if ((dst_fp->ctf_link_type_mapping = ctf_dynhash_create (f, e, free,
+							       NULL)) == NULL)
+	return;
+    }
+
+  ctf_link_type_mapping_key_t *key;
+  key = calloc (1, sizeof (struct ctf_link_type_mapping_key));
+  if (!key)
+    return;
+
+  key->cltm_fp = src_fp;
+  key->cltm_idx = src_type;
+
+  ctf_dynhash_insert (dst_fp->ctf_link_type_mapping, key,
+		      (void *) (uintptr_t) dst_type);
+}
+
+/* Look up a type mapping: return 0 if none.  The DST_FP is modified to point to
+   the parent if need be.  The ID returned is from the dst_fp's perspective.  */
+static ctf_id_t
+ctf_type_mapping (ctf_file_t *src_fp, ctf_id_t src_type, ctf_file_t **dst_fp)
+{
+  ctf_link_type_mapping_key_t key;
+  ctf_file_t *target_fp = *dst_fp;
+  ctf_id_t dst_type = 0;
+
+  memset (&key, 0, sizeof (struct ctf_link_type_mapping_key));
+
+  if (LCTF_TYPE_ISPARENT (src_fp, src_type) && src_fp->ctf_parent)
+    src_fp = src_fp->ctf_parent;
+
+  src_type = LCTF_TYPE_TO_INDEX(src_fp, src_type);
+  key.cltm_fp = src_fp;
+  key.cltm_idx = src_type;
+
+  if (target_fp->ctf_link_type_mapping)
+    dst_type = (uintptr_t) ctf_dynhash_lookup (target_fp->ctf_link_type_mapping,
+					       &key);
+
+  if (dst_type != 0)
+    {
+      dst_type = LCTF_INDEX_TO_TYPE (target_fp, dst_type,
+				     target_fp->ctf_parent != NULL);
+      *dst_fp = target_fp;
+      return dst_type;
+    }
+
+  if (target_fp->ctf_parent)
+    target_fp = target_fp->ctf_parent;
+  else
+    return 0;
+
+  if (target_fp->ctf_link_type_mapping)
+    dst_type = (uintptr_t) ctf_dynhash_lookup (target_fp->ctf_link_type_mapping,
+					       &key);
+
+  if (dst_type)
+    dst_type = LCTF_INDEX_TO_TYPE (target_fp, dst_type,
+				   target_fp->ctf_parent != NULL);
+
+  *dst_fp = target_fp;
+  return dst_type;
+}
+
 static int
 enumcmp (const char *name, int value, void *arg)
 {
@@ -1619,7 +1721,10 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	      if (memcmp (&src_en, &dst_en, sizeof (ctf_encoding_t)) == 0)
 		{
 		  if (kind != CTF_K_SLICE)
-		    return dst_type;
+		    {
+		      ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
+		      return dst_type;
+		    }
 		}
 	      else
 #ifndef BFD_ONLY
@@ -1936,6 +2041,8 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
       return (ctf_set_errno (dst_fp, ECTF_CORRUPT));
     }
 
+  if (dst_type != CTF_ERR)
+    ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
   return dst_type;
 }
 
@@ -2249,12 +2356,84 @@ ctf_link_one_type (ctf_id_t type, void *arg_)
 	       "into output per-CU CTF archive member %s: %s: skipped\n", type,
 	       arg->arcname, arg->file_name, arg->arcname,
 	       ctf_strerror (ctf_errno (arg->out_fp)));
-  return err;
+  return err;			/* Should be impossible: abort link.  */
 }
-/* Merge every type in this archive member into the link, so we can relink things
-   that have already had ld run on them.  We use the archive member name, sans
-   any leading '.ctf.', as the CU name for ambiguous types if there is one and
-   it's not the default: otherwise, we use the name of the input file.  */
+
+/* Link one variable in.  */
+
+static int
+ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
+{
+  ctf_link_in_member_cb_arg_t *arg = (ctf_link_in_member_cb_arg_t *) arg_;
+  ctf_dvdef_t *dvd;
+  ctf_id_t dst_type = 0;
+  ctf_file_t *check_fp;
+
+  /* In unconflicted link mode, when called on a child, we want to try to merge
+     into the parent first, then the child (if there is one): it must be
+     possible to merge into one of those given valid input.  Look for the type
+     of this variable in the parent.  */
+
+  if (arg->out_fp->ctf_parent)
+    {
+      check_fp = arg->out_fp->ctf_parent;
+
+      dst_type = ctf_type_mapping (arg->in_fp, type, &check_fp);
+      if (dst_type != 0)
+	{
+	  /* Got it in the parent.  Is there already a variable of this name in
+	     the parent? Does it already refer to the right type?  */
+
+	  dvd = ctf_dynhash_lookup (check_fp->ctf_dvhash, name);
+	  if (dvd && dvd->dvd_type == dst_type)
+	    return 0;
+
+	  /* No variable here: we can add it.  */
+	  if (!dvd)
+	    {
+	      ctf_add_variable (check_fp, name, dst_type);
+	      return 0;
+	    }
+	}
+    }
+
+  /* Not in the parent, or conflicted, or no parent at all.  Find the type in
+     the child if necessary, then add it there.  */
+
+  /* This type is from the parent's perspective: childify it.  */
+  if (dst_type != 0 && arg->out_fp->ctf_parent)
+    {
+      dst_type = LCTF_TYPE_TO_INDEX (arg->out_fp->ctf_parent, dst_type);
+      dst_type = LCTF_INDEX_TO_TYPE (arg->out_fp, dst_type, 1);
+    }
+  else
+    {
+      /* Look up the type in the child.  */
+      check_fp = arg->out_fp;
+
+      dst_type = ctf_type_mapping (arg->in_fp, type, &check_fp);
+    }
+
+  /* Type still unknown. Impossible: warn and fail.  */
+  if (dst_type == 0)
+    {
+      ctf_dprintf ("Type %lx from CTF archive member %s, input file %s not "
+		   "known in parent while adding variable %s: this should "
+		   "never happen.\n", type, arg->arcname, arg->file_name,
+		   name);
+      return EINVAL;
+    }
+
+  ctf_add_variable (check_fp, name, dst_type);
+
+  return 0;
+}
+
+/* Merge every type and variable in this archive member into the link, so we can
+   relink things that have already had ld run on them.  We use the archive
+   member name, sans any leading '.ctf.', as the CU name for ambiguous types if
+   there is one and it's not the default: otherwise, we use the name of the
+   input file.  */
 static int
 ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *arg_)
 {
@@ -2292,6 +2471,9 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
   arg->in_fp = in_fp;
 
   err = ctf_type_iter_all (in_fp, ctf_link_one_type, arg);
+
+  if (err == 0)
+    err = ctf_variable_iter (in_fp, ctf_link_one_variable, arg);
   arg->in_input_cu_file = 0;
   free (arg->arcname);
 
@@ -2330,7 +2512,8 @@ ctf_link_one_input_archive (void *key, void *value, void *arg_)
   ctf_file_close (arg->main_input_fp);
 }
 
-/* Merge types in all files added to the link together.  */
+/* Merge types and variable sections in all files added to the link
+   together.  */
 int
 ctf_link (ctf_file_t *fp, int share_mode)
 {

@@ -194,6 +194,17 @@ typedef struct ctf_str_atom_ref
   uint32_t *caf_ref;		/* A single ref to this string.  */
 } ctf_str_atom_ref_t;
 
+/* The structure used as the key in a ctf_link_type_mapping, which lets the
+   linker machinery determine which type IDs on the input side of a link map to
+   which types on the output side.  (The value is a ctf_id_t: another
+   index, not a type.)  */
+
+typedef struct ctf_link_type_mapping_key
+{
+  ctf_file_t *cltm_fp;
+  ctf_id_t cltm_idx;
+} ctf_link_type_mapping_key_t;
+
 /* The ctf_file is the structure used to represent a CTF container to library
    clients, who see it only as an opaque pointer.  Modifications can therefore
    be made freely to this structure without regard to client versioning.  The
@@ -258,6 +269,7 @@ struct ctf_file
   ctf_archive_t *ctf_archive;	  /* Archive this ctf_file_t came from.  */
   ctf_dynhash_t *ctf_link_inputs; /* Inputs to this link.  */
   ctf_dynhash_t *ctf_link_outputs; /* Additional outputs from this link.  */
+  ctf_dynhash_t *ctf_link_type_mapping; /* Map input types to output types.  */
   char *ctf_tmp_typeslice;	  /* Storage for slicing up type names.  */
   size_t ctf_tmp_typeslicelen;	  /* Size of the typeslice.  */
   void *ctf_specific;		  /* Data for ctf_get/setspecific().  */
