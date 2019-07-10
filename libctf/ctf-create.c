@@ -2141,7 +2141,7 @@ static void ctf_file_close_thunk (void *file)
 int
 ctf_link_add_ctf (ctf_file_t *fp, ctf_archive_t *ctf, const char *name)
 {
-  char *dupname;
+  char *dupname = NULL;
 
   if (fp->ctf_link_outputs)
     return (ctf_set_errno (fp, ECTF_LINKADDEDLATE));
@@ -2150,16 +2150,21 @@ ctf_link_add_ctf (ctf_file_t *fp, ctf_archive_t *ctf, const char *name)
 					      ctf_hash_eq_string, free,
 					      ctf_arc_close_thunk);
 
+  if (fp->ctf_link_inputs == NULL)
+    goto oom;
+
   if ((dupname = strdup (name)) == NULL)
-    return (ctf_set_errno (fp, ENOMEM));
+    goto oom;
 
   if (ctf_dynhash_insert (fp->ctf_link_inputs, dupname, ctf) < 0)
-    {
-      free (dupname);
-      return (ctf_set_errno (fp, ENOMEM));
-    }
+    goto oom;
 
   return 0;
+ oom:
+  free (fp->ctf_link_inputs);
+  fp->ctf_link_inputs = NULL;
+  free (dupname);
+  return (ctf_set_errno (fp, ENOMEM));
 }
 
 typedef struct ctf_link_in_member_cb_arg
@@ -2343,6 +2348,9 @@ ctf_link (ctf_file_t *fp, int share_mode)
 					       ctf_hash_eq_string, free,
 					       ctf_file_close_thunk);
 
+  if (fp->ctf_link_outputs == NULL)
+    return ctf_set_errno (fp, ENOMEM);
+
   ctf_dynhash_iter (fp->ctf_link_inputs, ctf_link_one_input_archive,
 		    &arg);
 
@@ -2430,6 +2438,7 @@ ctf_accumulate_archive_names (void *key, void *value, void *arg_)
   char **names;
   ctf_file_t **files;
   ctf_name_list_accum_cb_arg_t *arg = (ctf_name_list_accum_cb_arg_t *) arg_;
+  int err;
 
   if ((err = ctf_update (fp)) < 0)
     {
