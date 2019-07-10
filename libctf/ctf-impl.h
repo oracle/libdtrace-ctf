@@ -326,6 +326,30 @@ typedef int (*ctf_hash_eq_fun) (const void *, const void *);
 extern int ctf_hash_eq_integer (const void *, const void *);
 extern int ctf_hash_eq_string (const void *, const void *);
 
+/* Some macro trickery to automatically generate hash functions for sized,
+   non-string hashes, even though the hash functions supported by the hash
+   implementations we use do not support passing in a key size.
+
+   Does not work on structs or unions, only on typedefs to them.  */
+
+extern unsigned int ctf_hash_sized (const void *, size_t);
+extern int ctf_hash_eq_sized (const void *, const void *, size_t);
+
+#define __LCTF_CONCAT(__a,__b) __a ## __b
+
+#define DECL_CTF_HASH_SIZED(__ident)			\
+  static unsigned int __LCTF_CONCAT (ctf_hash_size_, __ident) (const void *v) \
+  {									\
+    return ctf_hash_sized (v, sizeof (__ident));			\
+  }									\
+  static int __LCTF_CONCAT (ctf_hash_eq_size_, __ident)			\
+    (const void *a, const void *b)					\
+  {									\
+    return ctf_hash_eq_sized (a, b, sizeof (__ident));			\
+  }
+#define CTF_HASH_SIZED(__ident) __LCTF_CONCAT (ctf_hash_size_, __ident)
+#define CTF_HASH_EQ_SIZED(__ident) __LCTF_CONCAT (ctf_hash_eq_size_, __ident)
+
 typedef void (*ctf_hash_free_fun) (void *);
 
 typedef void (*ctf_hash_iter_f) (void *key, void *value, void *arg);

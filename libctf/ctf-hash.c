@@ -56,6 +56,26 @@ ctf_hash_eq_string (const void *a, const void *b)
   return g_str_equal (a, b);
 }
 
+/* This is g_str_hash() with a length argument.  */
+unsigned int
+ctf_hash_sized (const void *v, size_t size)
+{
+  const unsigned char *p;
+  guint32 h = 5381;
+  ssize_t signed_size = size;
+
+  for (p = v; (p - (const unsigned char *) v) < signed_size; p++)
+    h = (h << 5) + h + *p;
+
+  return h;
+}
+
+int
+ctf_hash_eq_sized (const void *a, const void *b, size_t size)
+{
+  return memcmp (a, b, size);
+}
+
 /* The dynhash, used for hashes whose size is not known at creation time.
    Implemented using GHashTable, an expanding hash.  */
 
