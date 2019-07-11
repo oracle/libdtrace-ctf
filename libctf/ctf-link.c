@@ -8,6 +8,7 @@
    COPYING in the top level of this tree.  */
 
 #include <ctf-impl.h>
+#include <string.h>
 
 /* Type tracking machinery.  */
 
