@@ -2322,7 +2322,7 @@ ctf_link_one_type (ctf_id_t type, void *arg_)
 	{
 	  ctf_dprintf ("Cannot link type %lx from archive member %s, input file %s "
 		       "into output link: %s\n", type, arg->arcname, arg->file_name,
-		       ctf_strerror (ctf_errno (arg->out_fp)));
+		       ctf_errmsg (ctf_errno (arg->out_fp)));
 	  return err;
 	}
     }
@@ -2335,7 +2335,7 @@ ctf_link_one_type (ctf_id_t type, void *arg_)
       if ((per_cu_out_fp = ctf_create (&err)) == NULL)
 	{
 	  ctf_dprintf ("Cannot create per-CU CTF archive for member %s: %s\n",
-		       arg->arcname, ctf_strerror (err));
+		       arg->arcname, ctf_errmsg (err));
 	  return err;
 	}
 
@@ -2355,7 +2355,7 @@ ctf_link_one_type (ctf_id_t type, void *arg_)
   ctf_dprintf ("Cannot link type %lx from CTF archive member %s, input file %s "
 	       "into output per-CU CTF archive member %s: %s: skipped\n", type,
 	       arg->arcname, arg->file_name, arg->arcname,
-	       ctf_strerror (ctf_errno (arg->out_fp)));
+	       ctf_errmsg (ctf_errno (arg->out_fp)));
   return err;			/* Should be impossible: abort link.  */
 }
 
