@@ -199,9 +199,11 @@ ctf_bfdopen_ctfsect (struct bfd *abfd _libctf_unused_,
     return arci;
  err_free_sym:
 #ifdef HAVE_BFD_ELF
-  free ((void *) symsect.cts_data);
-err_free_str:
-  free ((void *) strsect.cts_data);
+  if (symsectp)
+    free ((void *) symsectp->cts_data);
+ err_free_str:
+  if (strsectp)
+    free ((void *) strsectp->cts_data);
 #endif
 err: _libctf_unused_;
   if (bfderrstr)
