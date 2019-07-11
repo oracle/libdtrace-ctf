@@ -401,6 +401,11 @@ extern int ctf_dvd_insert (ctf_file_t *, ctf_dvdef_t *);
 extern void ctf_dvd_delete (ctf_file_t *, ctf_dvdef_t *);
 extern ctf_dvdef_t *ctf_dvd_lookup (const ctf_file_t *, const char *);
 
+extern void ctf_add_type_mapping (ctf_file_t *src_fp, ctf_id_t src_type,
+				  ctf_file_t *dst_fp, ctf_id_t dst_type);
+extern ctf_id_t ctf_type_mapping (ctf_file_t *src_fp, ctf_id_t src_type,
+				  ctf_file_t **dst_fp);
+
 extern void ctf_decl_init (ctf_decl_t *);
 extern void ctf_decl_fini (ctf_decl_t *);
 extern void ctf_decl_push (ctf_decl_t *, ctf_file_t *, ctf_id_t);
