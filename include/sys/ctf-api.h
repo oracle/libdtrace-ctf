@@ -13,7 +13,6 @@
 #ifndef	_CTF_API_H
 #define	_CTF_API_H
 
-#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/ctf.h>
 #include <zlib.h>
