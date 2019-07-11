@@ -43,9 +43,9 @@ src:
 
 _subst:
 	if [[ -f $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR)) ]]; then \
-		git show $(shell cat $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR)) 2>/dev/null):$(FILE) | \
+		{ git show $(shell cat $(topdir)/maint/.last-sync.$(notdir $(GNU_DIR)) 2>/dev/null):$(FILE) | \
 		$(MAKE) -f $(topdir)/maint/Makefile.maint __one_subst \
-			topdir=$(topdir) OUT=$(topdir)/maint/.old || \
+			topdir=$(topdir) OUT=$(topdir)/maint/.old; } || \
 			cat /dev/null > $(topdir)/maint/.old; \
 	fi
 
