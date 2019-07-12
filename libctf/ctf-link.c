@@ -210,7 +210,7 @@ ctf_link_one_type (ctf_id_t type, void *arg_)
     {
       err = ctf_add_type (arg->out_fp, arg->in_fp, type);
 
-      if (err == 0)
+      if (err > -1)
 	return 0;
 
       if (err != ECTF_CONFLICT)
@@ -244,7 +244,7 @@ ctf_link_one_type (ctf_id_t type, void *arg_)
 
   err = ctf_add_type (per_cu_out_fp, arg->in_fp, type);
 
-  if (err == 0)
+  if (err > -1)
     return 0;
 
   ctf_dprintf ("Cannot link type %lx from CTF archive member %s, input file %s "
