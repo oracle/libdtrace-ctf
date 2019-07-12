@@ -647,6 +647,7 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
 	goto err_no;
       }
 
+  *size = fsize;
   free (arg.names);
   free (arg.files);
   return buf;
