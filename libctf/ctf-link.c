@@ -474,16 +474,16 @@ ctf_link_add_strtab (ctf_file_t *fp, ctf_link_strtab_string_f *add_string,
 
   while ((str = add_string (&offset, arg)) != NULL)
     {
-      ctf_link_out_string_cb_arg_t arg = { str, offset, 0 };
+      ctf_link_out_string_cb_arg_t iter_arg = { str, offset, 0 };
 
       fp->ctf_flags |= LCTF_DIRTY;
       if (ctf_str_add_external (fp, str, offset) == NULL)
 	err = ENOMEM;
 
       ctf_dynhash_iter (fp->ctf_link_outputs, ctf_link_intern_extern_string,
-			&arg);
-      if (arg.err)
-	err = arg.err;
+			&iter_arg);
+      if (iter_arg.err)
+	err = iter_arg.err;
     }
 
   return err;
