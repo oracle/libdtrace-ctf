@@ -158,4 +158,6 @@ LIBDTRACE_CTF_1.6 {
 	ctf_link_shuffle_syms;
 	ctf_link_write;
 	ctf_type_iter_all;
+	ctf_func_type_info;
+	ctf_func_type_args;
 } LIBDTRACE_CTF_1.5;
