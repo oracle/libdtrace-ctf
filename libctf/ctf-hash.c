@@ -56,24 +56,23 @@ ctf_hash_eq_string (const void *a, const void *b)
   return g_str_equal (a, b);
 }
 
-/* This is g_str_hash() with a length argument.  */
+/* Hash a type_mapping_key.  */
 unsigned int
-ctf_hash_sized (const void *v, size_t size)
+ctf_hash_type_mapping_key (const void *ptr)
 {
-  const unsigned char *p;
-  guint32 h = 5381;
-  ssize_t signed_size = size;
-
-  for (p = v; (p - (const unsigned char *) v) < signed_size; p++)
-    h = (h << 5) + h + *p;
-
-  return h;
+  ctf_link_type_mapping_key_t *k = (ctf_link_type_mapping_key_t *) ptr;
+  return GPOINTER_TO_UINT (k->cltm_fp) * 11
+    + 57 * GPOINTER_TO_UINT (k->cltm_idx) * 13;
 }
 
 int
-ctf_hash_eq_sized (const void *a, const void *b, size_t size)
+ctf_hash_eq_type_mapping_key (const void *a, const void *b)
 {
-  return memcmp (a, b, size);
+  ctf_link_type_mapping_key_t *key_a = (ctf_link_type_mapping_key_t *) a;
+  ctf_link_type_mapping_key_t *key_b = (ctf_link_type_mapping_key_t *) b;
+
+  return (key_a->cltm_fp == key_b->cltm_fp)
+    && (key_a->cltm_idx == key_b->cltm_idx);
 }
 
 /* The dynhash, used for hashes whose size is not known at creation time.

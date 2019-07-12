@@ -12,8 +12,6 @@
 
 /* Type tracking machinery.  */
 
-DECL_CTF_HASH_SIZED (ctf_link_type_mapping_key_t)
-
 /* Record the correspondence between a source and ctf_add_type()-added
    destination type: both types are translated into parent type IDs if need be,
    so they relate to the actual container they are in.  Outside controlled
@@ -45,8 +43,8 @@ ctf_add_type_mapping (ctf_file_t *src_fp, ctf_id_t src_type,
 
   if (dst_fp->ctf_link_type_mapping == NULL)
     {
-      ctf_hash_fun f = CTF_HASH_SIZED (ctf_link_type_mapping_key_t);
-      ctf_hash_eq_fun e = CTF_HASH_EQ_SIZED (ctf_link_type_mapping_key_t);
+      ctf_hash_fun f = ctf_hash_type_mapping_key;
+      ctf_hash_eq_fun e = ctf_hash_eq_type_mapping_key;
 
       if ((dst_fp->ctf_link_type_mapping = ctf_dynhash_create (f, e, free,
 							       NULL)) == NULL)
