@@ -62,7 +62,7 @@ ctf_hash_type_mapping_key (const void *ptr)
 {
   ctf_link_type_mapping_key_t *k = (ctf_link_type_mapping_key_t *) ptr;
   return GPOINTER_TO_UINT (k->cltm_fp) * 11
-    + 57 * GPOINTER_TO_UINT (k->cltm_idx) * 13;
+    + 59 * GPOINTER_TO_UINT (k->cltm_idx) * 13;
 }
 
 int
