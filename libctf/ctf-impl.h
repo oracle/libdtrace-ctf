@@ -427,8 +427,6 @@ extern const char *ctf_strerror (int);
 extern ctf_id_t ctf_type_resolve_unsliced (ctf_file_t *, ctf_id_t);
 extern int ctf_type_kind_unsliced (ctf_file_t *, ctf_id_t);
 
-extern int ctf_type_iter_all (ctf_file_t *, ctf_type_f *, void *);
-
 _libctf_printflike_ (1, 2)
 extern void ctf_dprintf (const char *, ...);
 extern void libctf_init_debug (void);

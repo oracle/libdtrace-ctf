@@ -157,4 +157,5 @@ LIBDTRACE_CTF_1.6 {
 	ctf_link_add_strtab;
 	ctf_link_shuffle_syms;
 	ctf_link_write;
+	ctf_type_iter_all;
 } LIBDTRACE_CTF_1.5;
