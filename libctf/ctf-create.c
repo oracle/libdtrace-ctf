@@ -10,7 +10,6 @@
 #include <ctf-impl.h>
 #include <sys/param.h>
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>
 #include <zlib.h>
 
