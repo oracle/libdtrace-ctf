@@ -187,7 +187,7 @@ typedef struct ctf_link_in_member_cb_arg
    mindlessly duplicated), but will improve shortly.  */
 
 static int
-ctf_link_one_type (ctf_id_t type, void *arg_)
+ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 {
   ctf_link_in_member_cb_arg_t *arg = (ctf_link_in_member_cb_arg_t *) arg_;
   ctf_file_t *per_cu_out_fp;
