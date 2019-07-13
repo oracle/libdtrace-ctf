@@ -1695,7 +1695,10 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	      if (match && sroot == droot)
 		{
 		  if (kind != CTF_K_SLICE)
-		    return dtd->dtd_type;
+		    {
+		      ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
+		      return dtd->dtd_type;
+		    }
 		}
 	      else if (!match && sroot && droot)
 #ifndef BFD_ONLY
