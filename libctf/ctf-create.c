@@ -1533,6 +1533,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
   ctf_funcinfo_t ctc;
 
   ctf_hash_t *hp;
+  ctf_id_t orig_src_type = src_type;
 
   if (!(dst_fp->ctf_flags & LCTF_RDWR))
     return (ctf_set_errno (dst_fp, ECTF_RDONLY));
@@ -1945,7 +1946,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
     }
 
   if (dst_type != CTF_ERR)
-    ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
+    ctf_add_type_mapping (src_fp, orig_src_type, dst_fp, dst_type);
   return dst_type;
 }
 
