@@ -72,8 +72,6 @@ ctf_type_mapping (ctf_file_t *src_fp, ctf_id_t src_type, ctf_file_t **dst_fp)
   ctf_file_t *target_fp = *dst_fp;
   ctf_id_t dst_type = 0;
 
-  memset (&key, 0, sizeof (struct ctf_link_type_mapping_key));
-
   if (LCTF_TYPE_ISPARENT (src_fp, src_type) && src_fp->ctf_parent)
     src_fp = src_fp->ctf_parent;
 
