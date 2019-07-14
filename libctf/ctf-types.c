@@ -380,6 +380,23 @@ ctf_type_name (ctf_file_t *fp, ctf_id_t type, char *buf, size_t len)
   return (rv >= 0 && (size_t) rv < len ? buf : NULL);
 }
 
+/* Lookup the given type ID and return its raw, unadorned, undecorated name as a
+   new dynamcally-allocated string.  */
+
+char *
+ctf_type_aname_raw (ctf_file_t *fp, ctf_id_t type)
+{
+  const ctf_type_t *tp;
+
+  if ((tp = ctf_lookup_by_id (&fp, type)) == NULL)
+    return NULL;		/* errno is set for us.  */
+
+  if (ctf_strraw (fp, tp->ctt_name) != NULL)
+    return strdup (ctf_strraw (fp, tp->ctt_name));
+
+  return NULL;
+}
+
 /* Resolve the type down to a base type node, and then return the size
    of the type storage in bytes.  */
 

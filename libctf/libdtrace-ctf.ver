@@ -160,4 +160,5 @@ LIBDTRACE_CTF_1.6 {
 	ctf_type_iter_all;
 	ctf_func_type_info;
 	ctf_func_type_args;
+        ctf_type_aname_raw;
 } LIBDTRACE_CTF_1.5;
