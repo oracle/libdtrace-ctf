@@ -2063,7 +2063,6 @@ ctf_write_mem (ctf_file_t *fp, size_t *size, size_t threshold)
 
   hp = (ctf_header_t *) buf;
   memcpy (hp, fp->ctf_header, header_len);
-  hp->cth_flags |= CTF_F_COMPRESS;
   bp = buf + sizeof (struct ctf_header);
   *size = sizeof (struct ctf_header);
 
@@ -2071,11 +2070,13 @@ ctf_write_mem (ctf_file_t *fp, size_t *size, size_t threshold)
 
   if (fp->ctf_size < threshold)
     {
+      hp->cth_flags &= ~CTF_F_COMPRESS;
       memcpy (bp, fp->ctf_buf, fp->ctf_size);
       *size += fp->ctf_size;
     }
   else
     {
+      hp->cth_flags |= CTF_F_COMPRESS;
       if ((rc = compress (bp, (uLongf *) &compress_len,
 			  fp->ctf_buf, fp->ctf_size)) != Z_OK)
 	{
