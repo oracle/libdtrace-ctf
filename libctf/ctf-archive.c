@@ -220,6 +220,8 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
     }
 
   err = ctf_arc_write_fd (fd, ctf_files, ctf_file_cnt, names, threshold);
+  if (err)
+    goto err;
 
   if ((err = close (fd)) < 0)
     {
@@ -229,14 +231,11 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
     }
 
  err:
+  close (fd);
   if (err < 0)
-    {
-      close (fd);
-      fd = -1;
-      unlink (file);
-    }
+    unlink (file);
 
-  return fd;
+  return err;
 }
 
 /* Write one CTF file out.  Return the file position of the written file (or
