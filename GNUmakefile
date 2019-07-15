@@ -23,7 +23,7 @@ $(if $(subst sparc64,,$(subst aarch64,,$(subst x86_64,,$(shell uname -m)))), \
 $(if $(subst Linux,,$(shell uname -s)), \
     $(error "Error: DTrace only supports Linux"),)
 
-CFLAGS ?= -O2 -g -Wall -pedantic -Wno-unknown-pragmas
+CFLAGS ?= -O2 -Wall -pedantic -Wno-unknown-pragmas
 LDFLAGS ?=
 INVARIANT_CFLAGS := -std=gnu11 -D_GNU_SOURCE -DPACKAGE=\"libctf\" $(DTO)
 CPPFLAGS += -Iinclude -I$(objdir)
