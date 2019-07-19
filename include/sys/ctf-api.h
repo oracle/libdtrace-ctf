@@ -416,6 +416,8 @@ extern int ctf_compress_write (ctf_file_t * fp, int fd);
 extern unsigned char *ctf_write_mem (ctf_file_t *, size_t *, size_t threshold);
 
 extern int ctf_link_add_ctf (ctf_file_t *, ctf_archive_t *, const char *);
+extern int ctf_link_add_cu_mapping (ctf_file_t *, const char *from,
+				    const char *to);
 extern int ctf_link (ctf_file_t *, int share_mode);
 typedef const char *ctf_link_strtab_string_f (uint32_t *offset, void *arg);
 extern int ctf_link_add_strtab (ctf_file_t *, ctf_link_strtab_string_f *,

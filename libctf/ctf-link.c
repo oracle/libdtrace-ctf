@@ -165,6 +165,90 @@ ctf_link_add_ctf (ctf_file_t *fp, ctf_archive_t *ctf, const char *name)
   return (ctf_set_errno (fp, ENOMEM));
 }
 
+/* Return a per-CU output CTF dictionary suitable for the given CU, creating and
+   interning it if need be.  */
+
+static ctf_file_t *
+ctf_create_per_cu (ctf_file_t *fp, const char *filename, const char *cuname,
+		   int *err)
+{
+  ctf_file_t *cu_fp;
+  const char *ctf_name = NULL;
+
+  /* First, check the mapping table and translate the per-CU name we use
+     accordingly.  We check both the input filename and the CU name.  Only if
+     neither are set do we fall back to the input filename as the per-CU
+     dictionary name.  We prefer the filename because this easier for likely
+     callers to determine.  */
+
+  if (fp->ctf_link_cu_mapping)
+    {
+      if (((ctf_name = ctf_dynhash_lookup (fp->ctf_link_cu_mapping, filename)) == NULL) &&
+	  ((ctf_name = ctf_dynhash_lookup (fp->ctf_link_cu_mapping, cuname)) == NULL))
+	ctf_name = filename;
+    }
+
+  if (ctf_name == NULL)
+    ctf_name = filename;
+
+  if ((cu_fp = ctf_dynhash_lookup (fp->ctf_link_outputs, ctf_name)) == NULL)
+    {
+      if ((cu_fp = ctf_create (err)) == NULL)
+	{
+	  ctf_dprintf ("Cannot create per-CU CTF archive for CU %s from "
+		       "input file %s: %s\n", cuname, filename,
+		       ctf_errmsg (*err));
+	  return NULL;				/* Errno is set for us.  */
+	}
+
+      if (ctf_dynhash_insert (fp->ctf_link_outputs, ctf_strdup (ctf_name),
+			      cu_fp) < 0)
+	{
+	  ctf_file_close (cu_fp);
+	  *err = ENOMEM;
+	  return NULL;
+	}
+
+      ctf_import (cu_fp, fp);
+      ctf_cuname_set (cu_fp, cuname);
+    }
+  return cu_fp;
+}
+
+/* Add a mapping directing that the CU named FROM should have its
+   conflicting/non-duplicate types (depending on link mode) go into a container
+   named TO.  Many FROMs can share a TO: in this case, the effect on conflicting
+   types is not yet defined (but in time an auto-renaming algorithm will be
+   added: ugly, but there is really no right thing one can do in this
+   situation).
+
+   We forcibly add a container named TO in every case, even though it may well
+   wind up empty, because clients that use this facility usually expect to find
+   every TO container present, even if empty, and malfunction otherwise.  */
+
+int
+ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
+{
+  int err;
+
+  if (fp->ctf_link_cu_mapping == NULL)
+    fp->ctf_link_cu_mapping = ctf_dynhash_create (ctf_hash_string,
+						  ctf_hash_eq_string, free,
+						  free);
+  if (fp->ctf_link_cu_mapping == NULL)
+    return ctf_set_errno (fp, ENOMEM);
+
+  if (ctf_create_per_cu (fp, to, to, &err) == NULL)
+    return err;					/* Rrrno is set for us.  */
+
+  err = ctf_dynhash_insert (fp->ctf_link_cu_mapping, strdup (from),
+			    strdup (to));
+
+  if (err)
+    return ctf_set_errno (fp, err);
+  return 0;
+}
+
 typedef struct ctf_link_in_member_cb_arg
 {
   ctf_file_t *out_fp;
@@ -178,7 +262,6 @@ typedef struct ctf_link_in_member_cb_arg
   int in_input_cu_file;
   int err;
 } ctf_link_in_member_cb_arg_t;
-
 
 /* Link one type into the link.  We rely on ctf_add_type() to detect
    duplicates.  This is not terribly reliable yet (unnmamed types will be
@@ -218,25 +301,9 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 	}
     }
 
-  if ((per_cu_out_fp = ctf_dynhash_lookup (arg->out_fp->ctf_link_outputs,
-					   arg->arcname)) == NULL)
-    {
-      int err;
-
-      if ((per_cu_out_fp = ctf_create (&err)) == NULL)
-	{
-	  ctf_dprintf ("Cannot create per-CU CTF archive for member %s: %s\n",
-		       arg->arcname, ctf_errmsg (err));
-	  return err;
-	}
-
-      if (ctf_dynhash_insert (arg->out_fp->ctf_link_outputs, arg->arcname,
-			      per_cu_out_fp) < 0)
-	  return ENOMEM;
-
-      ctf_import (per_cu_out_fp, arg->out_fp);
-      ctf_cuname_set (per_cu_out_fp, arg->cu_name);
-    }
+  if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->arcname, arg->cu_name,
+					  &err)) == NULL)
+    return err; 				/* Errno is set for us.  */
 
   err = ctf_add_type (per_cu_out_fp, arg->in_fp, type);
 

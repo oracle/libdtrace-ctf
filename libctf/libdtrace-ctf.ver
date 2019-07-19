@@ -135,7 +135,7 @@ LIBDTRACE_CTF_1.5 {
 
 LIBDTRACE_CTF_1.6 {
     global:
-        ctf_add_slice;
+	ctf_add_slice;
 	ctf_add_enum_encoded;
 	ctf_add_member_encoded;
 	ctf_type_aname;
@@ -153,6 +153,7 @@ LIBDTRACE_CTF_1.6 {
 	ctf_arc_write_fd;
 	ctf_write_mem;
 	ctf_link_add_ctf;
+	ctf_link_add_cu_mapping;
 	ctf_link;
 	ctf_link_add_strtab;
 	ctf_link_shuffle_syms;
@@ -160,5 +161,5 @@ LIBDTRACE_CTF_1.6 {
 	ctf_type_iter_all;
 	ctf_func_type_info;
 	ctf_func_type_args;
-        ctf_type_aname_raw;
+	ctf_type_aname_raw;
 } LIBDTRACE_CTF_1.5;

@@ -448,6 +448,7 @@ ctf_update (ctf_file_t *fp)
   nfp->ctf_link_inputs = fp->ctf_link_inputs;
   nfp->ctf_link_outputs = fp->ctf_link_outputs;
   nfp->ctf_link_type_mapping = fp->ctf_link_type_mapping;
+  nfp->ctf_link_cu_mapping = fp->ctf_link_cu_mapping;
 
   nfp->ctf_snapshot_lu = fp->ctf_snapshots;
 
@@ -460,6 +461,7 @@ ctf_update (ctf_file_t *fp)
   fp->ctf_link_inputs = NULL;
   fp->ctf_link_outputs = NULL;
   fp->ctf_link_type_mapping = NULL;
+  fp->ctf_link_cu_mapping = NULL;
 
   fp->ctf_dvhash = NULL;
   memset (&fp->ctf_dvdefs, 0, sizeof (ctf_list_t));
