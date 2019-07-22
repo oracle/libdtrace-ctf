@@ -249,6 +249,22 @@ ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
   return 0;
 }
 
+/* Set a function which is called to transform the names of archive members.
+   This is useful for applying regular transformations to many names, where
+   ctf_link_add_cu_mapping applies arbitrarily irregular changes to single
+   names.  The member name changer is applied at ctf_link_write time, so it
+   cannot conflate multiple CUs into one the way ctf_link_add_cu_mapping can.
+   The changer function accepts a name and should return a new
+   dynamically-allocated name, or NULL if the name should be left unchanged.  */
+void
+ctf_link_set_memb_name_changer (ctf_file_t *fp,
+				ctf_link_memb_name_changer_f *changer,
+				void *arg)
+{
+  fp->ctf_link_memb_name_changer = changer;
+  fp->ctf_link_memb_name_changer_arg = arg;
+}
+
 typedef struct ctf_link_in_member_cb_arg
 {
   ctf_file_t *out_fp;
@@ -567,6 +583,8 @@ typedef struct ctf_name_list_accum_cb_arg
   ctf_file_t **files;
   size_t i;
   int err;
+  char **dynames;
+  size_t ndynames;
 } ctf_name_list_accum_cb_arg_t;
 
 /* Accumulate the names and a count of the names in the link output hash,
@@ -600,6 +618,34 @@ ctf_accumulate_archive_names (void *key, void *value, void *arg_)
       arg->err = ENOMEM;
       return;
     }
+
+  /* Allow the caller to get in and modify the name at the last minute.  If the
+     caller *does* modify the name, we have to stash away the new name the
+     caller returned so we can free it later on.  (The original name is the key
+     of the ctf_link_outputs hash and is freed by the dynhash machinery.)  */
+
+  if (fp->ctf_link_memb_name_changer)
+    {
+      char **dynames;
+      char *dyname;
+      void *nc_arg = fp->ctf_link_memb_name_changer_arg;
+
+      dyname = fp->ctf_link_memb_name_changer (fp, name, nc_arg);
+
+      if (dyname != NULL)
+	{
+	  if ((dynames = realloc (arg->dynames,
+				  sizeof (char *) * ++(arg->ndynames))) == NULL)
+	    {
+	      (arg->ndynames)--;
+	      arg->err = ENOMEM;
+	      return;
+	    }
+	    arg->dynames = dynames;
+	    name = (const char *) dyname;
+	}
+    }
+
   arg->names = names;
   arg->names[(arg->i) - 1] = (char *) name;
   arg->files = files;
@@ -614,6 +660,7 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
 {
   ctf_name_list_accum_cb_arg_t arg;
   char **names;
+  char *transformed_name = NULL;
   ctf_file_t **files;
   FILE *f = NULL;
   int err;
@@ -653,7 +700,18 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
     }
   arg.names = names;
   memmove (&(arg.names[1]), arg.names, sizeof (char *) * (arg.i));
+
   arg.names[0] = (char *) _CTF_SECTION;
+  if (fp->ctf_link_memb_name_changer)
+    {
+      void *nc_arg = fp->ctf_link_memb_name_changer_arg;
+
+      transformed_name = fp->ctf_link_memb_name_changer (fp, _CTF_SECTION,
+							 nc_arg);
+
+      if (transformed_name != NULL)
+	arg.names[0] = transformed_name;
+    }
 
   if ((files = realloc (arg.files,
 			sizeof (struct ctf_file *) * (arg.i + 1))) == NULL)
@@ -713,6 +771,14 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
   *size = fsize;
   free (arg.names);
   free (arg.files);
+  free (transformed_name);
+  if (arg.ndynames)
+    {
+      size_t i;
+      for (i = 0; i < arg.ndynames; i++)
+	free (arg.dynames[i]);
+      free (arg.dynames);
+    }
   return buf;
 
  err_no:
@@ -723,6 +789,14 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
     fclose (f);
   free (arg.names);
   free (arg.files);
+  free (transformed_name);
+  if (arg.ndynames)
+    {
+      size_t i;
+      for (i = 0; i < arg.ndynames; i++)
+	free (arg.dynames[i]);
+      free (arg.dynames);
+    }
   ctf_dprintf ("Cannot write archive in link: %s failure: %s\n", errloc,
 	       ctf_errmsg (err));
   ctf_set_errno (fp, err);

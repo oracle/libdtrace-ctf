@@ -416,8 +416,6 @@ extern int ctf_compress_write (ctf_file_t * fp, int fd);
 extern unsigned char *ctf_write_mem (ctf_file_t *, size_t *, size_t threshold);
 
 extern int ctf_link_add_ctf (ctf_file_t *, ctf_archive_t *, const char *);
-extern int ctf_link_add_cu_mapping (ctf_file_t *, const char *from,
-				    const char *to);
 extern int ctf_link (ctf_file_t *, int share_mode);
 typedef const char *ctf_link_strtab_string_f (uint32_t *offset, void *arg);
 extern int ctf_link_add_strtab (ctf_file_t *, ctf_link_strtab_string_f *,
@@ -428,6 +426,16 @@ extern int ctf_link_shuffle_syms (ctf_file_t *, ctf_link_iter_symbol_f *,
 				  void *);
 extern unsigned char *ctf_link_write (ctf_file_t *, size_t *size,
 				      size_t threshold);
+
+/* Specialist linker functions.  These functions are not used by ld, but can be
+   used by other prgorams making use of the linker machinery for other purposes
+   to customize its output.  */
+extern int ctf_link_add_cu_mapping (ctf_file_t *, const char *from,
+				    const char *to);
+typedef char *ctf_link_memb_name_changer_f (ctf_file_t *,
+					    const char *, void *);
+extern void ctf_link_set_memb_name_changer
+  (ctf_file_t *, ctf_link_memb_name_changer_f *, void *);
 
 extern void ctf_setdebug (int debug);
 extern int ctf_getdebug (void);
