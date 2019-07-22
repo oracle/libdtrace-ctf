@@ -224,7 +224,7 @@ main (int argc, char *argv[])
 		   ctf_errmsg (err));
 	  exit (1);
 	}
-      if (!upgrade
+      if (extraction && !upgrade
 	  && (err = ctf_archive_raw_iter (arc, extract_raw_ctf, &visit_data)) < 0)
 	{
 	  fprintf (stderr, "Error reading archive %s: %s\n", *name,
