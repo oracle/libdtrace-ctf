@@ -238,6 +238,14 @@ ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
   if (fp->ctf_link_cu_mapping == NULL)
     return ctf_set_errno (fp, ENOMEM);
 
+  if (fp->ctf_link_outputs == NULL)
+    fp->ctf_link_outputs = ctf_dynhash_create (ctf_hash_string,
+					       ctf_hash_eq_string, free,
+					       ctf_file_close_thunk);
+
+  if (fp->ctf_link_outputs == NULL)
+    return ctf_set_errno (fp, ENOMEM);
+
   if (ctf_create_per_cu (fp, to, to, &err) == NULL)
     return err;					/* Rrrno is set for us.  */
 
