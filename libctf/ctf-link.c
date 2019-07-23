@@ -247,7 +247,7 @@ ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
     return ctf_set_errno (fp, ENOMEM);
 
   if (ctf_create_per_cu (fp, to, to, &err) == NULL)
-    return err;					/* Rrrno is set for us.  */
+    return err;					/* Errno is set for us.  */
 
   err = ctf_dynhash_insert (fp->ctf_link_cu_mapping, strdup (from),
 			    strdup (to));
