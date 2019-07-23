@@ -347,12 +347,12 @@ union
 
 #ifndef NO_COMPAT
 # define CTF_V1_INFO_KIND(info)		(((info) & 0xf800) >> 11)
-# define CTF_V1_INFO_ISROOT(info)	(!!(((info) & 0x0400) >> 10))
+# define CTF_V1_INFO_ISROOT(info)	(((info) & 0x0400) >> 10)
 # define CTF_V1_INFO_VLEN(info)		(((info) & CTF_MAX_VLEN_V1))
 #endif /* !NO_COMPAT */
 
 #define CTF_V2_INFO_KIND(info)		(((info) & 0xfc000000) >> 26)
-#define CTF_V2_INFO_ISROOT(info)	(!!(((info) & 0x2000000) >> 25))
+#define CTF_V2_INFO_ISROOT(info)	(((info) & 0x2000000) >> 25)
 #define CTF_V2_INFO_VLEN(info)		(((info) & CTF_MAX_VLEN))
 
 #define CTF_NAME_STID(name)		((name) >> 31)
