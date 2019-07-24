@@ -309,7 +309,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
      conclusions.  */
   if (arg->out_fp->ctf_dtoldid + 10000 < arg->out_fp->ctf_dtnextid)
     if ((err = ctf_update (arg->out_fp)) < 0)
-      arg->err = err;
+      return err;				/* Errno is set for us.  */
 
   /* Simply call ctf_add_type: if it reports a conflict and we're adding to the
      main CTF file, add to the per-CU archive member instead, creating it if
