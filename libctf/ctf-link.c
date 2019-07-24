@@ -298,6 +298,19 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
   ctf_file_t *per_cu_out_fp;
   int err;
 
+  if (arg->share_mode != CTF_LINK_SHARE_UNCONFLICTED)
+    {
+      ctf_dprintf ("Share-duplicated mode not yet implemented.\n");
+      return ECTF_NOTYET;
+    }
+
+  /* Pro tem horrible hack: to make things a bit less dreadfully slow, Do a
+     ctf_update() periodically so that ctf_add_type can come to better
+     conclusions.  */
+  if (arg->out_fp->ctf_dtoldid + 10000 < arg->out_fp->ctf_dtnextid)
+    if ((err = ctf_update (arg->out_fp)) < 0)
+      arg->err = err;
+
   /* Simply call ctf_add_type: if it reports a conflict and we're adding to the
      main CTF file, add to the per-CU archive member instead, creating it if
      necessary.  If we got this type from a per-CU archive member, add it
@@ -486,17 +499,6 @@ ctf_link_one_input_archive (void *key, void *value, void *arg_)
       arg->err = err;
     }
   ctf_file_close (arg->main_input_fp);
-
-  /* Pro tem horrible hack: to make things a bit less dreadfully slow,
-     in CTF_LINK_SHARE_DUPLICATED mode (which is usually used with very large
-     inputs), do a ctf_update() after every file so that ctf_add_type can come
-     to better conclusions.  */
-  if (err == 0 && arg->share_mode != CTF_LINK_SHARE_UNCONFLICTED)
-    {
-      if (arg->out_fp->ctf_dtoldid + 10000 < arg->out_fp->ctf_dtnextid)
-	if ((err = ctf_update (arg->out_fp)) < 0)
-	  arg->err = err;
-    }
 }
 
 /* Merge types and variable sections in all files added to the link
