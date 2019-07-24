@@ -435,7 +435,8 @@ ctf_update (ctf_file_t *fp)
 
   nfp->ctf_refcnt = fp->ctf_refcnt;
   nfp->ctf_flags |= fp->ctf_flags & ~LCTF_DIRTY;
-  nfp->ctf_data.cts_data = NULL;	/* Force ctf_free() on close.  */
+  if (nfp->ctf_dynbase == NULL)
+    nfp->ctf_dynbase = buf;		/* Make sure buf is freed on close.  */
   nfp->ctf_dthash = fp->ctf_dthash;
   nfp->ctf_dtdefs = fp->ctf_dtdefs;
   nfp->ctf_dtbyname = fp->ctf_dtbyname;
