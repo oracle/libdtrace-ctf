@@ -301,6 +301,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
   if (arg->share_mode != CTF_LINK_SHARE_UNCONFLICTED)
     {
       ctf_dprintf ("Share-duplicated mode not yet implemented.\n");
+      ctf_set_errno (arg->out_fp, ECTF_NOTYET);
       return ECTF_NOTYET;
     }
 
@@ -308,8 +309,8 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
      ctf_update() periodically so that ctf_add_type can come to better
      conclusions.  */
   if (arg->out_fp->ctf_dtoldid + 10000 < arg->out_fp->ctf_dtnextid)
-    if ((err = ctf_update (arg->out_fp)) < 0)
-      return err;				/* Errno is set for us.  */
+    if (ctf_update (arg->out_fp) < 0)
+      return ctf_errno (arg->out_fp);			/* Errno is set for us.  */
 
   /* Simply call ctf_add_type: if it reports a conflict and we're adding to the
      main CTF file, add to the per-CU archive member instead, creating it if
@@ -318,16 +319,15 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 
   if (!arg->in_input_cu_file)
     {
-      err = ctf_add_type (arg->out_fp, arg->in_fp, type);
-
-      if (err > -1)
+      if (ctf_add_type (arg->out_fp, arg->in_fp, type) > -1)
 	return 0;
 
+      err = ctf_errno (arg->out_fp);
       if (err != ECTF_CONFLICT)
 	{
 	  ctf_dprintf ("Cannot link type %lx from archive member %s, input file %s "
 		       "into output link: %s\n", type, arg->arcname, arg->file_name,
-		       ctf_errmsg (ctf_errno (arg->out_fp)));
+		       ctf_errmsg (err));
 	  return err;
 	}
     }
@@ -336,16 +336,15 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 					  &err)) == NULL)
     return err; 				/* Errno is set for us.  */
 
-  err = ctf_add_type (per_cu_out_fp, arg->in_fp, type);
-
-  if (err > -1)
+  if (ctf_add_type (per_cu_out_fp, arg->in_fp, type) > -1)
     return 0;
+  err = ctf_errno (arg->out_fp);
 
   ctf_dprintf ("Cannot link type %lx from CTF archive member %s, input file %s "
 	       "into output per-CU CTF archive member %s: %s: skipped\n", type,
 	       arg->arcname, arg->file_name, arg->arcname,
-	       ctf_errmsg (ctf_errno (arg->out_fp)));
-  return err;			/* Should be impossible: abort link.  */
+	       ctf_errmsg (err));
+  return err;				/* Should be impossible: abort link.  */
 }
 
 /* Link one variable in.  */
