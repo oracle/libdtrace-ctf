@@ -10,18 +10,37 @@
 #include <ctf-impl.h>
 #include <string.h>
 
-/* Convert an encoded CTF string name into a pointer to a C string by looking
-  up the appropriate string table buffer and then adding the offset.  */
+/* Convert an encoded CTF string name into a pointer to a C string, using an
+  explicit internal strtab rather than the fp-based one.  */
 const char *
-ctf_strraw (ctf_file_t *fp, uint32_t name)
+ctf_strraw_explicit (ctf_file_t *fp, uint32_t name, ctf_strs_t *strtab)
 {
   ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID (name)];
+
+  if ((CTF_NAME_STID (name) == CTF_STRTAB_0) && (strtab != NULL))
+    ctsp = strtab;
+
+  /* If this name is in the external strtab, and there is a synthetic strtab,
+     use it in preference.  */
+
+  if (CTF_NAME_STID (name) == CTF_STRTAB_1
+      && fp->ctf_syn_ext_strtab != NULL)
+    return ctf_dynhash_lookup (fp->ctf_syn_ext_strtab,
+                               (void *) (uintptr_t) name);
 
   if (ctsp->cts_strs != NULL && CTF_NAME_OFFSET (name) < ctsp->cts_len)
     return (ctsp->cts_strs + CTF_NAME_OFFSET (name));
 
   /* String table not loaded or corrupt offset.  */
   return NULL;
+}
+
+/* Convert an encoded CTF string name into a pointer to a C string by looking
+  up the appropriate string table buffer and then adding the offset.  */
+const char *
+ctf_strraw (ctf_file_t *fp, uint32_t name)
+{
+  return ctf_strraw_explicit (fp, name, NULL);
 }
 
 /* Return a guaranteed-non-NULL pointer to the string with the given CTF
@@ -290,8 +309,10 @@ ctf_str_sort_strtab (const void *a, const void *b)
 }
 
 /* Write out and return a strtab containing all strings with recorded refs,
-   adjusting the refs to refer to the corresponding string.  The returned
-   strtab may be NULL on error.  */
+   adjusting the refs to refer to the corresponding string.  The returned strtab
+   may be NULL on error.  Also populate the synthetic strtab with mappings from
+   external strtab offsets to names, so we can look them up with ctf_strptr().
+   Only external strtab offsets with references are added.  */
 ctf_strs_writable_t
 ctf_str_write_strtab (ctf_file_t *fp)
 {
@@ -301,6 +322,7 @@ ctf_str_write_strtab (ctf_file_t *fp)
   ctf_strtab_write_state_t s;
   ctf_str_atom_t **sorttab;
   size_t i;
+  int any_external = 0;
 
   memset (&strtab, 0, sizeof (struct ctf_strs_writable));
   memset (&s, 0, sizeof (struct ctf_strtab_write_state));
@@ -322,7 +344,7 @@ ctf_str_write_strtab (ctf_file_t *fp)
   /* Sort the strtab.  Force the null string to be first.  */
   sorttab = calloc (s.strtab_count, sizeof (ctf_str_atom_t *));
   if (!sorttab)
-      return strtab;
+    goto oom;
 
   sorttab[0] = nullstr;
   s.i = 1;
@@ -334,19 +356,38 @@ ctf_str_write_strtab (ctf_file_t *fp)
 	 ctf_str_sort_strtab);
 
   if ((strtab.cts_strs = ctf_alloc (strtab.cts_len)) == NULL)
-    {
-      free (sorttab);
-      return strtab;
-    }
+    goto oom_sorttab;
 
-  /* Update all refs: also update the strtab if this is not an external strtab
-     pointer.  */
+  if (!fp->ctf_syn_ext_strtab)
+    fp->ctf_syn_ext_strtab = ctf_dynhash_create (ctf_hash_integer,
+						 ctf_hash_eq_integer,
+						 NULL, NULL);
+  if (!fp->ctf_syn_ext_strtab)
+    goto oom_strtab;
+
+  /* Update all refs: also update the strtab appropriately.  */
   for (i = 0; i < s.strtab_count; i++)
     {
       if (sorttab[i]->csa_offset)
-	ctf_str_update_refs (sorttab[i], sorttab[i]->csa_offset);
+	{
+	  /* External strtab entry: populate the synthetic external strtab.
+
+	     This is safe because you cannot ctf_rollback to before the point
+	     when a ctf_update is done, and the strtab is written at ctf_update
+	     time.  So any atoms we reference here are sure to stick around
+	     until ctf_file_close.  */
+
+	  any_external = 1;
+	  ctf_str_update_refs (sorttab[i], sorttab[i]->csa_offset);
+	  if (ctf_dynhash_insert (fp->ctf_syn_ext_strtab,
+				  (void *) (uintptr_t) sorttab[i]->csa_offset,
+				  (void *) sorttab[i]->csa_str) < 0)
+	    goto oom_strtab;
+	}
       else
 	{
+	  /* Internal strtab entry: actually add to the string table.  */
+
 	  ctf_str_update_refs (sorttab[i], cur_stroff);
 	  strcpy (&strtab.cts_strs[cur_stroff], sorttab[i]->csa_str);
 	  cur_stroff += strlen (sorttab[i]->csa_str) + 1;
@@ -354,5 +395,19 @@ ctf_str_write_strtab (ctf_file_t *fp)
     }
   free (sorttab);
 
+  if (!any_external)
+    {
+      ctf_dynhash_destroy (fp->ctf_syn_ext_strtab);
+      fp->ctf_syn_ext_strtab = NULL;
+    }
+
+  return strtab;
+
+ oom_strtab:
+  free (strtab.cts_strs);
+  strtab.cts_strs = NULL;
+ oom_sorttab:
+  free (sorttab);
+ oom:
   return strtab;
 }

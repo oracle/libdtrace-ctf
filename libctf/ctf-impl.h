@@ -225,6 +225,7 @@ struct ctf_file
   ctf_sect_t ctf_data;		    /* CTF data from object file.  */
   ctf_sect_t ctf_symtab;	    /* Symbol table from object file.  */
   ctf_sect_t ctf_strtab;	    /* String table from object file.  */
+  ctf_dynhash_t *ctf_syn_ext_strtab; /* Maps ext-strtab offsets to names.  */
   void *ctf_data_mmapped;	    /* CTF data we mmapped, to free later.  */
   size_t ctf_data_mmapped_len;	    /* Length of CTF data we mmapped.  */
   ctf_hash_t *ctf_structs;	    /* Hash table of struct types.  */
@@ -396,8 +397,10 @@ _libctf_printflike_ (2, 3)
 extern void ctf_decl_sprintf (ctf_decl_t *, const char *, ...);
 extern char *ctf_decl_buf (ctf_decl_t *cd);
 
-extern const char *ctf_strraw (ctf_file_t *, uint32_t);
 extern const char *ctf_strptr (ctf_file_t *, uint32_t);
+extern const char *ctf_strraw (ctf_file_t *, uint32_t);
+extern const char *ctf_strraw_explicit (ctf_file_t *, uint32_t,
+                                        ctf_strs_t *);
 extern int ctf_str_create_atoms (ctf_file_t *);
 extern void ctf_str_free_atoms (ctf_file_t *);
 extern const char *ctf_str_add (ctf_file_t *, const char *);

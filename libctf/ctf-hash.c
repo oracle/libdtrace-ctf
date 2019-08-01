@@ -240,8 +240,7 @@ int
 ctf_hash_insert_type (ctf_hash_t * hp, ctf_file_t * fp, uint32_t type,
 		      uint32_t name)
 {
-  ctf_strs_t *ctsp = &fp->ctf_str[CTF_NAME_STID (name)];
-  const char *str = ctsp->cts_strs + CTF_NAME_OFFSET (name);
+  const char *str = ctf_strraw (fp, name);
   ctf_helem_t *hep = &hp->h_chains[hp->h_free];
   uint32_t h;
 
@@ -251,10 +250,13 @@ ctf_hash_insert_type (ctf_hash_t * hp, ctf_file_t * fp, uint32_t type,
   if (hp->h_free >= hp->h_nelems)
     return EOVERFLOW;
 
-  if (ctsp->cts_strs == NULL)
+  if (str == NULL
+      && CTF_NAME_STID (name) == CTF_STRTAB_1
+      && fp->ctf_syn_ext_strtab == NULL
+      && fp->ctf_str[CTF_NAME_STID (name)].cts_strs == NULL)
     return ECTF_STRTAB;
 
-  if (ctsp->cts_len <= CTF_NAME_OFFSET (name))
+  if (str == NULL)
     return ECTF_BADNAME;
 
   if (str[0] == '\0')

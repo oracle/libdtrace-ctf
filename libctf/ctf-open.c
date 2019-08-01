@@ -802,7 +802,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	      err = ctf_hash_define_type (fp->ctf_names, fp,
 					  LCTF_INDEX_TO_TYPE (fp, id, child),
 					  tp->ctt_name);
-	      if (err != 0 && err != ECTF_STRTAB)
+	      if (err != 0)
 		return err;
 	    }
 	  break;
@@ -817,7 +817,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  err = ctf_hash_insert_type (fp->ctf_names, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
-	  if (err != 0 && err != ECTF_STRTAB)
+	  if (err != 0)
 	    return err;
 	  break;
 
@@ -826,7 +826,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 
-	  if (err != 0 && err != ECTF_STRTAB)
+	  if (err != 0)
 	    return err;
 
 	  if (size >= CTF_LSTRUCT_THRESH)
@@ -838,7 +838,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 
-	  if (err != 0 && err != ECTF_STRTAB)
+	  if (err != 0)
 	    return err;
 
 	  if (size >= CTF_LSTRUCT_THRESH)
@@ -850,7 +850,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 
-	  if (err != 0 && err != ECTF_STRTAB)
+	  if (err != 0)
 	    return err;
 	  break;
 
@@ -858,7 +858,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  err = ctf_hash_insert_type (fp->ctf_names, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
-	  if (err != 0 && err != ECTF_STRTAB)
+	  if (err != 0)
 	    return err;
 	  break;
 
@@ -885,7 +885,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	      err = ctf_hash_insert_type (hp, fp,
 					  LCTF_INDEX_TO_TYPE (fp, id, child),
 					  tp->ctt_name);
-	      if (err != 0 && err != ECTF_STRTAB)
+	      if (err != 0)
 		return err;
 	    }
 	  break;
@@ -906,7 +906,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  err = ctf_hash_insert_type (fp->ctf_names, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
-	  if (err != 0 && err != ECTF_STRTAB)
+	  if (err != 0)
 	    return err;
 	  break;
 	default:
@@ -1626,12 +1626,12 @@ ctf_file_close (ctf_file_t *fp)
 
   if (fp->ctf_strtab.cts_name != _CTF_NULLSTR)
     ctf_free ((char *) fp->ctf_strtab.cts_name);
-
   else if (fp->ctf_data_mmapped)
     ctf_munmap (fp->ctf_data_mmapped, fp->ctf_data_mmapped_len);
 
   ctf_free (fp->ctf_dynbase);
 
+  ctf_dynhash_destroy (fp->ctf_syn_ext_strtab);
   ctf_dynhash_destroy (fp->ctf_link_inputs);
   ctf_dynhash_destroy (fp->ctf_link_outputs);
   ctf_dynhash_destroy (fp->ctf_link_type_mapping);

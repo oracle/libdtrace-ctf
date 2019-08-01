@@ -160,16 +160,21 @@ ctf_copy_emembers (ctf_file_t *fp, ctf_dtdef_t *dtd, unsigned char *t)
 
 /* Sort a newly-constructed static variable array.  */
 
+typedef struct ctf_sort_var_arg_cb
+{
+  ctf_file_t *fp;
+  ctf_strs_t *strtab;
+} ctf_sort_var_arg_cb_t;
+
 static int
-ctf_sort_var (const void *one_, const void *two_, void *strtab_)
+ctf_sort_var (const void *one_, const void *two_, void *arg_)
 {
   const ctf_varent_t *one = one_;
   const ctf_varent_t *two = two_;
-  const char *strtab = strtab_;
-  const char *n1 = strtab + CTF_NAME_OFFSET (one->ctv_name);
-  const char *n2 = strtab + CTF_NAME_OFFSET (two->ctv_name);
+  ctf_sort_var_arg_cb_t *arg = arg_;
 
-  return (strcmp (n1, n2));
+  return (strcmp (ctf_strraw_explicit (arg->fp, one->ctv_name, arg->strtab),
+		  ctf_strraw_explicit (arg->fp, two->ctv_name, arg->strtab)));
 }
 
 /* If the specified CTF container is writable and has been modified, reload this
@@ -402,10 +407,17 @@ ctf_update (ctf_file_t *fp)
   strtab = ctf_str_write_strtab (fp);
   ctf_str_purge_refs (fp);
 
+  if (strtab.cts_strs == NULL)
+    {
+      ctf_free (buf);
+      return (ctf_set_errno (fp, EAGAIN));
+    }
+
   /* Now the string table is constructed, we can sort the buffer of
      ctf_varent_t's.  */
+  ctf_sort_var_arg_cb_t sort_var_arg = { fp, (ctf_strs_t *) &strtab };
   ctf_qsort_r (dvarents, nvars, sizeof (ctf_varent_t), ctf_sort_var,
-	       strtab.cts_strs);
+               &sort_var_arg);
 
   if ((newbuf = ctf_realloc (fp, buf, buf_size + strtab.cts_len)) == NULL)
     {
@@ -448,6 +460,7 @@ ctf_update (ctf_file_t *fp)
   nfp->ctf_specific = fp->ctf_specific;
   nfp->ctf_link_inputs = fp->ctf_link_inputs;
   nfp->ctf_link_outputs = fp->ctf_link_outputs;
+  nfp->ctf_syn_ext_strtab = fp->ctf_syn_ext_strtab;
   nfp->ctf_link_cu_mapping = fp->ctf_link_cu_mapping;
   nfp->ctf_link_type_mapping = fp->ctf_link_type_mapping;
   nfp->ctf_link_memb_name_changer = fp->ctf_link_memb_name_changer;
@@ -463,6 +476,7 @@ ctf_update (ctf_file_t *fp)
   memset (&fp->ctf_dtdefs, 0, sizeof (ctf_list_t));
   fp->ctf_link_inputs = NULL;
   fp->ctf_link_outputs = NULL;
+  fp->ctf_syn_ext_strtab = NULL;
   fp->ctf_link_cu_mapping = NULL;
   fp->ctf_link_type_mapping = NULL;
 
