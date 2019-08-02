@@ -181,15 +181,16 @@ ctf_sort_var (const void *one_, const void *two_, void *arg_)
    container with the updated type definitions.  In order to make this code and
    the rest of libctf as simple as possible, we perform updates by taking the
    dynamic type definitions and creating an in-memory CTF file containing the
-   definitions, and then call ctf_simple_open() on it.  This not only leverages
-   ctf_simple_open(), but also avoids having to bifurcate the rest of the library
-   code with different lookup paths for static and dynamic type definitions.  We
-   are therefore optimizing greatly for lookup over update, which we assume will
-   be an uncommon operation.  We perform one extra trick here for the benefit of
-   callers and to keep our code simple: ctf_simple_open() will return a new
-   ctf_file_t, but we want to keep the fp constant for the caller, so after
-   ctf_simple_open() returns, we use memcpy to swap the interior of the old and
-   new ctf_file_t's, and then free the old.  */
+   definitions, and then call ctf_simple_open_internal() on it.  This not only
+   leverages ctf_simple_open(), but also avoids having to bifurcate the rest of
+   the library code with different lookup paths for static and dynamic type
+   definitions.  We are therefore optimizing greatly for lookup over update,
+   which we assume will be an uncommon operation.  We perform one extra trick
+   here for the benefit of callers and to keep our code simple:
+   ctf_simple_open_internal() will return a new ctf_file_t, but we want to keep
+   the fp constant for the caller, so after ctf_simple_open_internal() returns,
+   we use memcpy to swap the interior of the old and new ctf_file_t's, and then
+   free the old.  */
 int
 ctf_update (ctf_file_t *fp)
 {
@@ -435,8 +436,9 @@ ctf_update (ctf_file_t *fp)
   /* Finally, we are ready to ctf_simple_open() the new container.  If this
      is successful, we then switch nfp and fp and free the old container.  */
 
-  if ((nfp = ctf_simple_open ((char *) buf, buf_size, NULL, 0, 0, NULL,
-			      0, &err)) == NULL)
+  if ((nfp = ctf_simple_open_internal ((char *) buf, buf_size, NULL, 0,
+				       0, NULL, 0, fp->ctf_syn_ext_strtab,
+				       &err)) == NULL)
     {
       ctf_free (buf);
       return (ctf_set_errno (fp, err));

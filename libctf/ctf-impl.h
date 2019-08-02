@@ -416,6 +416,14 @@ extern void ctf_arc_close_internal (struct ctf_archive *);
 extern void *ctf_set_open_errno (int *, int);
 extern unsigned long ctf_set_errno (ctf_file_t *, int);
 
+extern ctf_file_t *ctf_simple_open_internal (const char *, size_t, const char *,
+					     size_t, size_t,
+					     const char *, size_t,
+					     ctf_dynhash_t *, int *);
+extern ctf_file_t *ctf_bufopen_internal (const ctf_sect_t *, const ctf_sect_t *,
+					 const ctf_sect_t *, ctf_dynhash_t *,
+					 int *);
+
 _libctf_malloc_
 extern void *ctf_mmap (size_t length, size_t offset, int fd);
 extern void ctf_munmap (void *, size_t);
