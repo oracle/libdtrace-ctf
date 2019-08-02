@@ -330,6 +330,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 		       ctf_errmsg (err));
 	  return -1;
 	}
+      ctf_set_errno (arg->out_fp, 0);
     }
 
   if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->arcname,
