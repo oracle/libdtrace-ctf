@@ -408,7 +408,7 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
 		   "known in parent while adding variable %s: this should "
 		   "never happen.\n", type, arg->arcname, arg->file_name,
 		   name);
-      return ctf_set_errno (arg->out_fp, EINVAL);
+      return ctf_set_errno (arg->out_fp, ECTF_INTERNAL);
     }
 
   if (ctf_add_variable (check_fp, name, dst_type) < 0)
