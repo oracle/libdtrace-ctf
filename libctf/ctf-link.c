@@ -169,8 +169,7 @@ ctf_link_add_ctf (ctf_file_t *fp, ctf_archive_t *ctf, const char *name)
    interning it if need be.  */
 
 static ctf_file_t *
-ctf_create_per_cu (ctf_file_t *fp, const char *filename, const char *cuname,
-		   int *err)
+ctf_create_per_cu (ctf_file_t *fp, const char *filename, const char *cuname)
 {
   ctf_file_t *cu_fp;
   const char *ctf_name = NULL;
@@ -193,19 +192,22 @@ ctf_create_per_cu (ctf_file_t *fp, const char *filename, const char *cuname,
 
   if ((cu_fp = ctf_dynhash_lookup (fp->ctf_link_outputs, ctf_name)) == NULL)
     {
-      if ((cu_fp = ctf_create (err)) == NULL)
+      int err;
+
+      if ((cu_fp = ctf_create (&err)) == NULL)
 	{
 	  ctf_dprintf ("Cannot create per-CU CTF archive for CU %s from "
 		       "input file %s: %s\n", cuname, filename,
-		       ctf_errmsg (*err));
-	  return NULL;				/* Errno is set for us.  */
+		       ctf_errmsg (err));
+	  ctf_set_errno (fp, err);
+	  return NULL;
 	}
 
       if (ctf_dynhash_insert (fp->ctf_link_outputs, ctf_strdup (ctf_name),
 			      cu_fp) < 0)
 	{
 	  ctf_file_close (cu_fp);
-	  *err = ENOMEM;
+	  ctf_set_errno (fp, ENOMEM);
 	  return NULL;
 	}
 
@@ -246,8 +248,8 @@ ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
   if (fp->ctf_link_outputs == NULL)
     return ctf_set_errno (fp, ENOMEM);
 
-  if (ctf_create_per_cu (fp, to, to, &err) == NULL)
-    return err;					/* Errno is set for us.  */
+  if (ctf_create_per_cu (fp, to, to) == NULL)
+    return -1;					/* Errno is set for us.  */
 
   err = ctf_dynhash_insert (fp->ctf_link_cu_mapping, strdup (from),
 			    strdup (to));
@@ -284,7 +286,6 @@ typedef struct ctf_link_in_member_cb_arg
   int done_main_member;
   int share_mode;
   int in_input_cu_file;
-  int err;
 } ctf_link_in_member_cb_arg_t;
 
 /* Link one type into the link.  We rely on ctf_add_type() to detect
@@ -301,8 +302,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
   if (arg->share_mode != CTF_LINK_SHARE_UNCONFLICTED)
     {
       ctf_dprintf ("Share-duplicated mode not yet implemented.\n");
-      ctf_set_errno (arg->out_fp, ECTF_NOTYET);
-      return ECTF_NOTYET;
+      return ctf_set_errno (arg->out_fp, ECTF_NOTYET);
     }
 
   /* Pro tem horrible hack: to make things a bit less dreadfully slow, Do a
@@ -310,7 +310,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
      conclusions.  */
   if (arg->out_fp->ctf_dtoldid + 10000 < arg->out_fp->ctf_dtnextid)
     if (ctf_update (arg->out_fp) < 0)
-      return ctf_errno (arg->out_fp);			/* Errno is set for us.  */
+      return -1;				/* Errno is set for us.  */
 
   /* Simply call ctf_add_type: if it reports a conflict and we're adding to the
      main CTF file, add to the per-CU archive member instead, creating it if
@@ -319,7 +319,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 
   if (!arg->in_input_cu_file)
     {
-      if (ctf_add_type (arg->out_fp, arg->in_fp, type) > -1)
+      if (ctf_add_type (arg->out_fp, arg->in_fp, type) != CTF_ERR)
 	return 0;
 
       err = ctf_errno (arg->out_fp);
@@ -328,23 +328,24 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 	  ctf_dprintf ("Cannot link type %lx from archive member %s, input file %s "
 		       "into output link: %s\n", type, arg->arcname, arg->file_name,
 		       ctf_errmsg (err));
-	  return err;
+	  return -1;
 	}
     }
 
-  if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->arcname, arg->cu_name,
-					  &err)) == NULL)
-    return err; 				/* Errno is set for us.  */
+  if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->arcname,
+					  arg->cu_name)) == NULL)
+    return -1;	 				/* Errno is set for us.  */
 
-  if (ctf_add_type (per_cu_out_fp, arg->in_fp, type) > -1)
+  if (ctf_add_type (per_cu_out_fp, arg->in_fp, type) != CTF_ERR)
     return 0;
-  err = ctf_errno (arg->out_fp);
+
+  err = ctf_errno (per_cu_out_fp);
 
   ctf_dprintf ("Cannot link type %lx from CTF archive member %s, input file %s "
 	       "into output per-CU CTF archive member %s: %s: skipped\n", type,
 	       arg->arcname, arg->file_name, arg->arcname,
 	       ctf_errmsg (err));
-  return err;				/* Should be impossible: abort link.  */
+  return ctf_set_errno (arg->out_fp, err);   /* Should be impossible: abort.  */
 }
 
 /* Link one variable in.  */
@@ -378,10 +379,8 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
 
 	  /* No variable here: we can add it.  */
 	  if (!dvd)
-	    {
-	      ctf_add_variable (check_fp, name, dst_type);
-	      return 0;
-	    }
+	    if (ctf_add_variable (check_fp, name, dst_type) < 0)
+	      return (ctf_set_errno (arg->out_fp, ctf_errno (check_fp)));
 	}
     }
 
@@ -409,10 +408,11 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
 		   "known in parent while adding variable %s: this should "
 		   "never happen.\n", type, arg->arcname, arg->file_name,
 		   name);
-      return EINVAL;
+      return ctf_set_errno (arg->out_fp, EINVAL);
     }
 
-  ctf_add_variable (check_fp, name, dst_type);
+  if (ctf_add_variable (check_fp, name, dst_type) < 0)
+    return (ctf_set_errno (arg->out_fp, ctf_errno (check_fp)));
 
   return 0;
 }
@@ -426,7 +426,7 @@ static int
 ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *arg_)
 {
   ctf_link_in_member_cb_arg_t *arg = (ctf_link_in_member_cb_arg_t *) arg_;
-  int err;
+  int err = 0;
 
   if (strcmp (name, _CTF_SECTION) == 0)
     {
@@ -458,14 +458,16 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
     arg->cu_name += strlen (".ctf.");
   arg->in_fp = in_fp;
 
-  err = ctf_type_iter_all (in_fp, ctf_link_one_type, arg);
-
-  if (err == 0)
+  if ((err = ctf_type_iter_all (in_fp, ctf_link_one_type, arg)) > -1)
     err = ctf_variable_iter (in_fp, ctf_link_one_variable, arg);
+
   arg->in_input_cu_file = 0;
   free (arg->arcname);
 
-  return err;
+  if (err < 0)
+      return -1;                                /* Errno is set for us.  */
+
+  return 0;
 }
 
 /* Link one input file's types into the output file.  */
@@ -488,15 +490,18 @@ ctf_link_one_input_archive (void *key, void *value, void *arg_)
 	return;
       }
 
-  ctf_link_one_input_archive_member (arg->main_input_fp, _CTF_SECTION, arg);
-  arg->done_main_member = 1;
-  if ((err = ctf_archive_iter (arc, ctf_link_one_input_archive_member,
-			       arg)) < 0)
+  if (ctf_link_one_input_archive_member (arg->main_input_fp,
+					 _CTF_SECTION, arg) < 0)
     {
-      ctf_dprintf ("Cannot traverse archive in input file %s: some types "
-		   "skipped: %s.\n", arg->file_name, ctf_errmsg (err));
-      arg->err = err;
+      ctf_file_close (arg->main_input_fp);
+      return;
     }
+  arg->done_main_member = 1;
+  if (ctf_archive_iter (arc, ctf_link_one_input_archive_member, arg) < 0)
+      ctf_dprintf ("Cannot traverse archive in input file %s: some types "
+		   "skipped: %s.\n", arg->file_name,
+		   ctf_errmsg (ctf_errno (arg->out_fp)));
+
   ctf_file_close (arg->main_input_fp);
 }
 
@@ -525,9 +530,8 @@ ctf_link (ctf_file_t *fp, int share_mode)
   ctf_dynhash_iter (fp->ctf_link_inputs, ctf_link_one_input_archive,
 		    &arg);
 
-  /* Promote any sub-CU errors into the main archive.  */
-  if (arg.err)
-    return ctf_set_errno (fp, arg.err);
+  if (ctf_errno (fp) != 0)
+    return -1;
   return 0;
 }
 
@@ -579,7 +583,7 @@ ctf_link_add_strtab (ctf_file_t *fp, ctf_link_strtab_string_f *add_string,
 	err = iter_arg.err;
     }
 
-  return err;
+  return -err;
 }
 
 /* Not yet implemented.  */
@@ -594,9 +598,9 @@ ctf_link_shuffle_syms (ctf_file_t *fp _libctf_unused_,
 typedef struct ctf_name_list_accum_cb_arg
 {
   char **names;
+  ctf_file_t *fp;
   ctf_file_t **files;
   size_t i;
-  int err;
   char **dynames;
   size_t ndynames;
 } ctf_name_list_accum_cb_arg_t;
@@ -615,21 +619,21 @@ ctf_accumulate_archive_names (void *key, void *value, void *arg_)
 
   if ((err = ctf_update (fp)) < 0)
     {
-      arg->err = err;
+      ctf_set_errno (arg->fp, ctf_errno (fp));
       return;
     }
 
   if ((names = realloc (arg->names, sizeof (char *) * ++(arg->i))) == NULL)
     {
       (arg->i)--;
-      arg->err = ENOMEM;
+      ctf_set_errno (arg->fp, ENOMEM);
       return;
     }
 
   if ((files = realloc (arg->files, sizeof (ctf_file_t *) * arg->i)) == NULL)
     {
       (arg->i)--;
-      arg->err = ENOMEM;
+      ctf_set_errno (arg->fp, ENOMEM);
       return;
     }
 
@@ -652,7 +656,7 @@ ctf_accumulate_archive_names (void *key, void *value, void *arg_)
 				  sizeof (char *) * ++(arg->ndynames))) == NULL)
 	    {
 	      (arg->ndynames)--;
-	      arg->err = ENOMEM;
+	      ctf_set_errno (arg->fp, ENOMEM);
 	      return;
 	    }
 	    arg->dynames = dynames;
@@ -683,8 +687,9 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
   unsigned char *buf = NULL;
 
   memset (&arg, 0, sizeof (ctf_name_list_accum_cb_arg_t));
+  arg.fp = fp;
 
-  if ((err = ctf_update (fp)) < 0)
+  if (ctf_update (fp) < 0)
     {
       errloc = "CTF file construction";
       goto err;
@@ -693,10 +698,9 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
   if (fp->ctf_link_outputs)
     {
       ctf_dynhash_iter (fp->ctf_link_outputs, ctf_accumulate_archive_names, &arg);
-      if (arg.err)
+      if (ctf_errno (fp) < 0)
 	{
 	  errloc = "hash creation";
-	  err = arg.err;
 	  goto err;
 	}
     }
@@ -748,6 +752,7 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
 			       threshold)) < 0)
     {
       errloc = "archive writing";
+      ctf_set_errno (fp, err);
       goto err;
     }
 
@@ -796,7 +801,7 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
   return buf;
 
  err_no:
-  err = errno;
+  ctf_set_errno (fp, errno);
  err:
   free (buf);
   if (f)
@@ -812,7 +817,6 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
       free (arg.dynames);
     }
   ctf_dprintf ("Cannot write archive in link: %s failure: %s\n", errloc,
-	       ctf_errmsg (err));
-  ctf_set_errno (fp, err);
+	       ctf_errmsg (ctf_errno (fp)));
   return NULL;
 }
