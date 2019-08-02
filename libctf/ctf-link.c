@@ -360,8 +360,8 @@ check_variable (const char *name, ctf_file_t *fp, ctf_id_t type,
 
   dvd = ctf_dynhash_lookup (fp->ctf_dvhash, name);
   *out_dvd = dvd;
-  if (!dvd || (dvd && dvd->dvd_type == type))
-    return 0;                                   /* Already exists.  */
+  if (!dvd)
+    return 1;
 
   if (dvd->dvd_type != type)
     {
@@ -369,9 +369,9 @@ check_variable (const char *name, ctf_file_t *fp, ctf_id_t type,
          no way to express this in CTF.  (This might be the parent, in which
          case we'll try adding in the child first, and only then give up.)  */
       ctf_dprintf ("Inexpressible duplicate variable %s skipped.\n", name);
-      return 0;
     }
-  return 1;
+
+  return 0;                                   /* Already exists.  */
 }
 
 /* Link one variable in.  */
@@ -392,44 +392,50 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
   check_fp = arg->out_fp;
 
   dst_type = ctf_type_mapping (arg->in_fp, type, &check_fp);
-  if (dst_type == 0)
+  if (dst_type != 0)
     {
-      ctf_dprintf ("Internal error (file corruption?): type %lx for "
-		   "variable %s in input file %s not found.\n", dst_type,
-		   name, arg->file_name);
-      return ctf_set_errno (arg->out_fp, ECTF_INTERNAL);
+      if (check_fp == arg->out_fp)
+        {
+          if (check_variable (name, check_fp, dst_type, &dvd))
+            {
+              /* No variable here: we can add it.  */
+              if (ctf_add_variable (check_fp, name, dst_type) < 0)
+                return (ctf_set_errno (arg->out_fp, ctf_errno (check_fp)));
+              return 0;
+            }
+
+          /* Already present?  Nothing to do.  */
+          if (dvd && dvd->dvd_type == type)
+            return 0;
+        }
     }
 
-  if (check_fp == arg->out_fp)
-    {
-      if (check_variable (name, check_fp, dst_type, &dvd))
-	{
-	  /* No variable here: we can add it.  */
-	  if (ctf_add_variable (check_fp, name, dst_type) < 0)
-	    return (ctf_set_errno (arg->out_fp, ctf_errno (check_fp)));
-	}
-
-      /* Already present?  Nothing to do.  */
-      if (dvd && dvd->dvd_type == type)
-	return 0;
-    }
-
-  /* Can't add to the parent due to a name clash.  Try adding to the child,
-     creating if need be, transforming the type ID into a parent-relative one
-     first.  */
+  /* Can't add to the parent due to a name clash, or because it references a
+     type only present in the child.  Try adding to the child, creating if need
+     be.  */
 
   if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->arcname,
 					  arg->cu_name)) == NULL)
     return -1;	 				/* Errno is set for us.  */
 
-  dst_type = LCTF_TYPE_TO_INDEX (arg->out_fp, dst_type);
-  dst_type = LCTF_INDEX_TO_TYPE (per_cu_out_fp, dst_type, 1);
+  /* If the type was not found, check for it in the child too. */
+  if (dst_type == 0)
+    {
+      check_fp = per_cu_out_fp;
+      dst_type = ctf_type_mapping (arg->in_fp, type, &check_fp);
+
+      if (dst_type == 0)
+        {
+          ctf_dprintf ("Internal error (file corruption?): type %lx for "
+                       "variable %s in input file %s not found.\n", dst_type,
+                       name, arg->file_name);
+          return ctf_set_errno (arg->out_fp, ECTF_INTERNAL);
+        }
+    }
 
   if (check_variable (name, per_cu_out_fp, dst_type, &dvd))
-    {
-      if (ctf_add_variable (per_cu_out_fp, name, dst_type) < 0)
-	return (ctf_set_errno (arg->out_fp, ctf_errno (check_fp)));
-    }
+    if (ctf_add_variable (per_cu_out_fp, name, dst_type) < 0)
+      return (ctf_set_errno (arg->out_fp, ctf_errno (per_cu_out_fp)));
   return 0;
 }
 
