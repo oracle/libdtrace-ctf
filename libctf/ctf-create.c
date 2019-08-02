@@ -1690,7 +1690,10 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	      int match;	/* Do the encodings match?  */
 
 	      if (kind != CTF_K_INTEGER && kind != CTF_K_FLOAT && kind != CTF_K_SLICE)
-		return dtd->dtd_type;
+		{
+		  ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
+		  return dtd->dtd_type;
+		}
 
 	      sroot = (flag & CTF_ADD_ROOT);
 	      droot = (LCTF_INFO_ISROOT (dst_fp,
