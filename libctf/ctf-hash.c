@@ -102,6 +102,12 @@ ctf_dynhash_remove (ctf_dynhash_t *hp, const void *key)
   g_hash_table_remove ((GHashTable *) hp, key);
 }
 
+void
+ctf_dynhash_empty (ctf_dynhash_t *hp)
+{
+  g_hash_table_remove_all ((GHashTable *) hp);
+}
+
 void *
 ctf_dynhash_lookup (ctf_dynhash_t *hp, const void *key)
 {

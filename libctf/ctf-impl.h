@@ -276,6 +276,7 @@ struct ctf_file
   /* Allow the caller to Change the name of link archive members.  */
   ctf_link_memb_name_changer_f *ctf_link_memb_name_changer;
   void *ctf_link_memb_name_changer_arg; /* Argument for it.  */
+  ctf_dynhash_t *ctf_add_processing; /* Types ctf_add_type is working on now.  */
   char *ctf_tmp_typeslice;	  /* Storage for slicing up type names.  */
   size_t ctf_tmp_typeslicelen;	  /* Size of the typeslice.  */
   void *ctf_specific;		  /* Data for ctf_get/setspecific().  */
@@ -362,6 +363,7 @@ extern ctf_dynhash_t *ctf_dynhash_create (ctf_hash_fun, ctf_hash_eq_fun,
 					  ctf_hash_free_fun, ctf_hash_free_fun);
 extern int ctf_dynhash_insert (ctf_dynhash_t *, void *, void *);
 extern void ctf_dynhash_remove (ctf_dynhash_t *, const void *);
+extern void ctf_dynhash_empty (ctf_dynhash_t *);
 extern void *ctf_dynhash_lookup (ctf_dynhash_t *, const void *);
 extern void ctf_dynhash_destroy (ctf_dynhash_t *);
 extern void ctf_dynhash_iter (ctf_dynhash_t *, ctf_hash_iter_f, void *);
