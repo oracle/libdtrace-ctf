@@ -1785,7 +1785,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
       /* We have checked for conflicting encodings: now try to add the
 	 contained type.  */
       src_type = ctf_type_reference (src_fp, src_type);
-      dst_type = ctf_add_type (dst_fp, src_fp, src_type);
+      src_type = ctf_add_type (dst_fp, src_fp, src_type);
 
       if (src_type == CTF_ERR)
 	return CTF_ERR;				/* errno is set for us.  */
