@@ -106,7 +106,16 @@ ctf_dump_format_type (ctf_file_t *fp, ctf_id_t id, int flag)
 
       buf = ctf_type_aname (fp, id);
       if (!buf)
-	goto err;
+	{
+	  if (id == 0 || ctf_errno (fp) == ECTF_NONREPRESENTABLE)
+	    {
+	      str = ctf_str_append (str, " (type not represented in CTF)");
+	      ctf_set_errno (fp, ECTF_NOTREF);
+	      break;
+	    }
+
+	  goto err;
+	}
 
       /* Slices get a different print representation.  */
 
@@ -509,7 +518,21 @@ ctf_dump_member (const char *name, ctf_id_t id, unsigned long offset,
     *state->cdm_str = ctf_str_append (*state->cdm_str, "    ");
 
   if ((typestr = ctf_type_aname (state->cdm_fp, id)) == NULL)
-    goto oom;
+    {
+      if (id == 0 || ctf_errno (state->cdm_fp) == ECTF_NONREPRESENTABLE)
+	{
+	  if (asprintf (&bit, "    [0x%lx] (type not represented in CTF)",
+			offset) < 0)
+	    goto oom;
+
+	  *state->cdm_str = ctf_str_append (*state->cdm_str, bit);
+	  free (typestr);
+	  free (bit);
+	  return 0;
+	}
+
+      goto oom;
+    }
 
   if (asprintf (&bit, "    [0x%lx] (ID 0x%lx) (kind %i) %s %s (aligned at 0x%lx",
 		offset, id, ctf_type_kind (state->cdm_fp, id), typestr, name,
@@ -562,6 +585,11 @@ ctf_dump_type (ctf_id_t id, int flag, void *arg)
   str = ctf_str_append (str, "\n");
   if ((ctf_type_visit (state->cds_fp, id, ctf_dump_member, &membstate)) < 0)
     {
+      if (id == 0 || ctf_errno (state->cds_fp) == ECTF_NONREPRESENTABLE)
+	{
+	  ctf_dump_append (state, str);
+	  return 0;
+	}
       err = "visit members";
       goto err;
     }

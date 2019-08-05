@@ -329,7 +329,11 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 	  ctf_dprintf ("Cannot link type %lx from archive member %s, input file %s "
 		       "into output link: %s\n", type, arg->arcname, arg->file_name,
 		       ctf_errmsg (err));
-	  return -1;
+          /* We must ignore this problem or we end up losing future types, then
+             trying to link the variables in, then exploding.  Better to link as
+             much as possible.  XXX when we add a proper link warning
+             infrastructure, we should report the error here!  */
+	  return 0;
 	}
       ctf_set_errno (arg->out_fp, 0);
     }
@@ -339,7 +343,10 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
     return -1;	 				/* Errno is set for us.  */
 
   if (ctf_add_type (per_cu_out_fp, arg->in_fp, type) != CTF_ERR)
-    return 0;
+    {
+      if (ctf_errno (per_cu_out_fp) == ECTF_NONREPRESENTABLE)
+	return 0;
+    }
 
   err = ctf_errno (per_cu_out_fp);
 
