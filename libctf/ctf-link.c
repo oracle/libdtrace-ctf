@@ -527,10 +527,15 @@ ctf_link_one_input_archive (void *key, void *value, void *arg_)
     }
   arg->done_main_member = 1;
   if (ctf_archive_iter (arc, ctf_link_one_input_archive_member, arg) < 0)
-      ctf_dprintf ("Cannot traverse archive in input file %s: some types "
-		   "skipped: %s.\n", arg->file_name,
-		   ctf_errmsg (ctf_errno (arg->out_fp)));
-
+    ctf_dprintf ("Cannot traverse archive in input file %s: link "
+		 "cannot continue: %s.\n", arg->file_name,
+		 ctf_errmsg (ctf_errno (arg->out_fp)));
+  else
+    {
+      /* The only error indication to the caller is the errno: so ensure that it
+	 is zero if there was no actual error from the caller.  */
+      ctf_set_errno (arg->out_fp, 0);
+    }
   ctf_file_close (arg->main_input_fp);
 }
 
