@@ -1561,6 +1561,10 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
   if ((src_tp = ctf_lookup_by_id (&src_fp, src_type)) == NULL)
     return (ctf_set_errno (dst_fp, ctf_errno (src_fp)));
 
+  if ((ctf_type_resolve (src_fp, src_type) == CTF_ERR)
+      && (ctf_errno (src_fp) == ECTF_NONREPRESENTABLE))
+    return (ctf_set_errno (dst_fp, ECTF_NONREPRESENTABLE));
+
   name = ctf_strptr (src_fp, src_tp->ctt_name);
   kind = LCTF_INFO_KIND (src_fp, src_tp->ctt_info);
   flag = LCTF_INFO_ISROOT (src_fp, src_tp->ctt_info);
