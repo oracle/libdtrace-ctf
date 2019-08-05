@@ -1570,6 +1570,12 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
       && (ctf_errno (src_fp) == ECTF_NONREPRESENTABLE))
     return (ctf_set_errno (dst_fp, ECTF_NONREPRESENTABLE));
 
+  /* If this type has already been added, hand it straight back.  */
+
+  tmp = ctf_type_mapping (src_fp, src_type, &dst_fp);
+  if (tmp != 0)
+    return tmp;
+
   name = ctf_strptr (src_fp, src_tp->ctt_name);
   kind = LCTF_INFO_KIND (src_fp, src_tp->ctt_info);
   flag = LCTF_INFO_ISROOT (src_fp, src_tp->ctt_info);
@@ -1908,6 +1914,10 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	dst.ctb_type = dst_type;
 	dst.ctb_dtd = dtd;
 
+        /* Pre-emptively add this struct to the type mapping so that
+           structures that refer to themselves work.  */
+        ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
+
 	if (ctf_member_iter (src_fp, src_type, membadd, &dst) != 0)
 	  errs++;	       /* Increment errs and fail at bottom of case.  */
 
@@ -1935,11 +1945,16 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 	for (dmd = ctf_list_next (&dtd->dtd_u.dtu_members);
 	     dmd != NULL; dmd = ctf_list_next (dmd))
 	  {
-	    if ((dmd->dmd_type = ctf_add_type (dst_fp, src_fp,
-					       dmd->dmd_type)) == CTF_ERR)
+	    ctf_file_t *dst = dst_fp;
+
+	    if (ctf_type_mapping (src_fp, dmd->dmd_type, &dst) == 0)
 	      {
-		if (ctf_errno (dst_fp) != ECTF_NONREPRESENTABLE)
-		  errs++;
+		if ((dmd->dmd_type = ctf_add_type (dst_fp, src_fp,
+						   dmd->dmd_type)) == CTF_ERR)
+		  {
+		    if (ctf_errno (dst_fp) != ECTF_NONREPRESENTABLE)
+		      errs++;
+		  }
 	      }
 	  }
 
