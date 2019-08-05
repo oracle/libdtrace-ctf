@@ -347,13 +347,21 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
     return 0;
 
   err = ctf_errno (per_cu_out_fp);
-  if (err == ECTF_NONREPRESENTABLE)
+  if (ctf_add_type (per_cu_out_fp, arg->in_fp, type) != CTF_ERR)
     return 0;
 
-  ctf_dprintf ("Cannot link type %lx from CTF archive member %s, input file %s "
-	       "into output per-CU CTF archive member %s: %s: skipped\n", type,
-	       arg->arcname, arg->file_name, arg->arcname,
-	       ctf_errmsg (err));
+  err = ctf_errno (per_cu_out_fp);
+  if (err != ECTF_NONREPRESENTABLE)
+    ctf_dprintf ("Cannot link type %lx from CTF archive member %s, input file %s "
+                 "into output per-CU CTF archive member %s: %s: skipped\n", type,
+                 arg->arcname, arg->file_name, arg->arcname,
+                 ctf_errmsg (err));
+  if (err == ECTF_CONFLICT)
+      /* Conflicts are possible at this stage only if a non-ld user has combined
+         multiple TUs into a single output dictionary.  Even in this case we do not
+         want to stop the link or propagate the error.  */
+      ctf_set_errno (arg->out_fp, 0);
+
   return 0;					/* As above: do not lose types.  */
 }
 
@@ -432,12 +440,12 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
       dst_type = ctf_type_mapping (arg->in_fp, type, &check_fp);
 
       if (dst_type == 0)
-        {
-          ctf_dprintf ("Internal error (file corruption?): type %lx for "
-                       "variable %s in input file %s not found.\n", dst_type,
-                       name, arg->file_name);
-          return ctf_set_errno (arg->out_fp, ECTF_INTERNAL);
-        }
+	{
+          ctf_dprintf ("Type %lx for variable %s in input file %s not "
+                       "found: skipped.\n", type, name, arg->file_name);
+          /* Do not terminate the link: just skip the variable.  */
+          return 0;
+	}
     }
 
   if (check_variable (name, per_cu_out_fp, dst_type, &dvd))
