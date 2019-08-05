@@ -1429,6 +1429,11 @@ ctf_add_variable (ctf_file_t *fp, const char *name, ctf_id_t ref)
   if (ctf_lookup_by_id (&tmp, ref) == NULL)
     return -1;			/* errno is set for us.  */
 
+  /* Make sure this type is representable.  */
+  if ((ctf_type_resolve (fp, ref) == CTF_ERR)
+      && (ctf_errno (fp) == ECTF_NONREPRESENTABLE))
+    return -1;
+
   if ((dvd = ctf_alloc (sizeof (ctf_dvdef_t))) == NULL)
     return (ctf_set_errno (fp, EAGAIN));
 
