@@ -500,6 +500,17 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
   return 0;
 }
 
+/* Dump the unnecessary link type mapping after one input file is processed.  */
+static void
+empty_link_type_mapping (void *key _libctf_unused_, void *value,
+                         void *arg _libctf_unused_)
+{
+  ctf_file_t *fp = (ctf_file_t *) value;
+
+  if (fp->ctf_link_type_mapping)
+    ctf_dynhash_empty (fp->ctf_link_type_mapping);
+}
+
 /* Link one input file's types into the output file.  */
 static void
 ctf_link_one_input_archive (void *key, void *value, void *arg_)
@@ -538,6 +549,11 @@ ctf_link_one_input_archive (void *key, void *value, void *arg_)
       ctf_set_errno (arg->out_fp, 0);
     }
   ctf_file_close (arg->main_input_fp);
+
+  /* Discard the now-unnecessary mapping table data.  */
+  if (arg->out_fp->ctf_link_type_mapping)
+    ctf_dynhash_empty (arg->out_fp->ctf_link_type_mapping);
+  ctf_dynhash_iter (arg->out_fp->ctf_link_outputs, empty_link_type_mapping, NULL);
 }
 
 /* Merge types and variable sections in all files added to the link
