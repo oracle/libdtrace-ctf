@@ -79,11 +79,17 @@ typedef struct ctf_dmodel
   size_t ctd_long;		/* Size of long in bytes.  */
 } ctf_dmodel_t;
 
+typedef struct ctf_names
+{
+  ctf_hash_t *ctn_readonly;	/* Hash table when readonly.  */
+  ctf_dynhash_t *ctn_writable;	/* Hash table when writable.  */
+} ctf_names_t;
+
 typedef struct ctf_lookup
 {
   const char *ctl_prefix;	/* String prefix for this lookup.  */
   size_t ctl_len;		/* Length of prefix string in bytes.  */
-  ctf_hash_t *ctl_hash;		/* Pointer to hash table for lookup.  */
+  ctf_names_t *ctl_hash;	/* Pointer to hash table for lookup.  */
 } ctf_lookup_t;
 
 typedef struct ctf_fileops
@@ -228,11 +234,11 @@ struct ctf_file
   ctf_dynhash_t *ctf_syn_ext_strtab; /* Maps ext-strtab offsets to names.  */
   void *ctf_data_mmapped;	    /* CTF data we mmapped, to free later.  */
   size_t ctf_data_mmapped_len;	    /* Length of CTF data we mmapped.  */
-  ctf_hash_t *ctf_structs;	    /* Hash table of struct types.  */
-  ctf_hash_t *ctf_unions;	    /* Hash table of union types.  */
-  ctf_hash_t *ctf_enums;	    /* Hash table of enum types.  */
-  ctf_hash_t *ctf_names;	    /* Hash table of remaining type names.  */
-  ctf_lookup_t ctf_lookups[5];	    /* Pointers to hashes for name lookup.  */
+  ctf_names_t ctf_structs;	    /* Hash table of struct types.  */
+  ctf_names_t ctf_unions;	    /* Hash table of union types.  */
+  ctf_names_t ctf_enums;	    /* Hash table of enum types.  */
+  ctf_names_t ctf_names;	    /* Hash table of remaining type names.  */
+  ctf_lookup_t ctf_lookups[5];	    /* Pointers to nametabs for name lookup.  */
   ctf_strs_t ctf_str[2];	    /* Array of string table base and bounds.  */
   ctf_dynhash_t *ctf_str_atoms;	  /* Hash table of ctf_str_atoms_t.  */
   uint64_t ctf_str_num_refs;	  /* Number of refs to cts_str_atoms.  */
@@ -246,7 +252,7 @@ struct ctf_file
   uint32_t *ctf_ptrtab;		  /* Translation table for pointer-to lookups.  */
   struct ctf_varent *ctf_vars;	  /* Sorted variable->type mapping.  */
   unsigned long ctf_nvars;	  /* Number of variables in ctf_vars.  */
-  unsigned long ctf_typemax;	  /* Maximum valid type ID number.  */
+  unsigned long ctf_typemax;	  /* Maximum valid static type ID number.  */
   const ctf_dmodel_t *ctf_dmodel; /* Data model pointer (see above).  */
   const char *ctf_cuname;	  /* Compilation unit name (if any).  */
   char *ctf_dyncuname;		  /* Dynamically allocated name of CU.  */
@@ -260,11 +266,9 @@ struct ctf_file
   int ctf_errno;		  /* Error code for most recent error.  */
   int ctf_version;		  /* CTF data version.  */
   ctf_dynhash_t *ctf_dthash;	  /* Hash of dynamic type definitions.  */
-  ctf_dynhash_t *ctf_dtbyname;	  /* DTDs, indexed by name.  */
   ctf_list_t ctf_dtdefs;	  /* List of dynamic type definitions.  */
   ctf_dynhash_t *ctf_dvhash;	  /* Hash of dynamic variable mappings.  */
   ctf_list_t ctf_dvdefs;	  /* List of dynamic variable definitions.  */
-  unsigned long ctf_dtnextid;	  /* Next dynamic type id to assign.  */
   unsigned long ctf_dtoldid;	  /* Oldest id that has been committed.  */
   unsigned long ctf_snapshots;	  /* ctf_snapshot() plus ctf_update() count.  */
   unsigned long ctf_snapshot_lu;  /* ctf_snapshot() call count at last update.  */
@@ -315,7 +319,10 @@ struct ctf_archive_internal
 					   (id))
 
 #define LCTF_INDEX_TO_TYPEPTR(fp, i) \
-  ((ctf_type_t *)((uintptr_t)(fp)->ctf_buf + (fp)->ctf_txlate[(i)]))
+    ((fp->ctf_flags & LCTF_RDWR) ?					\
+     &(ctf_dtd_lookup (fp, LCTF_INDEX_TO_TYPE				\
+		       (fp, i, fp->ctf_flags & LCTF_CHILD))->dtd_data) : \
+     (ctf_type_t *)((uintptr_t)(fp)->ctf_buf + (fp)->ctf_txlate[(i)]))
 
 #define LCTF_INFO_KIND(fp, info)	((fp)->ctf_fileops->ctfo_get_kind(info))
 #define LCTF_INFO_ISROOT(fp, info)	((fp)->ctf_fileops->ctfo_get_root(info))
@@ -335,7 +342,11 @@ static inline ssize_t ctf_get_ctt_size (const ctf_file_t *fp,
 #define LCTF_RDWR	0x0002	/* CTF container is writable */
 #define LCTF_DIRTY	0x0004	/* CTF container has been modified */
 
+extern ctf_names_t *ctf_name_table (ctf_file_t *, int);
 extern const ctf_type_t *ctf_lookup_by_id (ctf_file_t **, ctf_id_t);
+extern ctf_id_t ctf_lookup_by_rawname (ctf_file_t *, int, const char *);
+extern ctf_id_t ctf_lookup_by_rawhash (ctf_file_t *, ctf_names_t *, const char *);
+extern void ctf_set_ctl_hashes (ctf_file_t *);
 
 typedef unsigned int (*ctf_hash_fun) (const void *ptr);
 extern unsigned int ctf_hash_integer (const void *ptr);
@@ -377,7 +388,7 @@ extern void ctf_list_append (ctf_list_t *, void *);
 extern void ctf_list_prepend (ctf_list_t *, void *);
 extern void ctf_list_delete (ctf_list_t *, void *);
 
-extern int ctf_dtd_insert (ctf_file_t *, ctf_dtdef_t *);
+extern int ctf_dtd_insert (ctf_file_t *, ctf_dtdef_t *, int);
 extern void ctf_dtd_delete (ctf_file_t *, ctf_dtdef_t *);
 extern ctf_dtdef_t *ctf_dtd_lookup (const ctf_file_t *, ctf_id_t);
 extern ctf_dtdef_t *ctf_dynamic_type (const ctf_file_t *, ctf_id_t);
@@ -421,10 +432,11 @@ extern unsigned long ctf_set_errno (ctf_file_t *, int);
 extern ctf_file_t *ctf_simple_open_internal (const char *, size_t, const char *,
 					     size_t, size_t,
 					     const char *, size_t,
-					     ctf_dynhash_t *, int *);
+					     ctf_dynhash_t *, int, int *);
 extern ctf_file_t *ctf_bufopen_internal (const ctf_sect_t *, const ctf_sect_t *,
 					 const ctf_sect_t *, ctf_dynhash_t *,
-					 int *);
+					 int, int *);
+extern int ctf_serialize (ctf_file_t *);
 
 _libctf_malloc_
 extern void *ctf_mmap (size_t length, size_t offset, int fd);

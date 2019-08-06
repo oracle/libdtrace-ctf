@@ -306,13 +306,6 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
       return ctf_set_errno (arg->out_fp, ECTF_NOTYET);
     }
 
-  /* Pro tem horrible hack: to make things a bit less dreadfully slow, Do a
-     ctf_update() periodically so that ctf_add_type can come to better
-     conclusions.  */
-  if (arg->out_fp->ctf_dtoldid + 10000 < arg->out_fp->ctf_dtnextid)
-    if (ctf_update (arg->out_fp) < 0)
-      return -1;				/* Errno is set for us.  */
-
   /* Simply call ctf_add_type: if it reports a conflict and we're adding to the
      main CTF file, add to the per-CU archive member instead, creating it if
      necessary.  If we got this type from a per-CU archive member, add it
@@ -647,8 +640,7 @@ typedef struct ctf_name_list_accum_cb_arg
   size_t ndynames;
 } ctf_name_list_accum_cb_arg_t;
 
-/* Accumulate the names and a count of the names in the link output hash,
-   and run ctf_update() on them to generate them.  */
+/* Accumulate the names and a count of the names in the link output hash.  */
 static void
 ctf_accumulate_archive_names (void *key, void *value, void *arg_)
 {
@@ -657,13 +649,6 @@ ctf_accumulate_archive_names (void *key, void *value, void *arg_)
   char **names;
   ctf_file_t **files;
   ctf_name_list_accum_cb_arg_t *arg = (ctf_name_list_accum_cb_arg_t *) arg_;
-  int err;
-
-  if ((err = ctf_update (fp)) < 0)
-    {
-      ctf_set_errno (arg->fp, ctf_errno (fp));
-      return;
-    }
 
   if ((names = realloc (arg->names, sizeof (char *) * ++(arg->i))) == NULL)
     {
@@ -741,12 +726,6 @@ ctf_link_write (ctf_file_t *fp, size_t *size, size_t threshold)
 
   memset (&arg, 0, sizeof (ctf_name_list_accum_cb_arg_t));
   arg.fp = fp;
-
-  if (ctf_update (fp) < 0)
-    {
-      errloc = "CTF file construction";
-      goto err;
-    }
 
   if (fp->ctf_link_outputs)
     {
