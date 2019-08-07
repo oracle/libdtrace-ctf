@@ -1679,11 +1679,17 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	    }
 	  else
 	    {
-	      /* We found a non-root-visible type in the hash.  We reset
-	         dst_type to ensure that we continue to look for a possible
-	         conflict in the pending list.  */
+	      /* We found a non-root-visible type in the hash.  If its encoding
+	         is the same, we can reuse it, unless it is a slice.  */
 
-	      dst_type = CTF_ERR;
+	      if (memcmp (&src_en, &dst_en, sizeof (ctf_encoding_t)) == 0)
+		{
+		  if (kind != CTF_K_SLICE)
+		    {
+		      ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
+		      return dst_type;
+		    }
+		}
 	    }
 	}
     }
