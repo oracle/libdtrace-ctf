@@ -16,7 +16,7 @@ Requires:     gcc binutils zlib glib2
 BuildRequires: binutils-devel kernel-headers glibc-headers glib2-devel zlib-devel
 Summary:      Compact Type Format library.
 Version:      1.2.0
-Release:      0.1%{?dist}
+Release:      0.2%{?dist}
 Source:       libdtrace-ctf-%{version}.tar.bz2
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 ExclusiveArch:    x86_64 sparc64 aarch64
@@ -77,11 +77,22 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
-* Tue Mar  5 2019 - nick.alcock@oracle.com - 1.2.0-0.1
+* Tue Aug  7 2019 - nick.alcock@oracle.com - 1.2.0-0.2
 - Work towards 1.2.0.
 - Reformat everything to GNU style.
 - Support opening CTF files of any endianness.
+- Transparent upgrading now supports changes to the header layout.
 - Use GHashTable for dynamically-sized hashtables.
+- ctf_fdopen and ctf_open now work, take a BFD target,
+  and return a ctf_archive_t containing at least one member.
+- Many new API functions: see NEWS.
+- Improvements to ctf_add_type.
+- New string table management machinery, supporting external string tables.
+- ctf_update calls are no longer required when updating ctf_file_t's.
+- Dumper machinery rewritten as a library function, ctf_dump().
+- Support for non-ELF platforms, and platforms not supporting pread()
+  or mmap().
+- New linker infrastructure, ctf_link_*().  Very new, improvement likely.
 
 * Fri Dec 14 2018 - nick.alcock@oracle.com - 1.1.0-1
 - Add ctf_add_{struct,union}_sized(). [Orabug: 29054972]

@@ -21,15 +21,38 @@ the entire file aggressively at open time: cross-endian files thus take a
 little longer to open, and -- if stored uncompressed -- consume a little
 more memory than native-endian files.)
 
+The dynamic upgrading machinery can now handle cases where the CTF header
+changes between versions.  Several new header fields have appeared, among them
+cth_cuname (and corresponding ctf_cuname() and ctf_cuname_set() functions),
+cth_functidxoff, and cth_objtidxoff.  ctf_dump can now dump the headers.
+
+The dumping machinery has been moved out of ctf_dump into a new ctf_dump() API
+in libctf itself, so that other programs can easily produce CTF debugging dumps.
+
 The internal implementation of the hashtables used by libdtrace-ctf has
 changed.  As a consequence, libdtrace-ctf now depends on glib 2.x.
 
-It is no longer necessary to call ctf_update() between calls to ctf_add_*()
-to make types added by previous ctf_add_*() calls visible to later calls
-to those functions.  (It still needs to be called before other operations,
-including ctf_type_*(), iteration functions, and CTF writeout).  Since
-ctf_update() is very expensive, this can result in a huge runtime reduction
-for programs doing batch type addition.
+It is no longer necessary to call ctf_update() between calls to ctf_add_*() to
+make types added by previous ctf_add_*() calls visible to later calls to those
+functions: ctf_update() is now only a tiny convenience function that sets things
+up for ctf_discard(), and serialization is handled automatically by the
+functions that do writeout.  Since ctf_update() is very expensive, this can
+result in a huge runtime reduction for programs doing batch type addition.
+
+ctf_add_type() can now handle replacing forwards with structures *and*
+structures with forwards (which just give you the same type back again), so it
+can be used to merge several CTF files into one.
+
+String table management has been completely revamped.  The string table is now
+sorted and deduplicated.
+
+There is a new linker infrastructure, ctf_link_*(), that can be used to merge
+CTF sections as a whole into larger sections: the linker can pass in its idea of
+its external string table, and we will emit appropriate external references
+accordingly.  The corresponding machinery to allow the function and object info
+sections to be reshuffled into place has not yet been impleented.  (The new
+cth_functidxoff and cth_objtidxoff header fields are part of that).  This is
+very new and may not be reliable yet.
 
 All ctf_id_t arguments to ctf_add_*() functions are now validated to ensure
 they are existing types.
@@ -61,6 +84,32 @@ the caller must free, and never truncates it.
 The new function ctf_simple_open() is useful if you want to pass in buffers
 to ctf_bufopen() without having to mock up an entire ctf_symtab.
 
+The new function ctf_write_mem() lets you write a CTF file to a new dynamically
+allocated buffer, optionally compressing it; ctf_arc_write_fd() allows you
+to write archives to already-open file descriptors.
+
+ctf_open() and ctf_fdopen() now use BFD to read binaries, and accept a new
+target argument which is either NULL or a BFD target name.  There are new
+lower-level functions ctf_bfdopen() and ctf_bfdopen_ctfsect().
+
+CTF archives are now more central. The opening functions just cited all return a
+ctf_archive_t, not a ctf_file_t, even if they are called on raw CTF files or on
+binaries with a .ctf section whose content is a raw CTF file.  This appears to
+users as a CTF archive with a single member named _CTF_SECTION (or NULL, for
+sort), which you can open with ctf_arc_open_by_name().  ctf_close() now accepts
+either a ctf_file_t or a ctf_archive_t: if CTF_CLOSE_NEW_API is #defined at
+include time, the prototype changes to a ctf_archive_t, but the function accepts
+either.  There is also a new function ctf_arc_open_by_name_sections() which
+allows you to explicitly specify the string and symbol sections associated with
+a CTF file when opening it out of an archive, in case the string and symbol
+tables set by ctf_open() and ctf_fdopen() are not right for your use case.
+
+Because it might be annoying to drag around an archive just to keep track of it
+to close it, the new function ctf_get_arc() returns the archive from which a CTF
+file was opened, so you can close it easily.
+
+libdtrace-ctf now works (with limitations) on non-ELF platforms and platforms
+not supporting mmap() or pread().
 
 1.1.0
 -----
