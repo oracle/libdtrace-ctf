@@ -41,7 +41,7 @@ Headers and libraries to develop applications using the Compact Type Format.
 %setup -q
 
 %build
-make -j $(getconf _NPROCESSORS_ONLN) VERSION=%{version}
+make -j $(getconf _NPROCESSORS_ONLN) VERSION=%{version} optdebugging=yes
 
 %install
 echo rm -rf $RPM_BUILD_ROOT
@@ -77,7 +77,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %{_includedir}/sys/ctf_api.h
 
 %changelog
-* Tue Aug  7 2019 - nick.alcock@oracle.com - 1.2.0-0.2
+* Wed Aug  7 2019 - nick.alcock@oracle.com - 1.2.0-0.2
 - Work towards 1.2.0.
 - Reformat everything to GNU style.
 - Support opening CTF files of any endianness.
