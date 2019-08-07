@@ -177,7 +177,7 @@ ctf_create_per_cu (ctf_file_t *fp, const char *filename, const char *cuname)
   /* First, check the mapping table and translate the per-CU name we use
      accordingly.  We check both the input filename and the CU name.  Only if
      neither are set do we fall back to the input filename as the per-CU
-     dictionary name.  We prefer the filename because this easier for likely
+     dictionary name.  We prefer the filename because this is easier for likely
      callers to determine.  */
 
   if (fp->ctf_link_cu_mapping)
@@ -282,7 +282,7 @@ typedef struct ctf_link_in_member_cb_arg
   const char *file_name;
   ctf_file_t *in_fp;
   ctf_file_t *main_input_fp;
-  char *cu_name;
+  const char *cu_name;
   char *arcname;
   int done_main_member;
   int share_mode;
@@ -332,7 +332,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
       ctf_set_errno (arg->out_fp, 0);
     }
 
-  if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->arcname,
+  if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->file_name,
 					  arg->cu_name)) == NULL)
     return -1;	 				/* Errno is set for us.  */
 
@@ -418,7 +418,7 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
      type only present in the child.  Try adding to the child, creating if need
      be.  */
 
-  if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->arcname,
+  if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->file_name,
 					  arg->cu_name)) == NULL)
     return -1;	 				/* Errno is set for us.  */
 
@@ -479,7 +479,7 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
       arg->in_input_cu_file = 1;
     }
 
-  arg->cu_name = arg->arcname;
+  arg->cu_name = name;
   if (strncmp (arg->cu_name, ".ctf.", strlen (".ctf.")) == 0)
     arg->cu_name += strlen (".ctf.");
   arg->in_fp = in_fp;
