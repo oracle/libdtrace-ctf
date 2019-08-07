@@ -1212,7 +1212,7 @@ flip_ctf (ctf_header_t *cth, unsigned char *buf)
 
 /* Set up the ctl hashes in a ctf_file_t.  Called by both writable and
    non-writable dictionary initialization.  */
-extern void ctf_set_ctl_hashes (ctf_file_t *fp)
+void ctf_set_ctl_hashes (ctf_file_t *fp)
 {
   /* Initialize the ctf_lookup_by_name top-level dictionary.  We keep an
      array of type name prefixes and the corresponding ctf_hash to use.  */
@@ -1736,7 +1736,7 @@ ctf_get_arc (const ctf_file_t *fp)
    structure, not a pointer to it, since that is likely to become a pointer to
    freed data before the return value is used under the expected use case of
    ctf_getsect()/ ctf_file_close()/free().  */
-extern ctf_sect_t
+ctf_sect_t
 ctf_getdatasect (const ctf_file_t *fp)
 {
   return fp->ctf_data;

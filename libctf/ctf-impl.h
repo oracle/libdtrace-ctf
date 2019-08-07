@@ -252,7 +252,7 @@ struct ctf_file
   uint32_t *ctf_ptrtab;		  /* Translation table for pointer-to lookups.  */
   struct ctf_varent *ctf_vars;	  /* Sorted variable->type mapping.  */
   unsigned long ctf_nvars;	  /* Number of variables in ctf_vars.  */
-  unsigned long ctf_typemax;	  /* Maximum valid static type ID number.  */
+  unsigned long ctf_typemax;	  /* Maximum valid type ID number.  */
   const ctf_dmodel_t *ctf_dmodel; /* Data model pointer (see above).  */
   const char *ctf_cuname;	  /* Compilation unit name (if any).  */
   char *ctf_dyncuname;		  /* Dynamically allocated name of CU.  */
