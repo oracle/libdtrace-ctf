@@ -1547,10 +1547,6 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
   flag = LCTF_INFO_ISROOT (src_fp, src_tp->ctt_info);
   vlen = LCTF_INFO_VLEN (src_fp, src_tp->ctt_info);
 
-  forward_kind = kind;
-  if (kind == CTF_K_FORWARD)
-    forward_kind = src_tp->ctt_type;
-
   /* If this is a type we are currently in the middle of adding, hand it
      straight back.  (This lets us handle self-referential structures without
      considering forwards and empty structures the same as their completed
@@ -1577,11 +1573,6 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	      return tmp;
         }
     }
-
-  name = ctf_strptr (src_fp, src_tp->ctt_name);
-  kind = LCTF_INFO_KIND (src_fp, src_tp->ctt_info);
-  flag = LCTF_INFO_ISROOT (src_fp, src_tp->ctt_info);
-  vlen = LCTF_INFO_VLEN (src_fp, src_tp->ctt_info);
 
   forward_kind = kind;
   if (kind == CTF_K_FORWARD)
