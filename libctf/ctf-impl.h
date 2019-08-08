@@ -250,6 +250,7 @@ struct ctf_file
   unsigned long ctf_nsyms;	  /* Number of entries in symtab xlate table.  */
   uint32_t *ctf_txlate;		  /* Translation table for type IDs.  */
   uint32_t *ctf_ptrtab;		  /* Translation table for pointer-to lookups.  */
+  size_t ctf_ptrtab_len;	  /* Num types storable in ptrtab currently.  */
   struct ctf_varent *ctf_vars;	  /* Sorted variable->type mapping.  */
   unsigned long ctf_nvars;	  /* Number of variables in ctf_vars.  */
   unsigned long ctf_typemax;	  /* Maximum valid type ID number.  */

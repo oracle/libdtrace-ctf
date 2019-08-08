@@ -764,7 +764,8 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
     return ENOMEM;
 
   fp->ctf_txlate = ctf_alloc (sizeof (uint32_t) * (fp->ctf_typemax + 1));
-  fp->ctf_ptrtab = ctf_alloc (sizeof (uint32_t) * (fp->ctf_typemax + 1));
+  fp->ctf_ptrtab_len = fp->ctf_typemax + 1;
+  fp->ctf_ptrtab = ctf_alloc (sizeof (uint32_t) * fp->ctf_ptrtab_len);
 
   if (fp->ctf_txlate == NULL || fp->ctf_ptrtab == NULL)
     return ENOMEM;		/* Memory allocation failed.  */

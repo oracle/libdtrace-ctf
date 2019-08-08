@@ -17,6 +17,40 @@
 #define roundup(x, y)  ((((x) + ((y) - 1)) / (y)) * (y))
 #endif
 
+/* Make sure the ptrtab has enough space for at least one more type.
+
+   We start with 4KiB of ptrtab, enough for a thousand types, then grow it 25%
+   at a time.  */
+
+static int
+ctf_grow_ptrtab (ctf_file_t *fp)
+{
+  size_t new_ptrtab_len = fp->ctf_ptrtab_len;
+
+  /* We allocate one more ptrtab entry than we need, for the initial zero,
+     plus one because the caller will probably allocate a new type.  */
+
+  if (fp->ctf_ptrtab == NULL)
+    new_ptrtab_len = 1024;
+  else if ((fp->ctf_typemax + 2) > fp->ctf_ptrtab_len)
+    new_ptrtab_len = fp->ctf_ptrtab_len * 1.25;
+
+  if (new_ptrtab_len != fp->ctf_ptrtab_len)
+    {
+      uint32_t *new_ptrtab;
+
+      if ((new_ptrtab = realloc (fp->ctf_ptrtab,
+				 new_ptrtab_len * sizeof (uint32_t))) == NULL)
+	return (ctf_set_errno (fp, ENOMEM));
+
+      fp->ctf_ptrtab = new_ptrtab;
+      memset (fp->ctf_ptrtab + fp->ctf_ptrtab_len, 0,
+	      (new_ptrtab_len - fp->ctf_ptrtab_len) * sizeof (uint32_t));
+      fp->ctf_ptrtab_len = new_ptrtab_len;
+    }
+  return 0;
+}
+
 /* To create an empty CTF container, we just declare a zeroed header and call
    ctf_bufopen() on it.  If ctf_bufopen succeeds, we mark the new container r/w
    and initialize the dynamic members.  We start assigning type IDs at 1 because
@@ -84,6 +118,12 @@ ctf_create (int *errp)
 
   ctf_set_ctl_hashes (fp);
   ctf_setmodel (fp, CTF_MODEL_NATIVE);
+  if (ctf_grow_ptrtab (fp) < 0)
+    {
+      ctf_set_open_errno (errp, ctf_errno (fp));
+      ctf_file_close (fp);
+      return NULL;
+    }
 
   return fp;
 
@@ -479,6 +519,7 @@ ctf_serialize (ctf_file_t *fp)
   nfp->ctf_snapshots = fp->ctf_snapshots + 1;
   nfp->ctf_specific = fp->ctf_specific;
   nfp->ctf_ptrtab = fp->ctf_ptrtab;
+  nfp->ctf_ptrtab_len = fp->ctf_ptrtab_len;
   nfp->ctf_link_inputs = fp->ctf_link_inputs;
   nfp->ctf_link_outputs = fp->ctf_link_outputs;
   nfp->ctf_syn_ext_strtab = fp->ctf_syn_ext_strtab;
@@ -817,6 +858,7 @@ ctf_add_reftype (ctf_file_t *fp, uint32_t flag, ctf_id_t ref, uint32_t kind)
   ctf_dtdef_t *dtd;
   ctf_id_t type;
   ctf_file_t *tmp = fp;
+  int child = fp->ctf_flags & LCTF_CHILD;
 
   if (ref == CTF_ERR || ref > CTF_MAX_TYPE)
     return (ctf_set_errno (fp, EINVAL));
@@ -824,11 +866,40 @@ ctf_add_reftype (ctf_file_t *fp, uint32_t flag, ctf_id_t ref, uint32_t kind)
   if (ctf_lookup_by_id (&tmp, ref) == NULL)
     return CTF_ERR;		/* errno is set for us.  */
 
+  if (ctf_grow_ptrtab (fp) < 0)
+    return CTF_ERR;		/* errno is set for us. */
+
   if ((type = ctf_add_generic (fp, flag, NULL, kind, &dtd)) == CTF_ERR)
     return CTF_ERR;		/* errno is set for us.  */
 
   dtd->dtd_data.ctt_info = CTF_TYPE_INFO (kind, flag, 0);
   dtd->dtd_data.ctt_type = (uint32_t) ref;
+
+  if (kind != CTF_K_POINTER)
+    return type;
+
+  /* If we are adding a pointer, update the ptrtab, both the directly pointed-to
+     type and (if an anonymous typedef node is being pointed at) the type that
+     points at too.  Note that ctf_typemax is at this point one higher than we
+     want to check against, because it's just been incremented for the addition
+     of this type.  */
+
+  uint32_t type_idx = LCTF_TYPE_TO_INDEX (fp, type);
+  uint32_t ref_idx = LCTF_TYPE_TO_INDEX (fp, ref);
+
+  if (LCTF_TYPE_ISCHILD (fp, ref) == child
+      && ref_idx < fp->ctf_typemax)
+    {
+      fp->ctf_ptrtab[ref_idx] = type_idx;
+
+      ctf_id_t refref_idx = LCTF_TYPE_TO_INDEX (fp, dtd->dtd_data.ctt_type);
+
+      if (tmp == fp
+	  && (LCTF_INFO_KIND (fp, dtd->dtd_data.ctt_info) == CTF_K_TYPEDEF)
+	  && dtd->dtd_name[0] == '\0'
+	  && refref_idx < fp->ctf_typemax)
+	fp->ctf_ptrtab[refref_idx] = type_idx;
+    }
 
   return type;
 }
