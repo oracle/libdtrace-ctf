@@ -1512,7 +1512,8 @@ membadd (const char *name, ctf_id_t type, unsigned long offset, void *arg)
    destination container already contains a named type which has the same
    attributes, then we succeed and return this type but no changes occur.  */
 static ctf_id_t
-ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
+ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type,
+		       ctf_file_t *proc_tracking_fp)
 {
   ctf_id_t dst_type = CTF_ERR;
   uint32_t dst_kind = CTF_K_UNKNOWN;
@@ -1556,7 +1557,7 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 
   if (tmp != 0)
     {
-      if (ctf_dynhash_lookup (src_fp->ctf_add_processing,
+      if (ctf_dynhash_lookup (proc_tracking_fp->ctf_add_processing,
                               (void *) (uintptr_t) src_type))
 	return tmp;
 
@@ -1701,7 +1702,7 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
      re-process any type that appears in this list.  The list is emptied
      wholesale at the end of processing everything in this recursive stack.  */
 
-  if (ctf_dynhash_insert (src_fp->ctf_add_processing,
+  if (ctf_dynhash_insert (proc_tracking_fp->ctf_add_processing,
                           (void *) (uintptr_t) src_type, (void *) 1) < 0)
     return ctf_set_errno (dst_fp, ENOMEM);
 
@@ -1723,7 +1724,8 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
       /* We have checked for conflicting encodings: now try to add the
 	 contained type.  */
       src_type = ctf_type_reference (src_fp, src_type);
-      src_type = ctf_add_type_internal (dst_fp, src_fp, src_type);
+      src_type = ctf_add_type_internal (dst_fp, src_fp, src_type,
+					proc_tracking_fp);
 
       if (src_type == CTF_ERR)
 	return CTF_ERR;				/* errno is set for us.  */
@@ -1736,7 +1738,8 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
     case CTF_K_CONST:
     case CTF_K_RESTRICT:
       src_type = ctf_type_reference (src_fp, src_type);
-      src_type = ctf_add_type_internal (dst_fp, src_fp, src_type);
+      src_type = ctf_add_type_internal (dst_fp, src_fp, src_type,
+					proc_tracking_fp);
 
       if (src_type == CTF_ERR)
 	return CTF_ERR;				/* errno is set for us.  */
@@ -1749,9 +1752,11 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	return (ctf_set_errno (dst_fp, ctf_errno (src_fp)));
 
       src_ar.ctr_contents =
-	ctf_add_type_internal (dst_fp, src_fp, src_ar.ctr_contents);
+	ctf_add_type_internal (dst_fp, src_fp, src_ar.ctr_contents,
+			       proc_tracking_fp);
       src_ar.ctr_index = ctf_add_type_internal (dst_fp, src_fp,
-						src_ar.ctr_index);
+						src_ar.ctr_index,
+						proc_tracking_fp);
       src_ar.ctr_nelems = src_ar.ctr_nelems;
 
       if (src_ar.ctr_contents == CTF_ERR || src_ar.ctr_index == CTF_ERR)
@@ -1779,7 +1784,8 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 
     case CTF_K_FUNCTION:
       ctc.ctc_return = ctf_add_type_internal (dst_fp, src_fp,
-					      src_tp->ctt_type);
+					      src_tp->ctt_type,
+					      proc_tracking_fp);
       ctc.ctc_argc = 0;
       ctc.ctc_flags = 0;
 
@@ -1877,8 +1883,9 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	    memb_type = ctf_type_mapping (src_fp, dmd->dmd_type, &dst);
 	    if (memb_type == 0)
               {
-                if ((dmd->dmd_type = ctf_add_type_internal (dst_fp, src_fp,
-                                                   dmd->dmd_type)) == CTF_ERR)
+                if ((dmd->dmd_type =
+		     ctf_add_type_internal (dst_fp, src_fp, dmd->dmd_type,
+					    proc_tracking_fp)) == CTF_ERR)
                   {
                     if (ctf_errno (dst_fp) != ECTF_NONREPRESENTABLE)
                       errs++;
@@ -1921,7 +1928,8 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 
     case CTF_K_TYPEDEF:
       src_type = ctf_type_reference (src_fp, src_type);
-      src_type = ctf_add_type_internal (dst_fp, src_fp, src_type);
+      src_type = ctf_add_type_internal (dst_fp, src_fp, src_type,
+					proc_tracking_fp);
 
       if (src_type == CTF_ERR)
 	return CTF_ERR;				/* errno is set for us.  */
@@ -1963,7 +1971,7 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
   if (!src_fp->ctf_add_processing)
     return (ctf_set_errno (dst_fp, ENOMEM));
 
-  id = ctf_add_type_internal (dst_fp, src_fp, src_type);
+  id = ctf_add_type_internal (dst_fp, src_fp, src_type, src_fp);
   ctf_dynhash_empty (src_fp->ctf_add_processing);
 
   return id;
