@@ -1634,6 +1634,9 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	  if ((dst_tp = ctf_lookup_by_id (&fp, dst_type)) == NULL)
 	    return CTF_ERR;
 
+	  if (ctf_type_encoding (dst_fp, dst_type, &dst_en) != 0)
+	    return CTF_ERR;			/* errno set for us.  */
+
 	  if (LCTF_INFO_ISROOT (fp, dst_tp->ctt_info) & CTF_ADD_ROOT)
 	    {
 	      /* The type that we found in the hash is also root-visible.  If
@@ -1647,9 +1650,6 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 		 root-visible int: this works around CTF damage in old kernels
 		 before UEK4 4.1.12-99.  */
 #endif /* !BFD_ONLY */
-	      if (ctf_type_encoding (dst_fp, dst_type, &dst_en) != 0)
-		return CTF_ERR;			/* errno set for us.  */
-
 	      if (memcmp (&src_en, &dst_en, sizeof (ctf_encoding_t)) == 0)
 		{
 		  if (kind != CTF_K_SLICE)
