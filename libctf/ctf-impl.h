@@ -148,9 +148,8 @@ typedef struct ctf_dmdef
 typedef struct ctf_dtdef
 {
   ctf_list_t dtd_list;		/* List forward/back pointers.  */
-  char *dtd_name;		/* Name associated with definition (if any).  */
   ctf_id_t dtd_type;		/* Type identifier for this definition.  */
-  ctf_type_t dtd_data;		/* Type node: name left unpopulated.  */
+  ctf_type_t dtd_data;		/* Type node, including name.  */
   union
   {
     ctf_list_t dtu_members;	/* struct, union, or enum */
@@ -189,7 +188,8 @@ typedef struct ctf_str_atom
 {
   const char *csa_str;		/* Backpointer to string (hash key).  */
   ctf_list_t csa_refs;		/* This string's refs.  */
-  uint32_t csa_offset;		/* External strtab offset, if any.  */
+  uint32_t csa_offset;		/* Strtab offset, if any.  */
+  uint32_t csa_external_offset;	/* External strtab offset, if any.  */
   unsigned long csa_snapshot_id; /* Snapshot ID at time of creation.  */
 } ctf_str_atom_t;
 
@@ -231,6 +231,8 @@ struct ctf_file
   ctf_sect_t ctf_data;		    /* CTF data from object file.  */
   ctf_sect_t ctf_symtab;	    /* Symbol table from object file.  */
   ctf_sect_t ctf_strtab;	    /* String table from object file.  */
+  ctf_dynhash_t *ctf_prov_strtab;   /* Maps provisional-strtab offsets
+				       to names.  */
   ctf_dynhash_t *ctf_syn_ext_strtab; /* Maps ext-strtab offsets to names.  */
   void *ctf_data_mmapped;	    /* CTF data we mmapped, to free later.  */
   size_t ctf_data_mmapped_len;	    /* Length of CTF data we mmapped.  */
@@ -242,6 +244,7 @@ struct ctf_file
   ctf_strs_t ctf_str[2];	    /* Array of string table base and bounds.  */
   ctf_dynhash_t *ctf_str_atoms;	  /* Hash table of ctf_str_atoms_t.  */
   uint64_t ctf_str_num_refs;	  /* Number of refs to cts_str_atoms.  */
+  uint32_t ctf_str_prov_offset;	  /* Latest provisional offset assigned so far.  */
   unsigned char *ctf_base;	  /* CTF file pointer.  */
   unsigned char *ctf_dynbase;	  /* Freeable CTF file pointer. */
   unsigned char *ctf_buf;	  /* Uncompressed CTF data buffer.  */
@@ -388,6 +391,7 @@ extern void ctf_dynhash_iter_remove (ctf_dynhash_t *, ctf_hash_iter_remove_f,
 extern void ctf_list_append (ctf_list_t *, void *);
 extern void ctf_list_prepend (ctf_list_t *, void *);
 extern void ctf_list_delete (ctf_list_t *, void *);
+extern int ctf_list_empty_p (ctf_list_t *lp);
 
 extern int ctf_dtd_insert (ctf_file_t *, ctf_dtdef_t *, int);
 extern void ctf_dtd_delete (ctf_file_t *, ctf_dtdef_t *);
@@ -417,9 +421,10 @@ extern const char *ctf_strraw_explicit (ctf_file_t *, uint32_t,
                                         ctf_strs_t *);
 extern int ctf_str_create_atoms (ctf_file_t *);
 extern void ctf_str_free_atoms (ctf_file_t *);
-extern const char *ctf_str_add (ctf_file_t *, const char *);
-extern const char *ctf_str_add_ref (ctf_file_t *, const char *, uint32_t *ref);
-extern const char *ctf_str_add_external (ctf_file_t *, const char *, uint32_t offset);
+extern uint32_t ctf_str_add (ctf_file_t *, const char *);
+extern uint32_t ctf_str_add_ref (ctf_file_t *, const char *, uint32_t *ref);
+extern int ctf_str_add_external (ctf_file_t *, const char *, uint32_t offset);
+extern void ctf_str_remove_ref (ctf_file_t *, const char *, uint32_t *ref);
 extern void ctf_str_rollback (ctf_file_t *, ctf_snapshot_id_t);
 extern void ctf_str_purge_refs (ctf_file_t *);
 extern ctf_strs_writable_t ctf_str_write_strtab (ctf_file_t *);
