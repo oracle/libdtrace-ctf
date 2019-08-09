@@ -935,11 +935,11 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	{
 	  tp = LCTF_INDEX_TO_TYPEPTR (fp, id);
 
-	  if (LCTF_INFO_KIND (fp, tp->ctt_info) == CTF_K_TYPEDEF &&
-	      strcmp (ctf_strptr (fp, tp->ctt_name), "") == 0 &&
-	      LCTF_TYPE_ISCHILD (fp, tp->ctt_type) == child &&
-	      LCTF_TYPE_TO_INDEX (fp, tp->ctt_type) <= fp->ctf_typemax)
-	    fp->ctf_ptrtab[LCTF_TYPE_TO_INDEX (fp, tp->ctt_type)] = dst;
+	  if (LCTF_INFO_KIND (fp, tp->ctt_info) == CTF_K_TYPEDEF
+	      && strcmp (ctf_strptr (fp, tp->ctt_name), "") == 0
+	      && LCTF_TYPE_ISCHILD (fp, tp->ctt_type) == child
+	      && LCTF_TYPE_TO_INDEX (fp, tp->ctt_type) <= fp->ctf_typemax)
+	      fp->ctf_ptrtab[LCTF_TYPE_TO_INDEX (fp, tp->ctt_type)] = dst;
 	}
     }
 
