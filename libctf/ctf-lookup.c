@@ -323,6 +323,7 @@ ctf_lookup_by_id (ctf_file_t **fpp, ctf_id_t type)
 	  *fpp = fp;
 	  return &dtd->dtd_data;
 	}
+      (void) ctf_set_errno (*fpp, ECTF_BADID);
       return NULL;
     }
 
