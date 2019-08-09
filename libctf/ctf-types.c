@@ -353,7 +353,13 @@ ctf_type_aname (ctf_file_t *fp, ctf_id_t type)
 	{
 	  ctf_file_t *rfp = fp;
 	  const ctf_type_t *tp = ctf_lookup_by_id (&rfp, cdp->cd_type);
-	  const char *name = ctf_strptr (rfp, tp->ctt_name);
+	  const ctf_dtdef_t *dtd;
+	  const char *name;
+
+	  if ((dtd = ctf_dynamic_type (rfp, type)) != NULL)
+	    name = dtd->dtd_name;
+	  else
+	    name = ctf_strptr (rfp, tp->ctt_name);
 
 	  if (k != CTF_K_POINTER && k != CTF_K_ARRAY)
 	    ctf_decl_sprintf (&cd, " ");
