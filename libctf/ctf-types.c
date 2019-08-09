@@ -353,13 +353,7 @@ ctf_type_aname (ctf_file_t *fp, ctf_id_t type)
 	{
 	  ctf_file_t *rfp = fp;
 	  const ctf_type_t *tp = ctf_lookup_by_id (&rfp, cdp->cd_type);
-	  const ctf_dtdef_t *dtd;
-	  const char *name;
-
-	  if ((dtd = ctf_dynamic_type (rfp, type)) != NULL)
-	    name = dtd->dtd_name;
-	  else
-	    name = ctf_strptr (rfp, tp->ctt_name);
+	  const char *name = ctf_strptr (rfp, tp->ctt_name);
 
 	  if (k != CTF_K_POINTER && k != CTF_K_ARRAY)
 	    ctf_decl_sprintf (&cd, " ");
@@ -837,8 +831,6 @@ ctf_type_compat (ctf_file_t *lfp, ctf_id_t ltype,
 		 ctf_file_t *rfp, ctf_id_t rtype)
 {
   const ctf_type_t *ltp, *rtp;
-  const char *lname = NULL, *rname = NULL;
-  ctf_dtdef_t *l_dtd, *r_dtd;
   ctf_encoding_t le, re;
   ctf_arinfo_t la, ra;
   uint32_t lkind, rkind;
@@ -856,21 +848,9 @@ ctf_type_compat (ctf_file_t *lfp, ctf_id_t ltype,
   ltp = ctf_lookup_by_id (&lfp, ltype);
   rtp = ctf_lookup_by_id (&rfp, rtype);
 
-  l_dtd = ctf_dynamic_type (lfp, ltype);
-  r_dtd = ctf_dynamic_type (rfp, rtype);
-
-  if (l_dtd)
-    lname = l_dtd->dtd_name;
-  else if (ltp != NULL)
-    lname = ctf_strptr (lfp, ltp->ctt_name);
-
-  if (r_dtd)
-    rname = r_dtd->dtd_name;
-  else if (rtp != NULL)
-    rname = ctf_strptr (rfp, rtp->ctt_name);
-
-  if (lname != NULL && rname != NULL)
-    same_names = (strcmp (lname, rname) == 0);
+  if (ltp != NULL && rtp != NULL)
+    same_names = (strcmp (ctf_strptr (lfp, ltp->ctt_name),
+			  ctf_strptr (rfp, rtp->ctt_name)) == 0);
 
   if (((lkind == CTF_K_ENUM) && (rkind == CTF_K_INTEGER)) ||
       ((rkind == CTF_K_ENUM) && (lkind == CTF_K_INTEGER)))

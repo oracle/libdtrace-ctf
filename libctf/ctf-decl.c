@@ -87,23 +87,13 @@ ctf_decl_push (ctf_decl_t *cd, ctf_file_t *fp, ctf_id_t type)
       break;
 
     case CTF_K_TYPEDEF:
-      {
-	ctf_dtdef_t *dtd;
-	const char *name;
-
-	if ((dtd = ctf_dynamic_type (fp, type)) != NULL)
-	  name = dtd->dtd_name;
-	else
-	  name = ctf_strptr (fp, tp->ctt_name);
-
-	if (name[0] == '\0')
-	  {
-	    ctf_decl_push (cd, fp, tp->ctt_type);
-	    return;
-	  }
-	prec = CTF_PREC_BASE;
-	break;
-      }
+      if (ctf_strptr (fp, tp->ctt_name)[0] == '\0')
+	{
+	  ctf_decl_push (cd, fp, tp->ctt_type);
+	  return;
+	}
+      prec = CTF_PREC_BASE;
+      break;
 
     case CTF_K_FUNCTION:
       ctf_decl_push (cd, fp, tp->ctt_type);
