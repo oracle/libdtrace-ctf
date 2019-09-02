@@ -470,7 +470,8 @@ ctf_dump_funcs (ctf_file_t *fp, ctf_dump_state_t *state)
       return (ctf_set_errno (fp, errno));
     err:
       ctf_dprintf ("Cannot %s dumping function type for symbol 0x%li: %s\n",
-		   err, i, ctf_errmsg (ctf_errno (state->cds_fp)));
+		   err, (unsigned long) i,
+		   ctf_errmsg (ctf_errno (state->cds_fp)));
       free (args);
       free (str);
       return -1;		/* errno is set for us.  */
