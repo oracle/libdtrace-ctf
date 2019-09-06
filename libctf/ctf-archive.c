@@ -227,11 +227,17 @@ ctf_arc_write (const char *file, ctf_file_t ** ctf_files, size_t ctf_file_cnt,
     {
       ctf_dprintf ("ctf_arc_write(): Cannot close after writing to archive: "
 		   "%s\n", strerror (errno));
-      goto err;
+      goto err_close;
     }
 
  err:
   close (fd);
+  if (err < 0)
+    unlink (file);
+
+  return err;
+
+ err_close:
   if (err < 0)
     unlink (file);
 
