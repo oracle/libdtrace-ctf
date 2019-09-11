@@ -166,10 +166,14 @@ void ctf_decl_sprintf (ctf_decl_t *cd, const char *format, ...)
   va_end (ap);
 
   if (n > 0)
-      cd->cd_buf = ctf_str_append (cd->cd_buf, str);
+    {
+      char *newbuf;
+      if ((newbuf = ctf_str_append (cd->cd_buf, str)) != NULL)
+	cd->cd_buf = newbuf;
+    }
 
   /* Sticky error condition.  */
-  if (n < 0)
+  if (n < 0 || cd->cd_buf == NULL)
     {
       free (cd->cd_buf);
       cd->cd_buf = NULL;

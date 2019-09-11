@@ -233,6 +233,7 @@ int
 ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
 {
   int err;
+  char *f, *t;
 
   if (fp->ctf_link_cu_mapping == NULL)
     fp->ctf_link_cu_mapping = ctf_dynhash_create (ctf_hash_string,
@@ -249,15 +250,30 @@ ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
   if (fp->ctf_link_outputs == NULL)
     return ctf_set_errno (fp, ENOMEM);
 
-  if (ctf_create_per_cu (fp, to, to) == NULL)
-    return -1;					/* Errno is set for us.  */
+  f = strdup (from);
+  t = strdup (to);
+  if (!f || !t)
+    goto oom;
 
-  err = ctf_dynhash_insert (fp->ctf_link_cu_mapping, strdup (from),
-			    strdup (to));
+  if (ctf_create_per_cu (fp, t, t) == NULL)
+    goto oom_noerrno;				/* Errno is set for us.  */
 
+  err = ctf_dynhash_insert (fp->ctf_link_cu_mapping, f, t);
   if (err)
-    return ctf_set_errno (fp, err);
+    {
+      free (f);
+      free (t);
+      return ctf_set_errno (fp, err);
+    }
+
   return 0;
+
+ oom:
+  ctf_set_errno (fp, ENOMEM);
+ oom_noerrno:
+  free (f);
+  free (t);
+  return -1;
 }
 
 /* Set a function which is called to transform the names of archive members.
@@ -456,6 +472,8 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
 
   if (strcmp (name, _CTF_SECTION) == 0)
     {
+      char *new_name;
+
       /* This file is the default member of this archive, and has already been
 	 explicitly processed.
 
@@ -468,7 +486,14 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
       if (arg->done_main_member)
 	return 0;
       arg->arcname = strdup (".ctf.");
-      arg->arcname = ctf_str_append (arg->arcname, arg->file_name);
+      if (arg->arcname)
+	{
+	  new_name = ctf_str_append (arg->arcname, arg->file_name);
+	  if (new_name)
+	    arg->arcname = new_name;
+	  else
+	    free (arg->arcname);
+	}
     }
   else
     {
@@ -478,6 +503,9 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
       ctf_import (in_fp, arg->main_input_fp);
       arg->in_input_cu_file = 1;
     }
+
+  if (!arg->arcname)
+    return ctf_set_errno (in_fp, ENOMEM);
 
   arg->cu_name = name;
   if (strncmp (arg->cu_name, ".ctf.", strlen (".ctf.")) == 0)
