@@ -106,7 +106,7 @@ ctf_strdup (const char *s1)
   return s2;
 }
 
-/* A string appender working on dynamic strings.  */
+/* A string appender working on dynamic strings.  Returns NULL on OOM.  */
 
 char *
 ctf_str_append (char *s, const char *append)
@@ -128,6 +128,19 @@ ctf_str_append (char *s, const char *append)
   s[s_len + append_len] = '\0';
 
   return s;
+}
+
+/* A version of ctf_str_append that returns the old string on OOM.  */
+
+char *
+ctf_str_append_noerr (char *s, const char *append)
+{
+  char *new_s;
+
+  new_s = ctf_str_append (s, append);
+  if (!new_s)
+    return s;
+  return new_s;
 }
 
 /* A realloc() that fails noisily if called with any ctf_str_num_users.  */
