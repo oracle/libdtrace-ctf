@@ -1503,6 +1503,7 @@ ctf_add_variable (ctf_file_t *fp, const char *name, ctf_id_t ref)
 
   if (ctf_dvd_insert (fp, dvd) < 0)
     {
+      free (dvd->dvd_name);
       free (dvd);
       return -1;			/* errno is set for us.  */
     }
