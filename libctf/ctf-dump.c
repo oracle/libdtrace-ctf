@@ -44,7 +44,7 @@ ctf_dump_append (ctf_dump_state_t *state, char *str)
 {
   ctf_dump_item_t *cdi;
 
-  if ((cdi = ctf_alloc (sizeof (struct ctf_dump_item))) == NULL)
+  if ((cdi = malloc (sizeof (struct ctf_dump_item))) == NULL)
     return (ctf_set_errno (state->cds_fp, ENOMEM));
 
   cdi->cdi_item = str;
@@ -65,7 +65,7 @@ ctf_dump_free (ctf_dump_state_t *state)
     {
       free (cdi->cdi_item);
       next_cdi = ctf_list_next (cdi);
-      ctf_free (cdi);
+      free (cdi);
     }
 }
 
@@ -660,7 +660,7 @@ ctf_dump (ctf_file_t *fp, ctf_dump_state_t **statep, ctf_sect_names_t sect,
 	 by bit.  The first call will take (much) longer than otherwise, but the
 	 amortized time needed is the same.  */
 
-      if ((*statep = ctf_alloc (sizeof (struct ctf_dump_state))) == NULL)
+      if ((*statep = malloc (sizeof (struct ctf_dump_state))) == NULL)
 	{
 	  ctf_set_errno (fp, ENOMEM);
 	  goto end;
@@ -778,7 +778,7 @@ ctf_dump (ctf_file_t *fp, ctf_dump_state_t **statep, ctf_sect_names_t sect,
 
  end:
   ctf_dump_free (state);
-  ctf_free (state);
+  free (state);
   ctf_set_errno (fp, 0);
   *statep = NULL;
   return NULL;

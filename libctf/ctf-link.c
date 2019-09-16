@@ -173,6 +173,7 @@ ctf_create_per_cu (ctf_file_t *fp, const char *filename, const char *cuname)
 {
   ctf_file_t *cu_fp;
   const char *ctf_name = NULL;
+  char *dynname = NULL;
 
   /* First, check the mapping table and translate the per-CU name we use
      accordingly.  We check both the input filename and the CU name.  Only if
@@ -203,19 +204,22 @@ ctf_create_per_cu (ctf_file_t *fp, const char *filename, const char *cuname)
 	  return NULL;
 	}
 
-      if (ctf_dynhash_insert (fp->ctf_link_outputs, ctf_strdup (ctf_name),
-			      cu_fp) < 0)
-	{
-	  ctf_file_close (cu_fp);
-	  ctf_set_errno (fp, ENOMEM);
-	  return NULL;
-	}
+      if ((dynname = strdup (ctf_name)) == NULL)
+	goto oom;
+      if (ctf_dynhash_insert (fp->ctf_link_outputs, dynname, cu_fp) < 0)
+	goto oom;
 
       ctf_import (cu_fp, fp);
       ctf_cuname_set (cu_fp, cuname);
       ctf_parent_name_set (cu_fp, _CTF_SECTION);
     }
   return cu_fp;
+
+ oom:
+  free (dynname);
+  ctf_file_close (cu_fp);
+  ctf_set_errno (fp, ENOMEM);
+  return NULL;
 }
 
 /* Add a mapping directing that the CU named FROM should have its
