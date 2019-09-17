@@ -265,15 +265,14 @@ ctf_link_add_cu_mapping (ctf_file_t *fp, const char *from, const char *to)
   err = ctf_dynhash_insert (fp->ctf_link_cu_mapping, f, t);
   if (err)
     {
-      free (f);
-      free (t);
-      return ctf_set_errno (fp, err);
+      ctf_set_errno (fp, err);
+      goto oom_noerrno;
     }
 
   return 0;
 
  oom:
-  ctf_set_errno (fp, ENOMEM);
+  ctf_set_errno (fp, errno);
  oom_noerrno:
   free (f);
   free (t);
@@ -476,8 +475,6 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
 
   if (strcmp (name, _CTF_SECTION) == 0)
     {
-      char *new_name;
-
       /* This file is the default member of this archive, and has already been
 	 explicitly processed.
 
@@ -492,6 +489,8 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
       arg->arcname = strdup (".ctf.");
       if (arg->arcname)
 	{
+	  char *new_name;
+
 	  new_name = ctf_str_append (arg->arcname, arg->file_name);
 	  if (new_name)
 	    arg->arcname = new_name;
