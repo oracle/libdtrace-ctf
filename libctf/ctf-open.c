@@ -1833,8 +1833,8 @@ ctf_import (ctf_file_t *fp, ctf_file_t *pfp)
 	if ((err = ctf_parent_name_set (fp, "PARENT")) < 0)
 	  return err;
 
-	fp->ctf_flags |= LCTF_CHILD;
-	pfp->ctf_refcnt++;
+      fp->ctf_flags |= LCTF_CHILD;
+      pfp->ctf_refcnt++;
     }
 
   fp->ctf_parent = pfp;
