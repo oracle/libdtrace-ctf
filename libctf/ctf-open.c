@@ -1820,6 +1820,7 @@ ctf_import (ctf_file_t *fp, ctf_file_t *pfp)
 
   if (fp->ctf_parent != NULL)
     {
+      fp->ctf_parent->ctf_refcnt--;
       ctf_file_close (fp->ctf_parent);
       fp->ctf_parent = NULL;
     }
@@ -1832,9 +1833,10 @@ ctf_import (ctf_file_t *fp, ctf_file_t *pfp)
 	if ((err = ctf_parent_name_set (fp, "PARENT")) < 0)
 	  return err;
 
-    fp->ctf_flags |= LCTF_CHILD;
-      pfp->ctf_refcnt++;
+	fp->ctf_flags |= LCTF_CHILD;
+	pfp->ctf_refcnt++;
     }
+
   fp->ctf_parent = pfp;
   return 0;
 }
