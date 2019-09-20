@@ -117,7 +117,7 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
    later.  */
 
 ctf_archive_t *
-ctf_bfdopen_ctfsect (struct bfd *abfd,
+ctf_bfdopen_ctfsect (struct bfd *abfd _libctf_unused_,
 		     const ctf_sect_t *ctfsect, int *errp)
 {
   struct ctf_archive *arc = NULL;
