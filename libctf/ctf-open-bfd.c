@@ -99,7 +99,7 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
 
   ctfsect.cts_name = _CTF_SECTION;
   ctfsect.cts_entsize = 1;
-  ctfsect.cts_size = bfd_section_size (abfd, ctf_asect);
+  ctfsect.cts_size = bfd_section_size (ctf_asect);
   ctfsect.cts_data = contents;
 
   if ((arc = ctf_bfdopen_ctfsect (abfd, &ctfsect, errp)) != NULL)
