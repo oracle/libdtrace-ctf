@@ -52,6 +52,15 @@ $(objdir)/.config/config.$(1).h: $(objdir)/.config/.dir.stamp
 $(CONFIG_H): $(objdir)/.config/config.$(1).h
 endef
 
+$(objdir)/.config/config.bfd_section_size.h: $(objdir)/.config/.dir.stamp
+	if printf '#include <stdio.h>\n#include <bfd.h>\nint main (void) { asection *foo = NULL; printf ("%%li", bfd_section_size (foo)); }' | \
+		$(CC) $(CFLAGS) $(LDFLAGS) -c -o /dev/null -x c - >/dev/null 2>&1; then \
+	    echo '#define HAVE_ONE_ARG_BFD_SECTION_SIZE 1' > $(objdir)/.config/config.bfd_section_size.h; \
+	else \
+	    echo '/* #undef HAVE_ONE_ARG_BFD_SECTION_SIZE */' > $(objdir)/.config/config.bfd_section_size.h; \
+	fi
+$(CONFIG_H): $(objdir)/.config/config.bfd_section_size.h
+
 $(objdir)/.config/.dir.stamp:
 	mkdir -p $(objdir)/.config
 	touch $(objdir)/.config/.dir.stamp

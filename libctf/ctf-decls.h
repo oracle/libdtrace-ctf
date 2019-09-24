@@ -21,4 +21,15 @@
 #define xstrdup(str) strdup (str)
 #define xstrndup(str, n) strndup (str, n)
 
+/* Work around recent changes in binutils APIs.
+
+   Since most of them are macros, we have to outright redeclare them, since we
+   can't wrap them.  */
+
+#ifndef HAVE_ONE_ARG_BFD_SECTION_SIZE
+#include <bfd.h>
+#undef bfd_section_size
+#define bfd_section_size(ptr) ((ptr)->size)
+#endif
+
 #endif
