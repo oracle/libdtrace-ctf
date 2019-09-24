@@ -1615,7 +1615,6 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
   ctf_encoding_t src_en, dst_en;
   ctf_arinfo_t src_ar, dst_ar;
 
-  ctf_dtdef_t *dtd;
   ctf_funcinfo_t ctc;
 
   ctf_id_t orig_src_type = src_type;
@@ -1657,7 +1656,7 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	      || kind == CTF_K_ENUM))
         {
           if ((dst_tp = ctf_lookup_by_id (&tmp_fp, dst_type)) != NULL)
-	    if (vlen == LCTF_INFO_VLEN (tmp_fp, dtd->dtd_data.ctt_info))
+	    if (vlen == LCTF_INFO_VLEN (tmp_fp, dst_tp->ctt_info))
 	      return tmp;
         }
     }
@@ -1889,6 +1888,7 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	int errs = 0;
 	size_t size;
 	ssize_t ssize;
+	ctf_dtdef_t *dtd;
 
 	/* Technically to match a struct or union we need to check both
 	   ways (src members vs. dst, dst members vs. src) but we make
