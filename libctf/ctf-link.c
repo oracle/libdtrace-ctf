@@ -342,10 +342,10 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 	    ctf_dprintf ("Cannot link type %lx from archive member %s, input file %s "
 			 "into output link: %s\n", type, arg->arcname, arg->file_name,
 			 ctf_errmsg (err));
-          /* We must ignore this problem or we end up losing future types, then
-             trying to link the variables in, then exploding.  Better to link as
-             much as possible.  XXX when we add a proper link warning
-             infrastructure, we should report the error here!  */
+	  /* We must ignore this problem or we end up losing future types, then
+	     trying to link the variables in, then exploding.  Better to link as
+	     much as possible.  XXX when we add a proper link warning
+	     infrastructure, we should report the error here!  */
 	  return 0;
 	}
       ctf_set_errno (arg->out_fp, 0);
@@ -353,7 +353,7 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
 
   if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->file_name,
 					  arg->cu_name)) == NULL)
-    return -1;	 				/* Errno is set for us.  */
+    return -1;					/* Errno is set for us.  */
 
   if (ctf_add_type (per_cu_out_fp, arg->in_fp, type) != CTF_ERR)
     return 0;
@@ -361,13 +361,13 @@ ctf_link_one_type (ctf_id_t type, int isroot _libctf_unused_, void *arg_)
   err = ctf_errno (per_cu_out_fp);
   if (err != ECTF_NONREPRESENTABLE)
     ctf_dprintf ("Cannot link type %lx from CTF archive member %s, input file %s "
-                 "into output per-CU CTF archive member %s: %s: skipped\n", type,
-                 arg->arcname, arg->file_name, arg->arcname,
-                 ctf_errmsg (err));
+		 "into output per-CU CTF archive member %s: %s: skipped\n", type,
+		 arg->arcname, arg->file_name, arg->arcname,
+		 ctf_errmsg (err));
   if (err == ECTF_CONFLICT)
       /* Conflicts are possible at this stage only if a non-ld user has combined
-         multiple TUs into a single output dictionary.  Even in this case we do not
-         want to stop the link or propagate the error.  */
+	 multiple TUs into a single output dictionary.  Even in this case we do not
+	 want to stop the link or propagate the error.  */
       ctf_set_errno (arg->out_fp, 0);
 
   return 0;					/* As above: do not lose types.  */
@@ -389,12 +389,12 @@ check_variable (const char *name, ctf_file_t *fp, ctf_id_t type,
   if (dvd->dvd_type != type)
     {
       /* Variable here.  Wrong type: cannot add.  Just skip it, because there is
-         no way to express this in CTF.  (This might be the parent, in which
-         case we'll try adding in the child first, and only then give up.)  */
+	 no way to express this in CTF.  (This might be the parent, in which
+	 case we'll try adding in the child first, and only then give up.)  */
       ctf_dprintf ("Inexpressible duplicate variable %s skipped.\n", name);
     }
 
-  return 0;                                   /* Already exists.  */
+  return 0;				      /* Already exists.  */
 }
 
 /* Link one variable in.  */
@@ -418,19 +418,19 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
   if (dst_type != 0)
     {
       if (check_fp == arg->out_fp)
-        {
-          if (check_variable (name, check_fp, dst_type, &dvd))
-            {
-              /* No variable here: we can add it.  */
-              if (ctf_add_variable (check_fp, name, dst_type) < 0)
-                return (ctf_set_errno (arg->out_fp, ctf_errno (check_fp)));
-              return 0;
-            }
+	{
+	  if (check_variable (name, check_fp, dst_type, &dvd))
+	    {
+	      /* No variable here: we can add it.  */
+	      if (ctf_add_variable (check_fp, name, dst_type) < 0)
+		return (ctf_set_errno (arg->out_fp, ctf_errno (check_fp)));
+	      return 0;
+	    }
 
-          /* Already present?  Nothing to do.  */
-          if (dvd && dvd->dvd_type == type)
-            return 0;
-        }
+	  /* Already present?  Nothing to do.  */
+	  if (dvd && dvd->dvd_type == type)
+	    return 0;
+	}
     }
 
   /* Can't add to the parent due to a name clash, or because it references a
@@ -439,7 +439,7 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
 
   if ((per_cu_out_fp = ctf_create_per_cu (arg->out_fp, arg->file_name,
 					  arg->cu_name)) == NULL)
-    return -1;	 				/* Errno is set for us.  */
+    return -1;					/* Errno is set for us.  */
 
   /* If the type was not found, check for it in the child too. */
   if (dst_type == 0)
@@ -449,10 +449,10 @@ ctf_link_one_variable (const char *name, ctf_id_t type, void *arg_)
 
       if (dst_type == 0)
 	{
-          ctf_dprintf ("Type %lx for variable %s in input file %s not "
-                       "found: skipped.\n", type, name, arg->file_name);
-          /* Do not terminate the link: just skip the variable.  */
-          return 0;
+	  ctf_dprintf ("Type %lx for variable %s in input file %s not "
+		       "found: skipped.\n", type, name, arg->file_name);
+	  /* Do not terminate the link: just skip the variable.  */
+	  return 0;
 	}
     }
 
@@ -522,7 +522,7 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
   free (arg->arcname);
 
   if (err < 0)
-      return -1;                                /* Errno is set for us.  */
+      return -1;				/* Errno is set for us.  */
 
   return 0;
 }
@@ -530,7 +530,7 @@ ctf_link_one_input_archive_member (ctf_file_t *in_fp, const char *name, void *ar
 /* Dump the unnecessary link type mapping after one input file is processed.  */
 static void
 empty_link_type_mapping (void *key _libctf_unused_, void *value,
-                         void *arg _libctf_unused_)
+			 void *arg _libctf_unused_)
 {
   ctf_file_t *fp = (ctf_file_t *) value;
 

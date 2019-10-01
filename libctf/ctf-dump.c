@@ -246,7 +246,7 @@ ctf_dump_header (ctf_file_t *fp, ctf_dump_state_t *state)
       if (fp->ctf_openflags)
 	if (asprintf (&str, "Flags: 0x%x (%s)", fp->ctf_openflags,
 		      fp->ctf_openflags & CTF_F_COMPRESS ? "CTF_F_COMPRESS"
-		                                         : "") < 0)
+							 : "") < 0)
 	goto err;
       ctf_dump_append (state, str);
     }
@@ -607,7 +607,7 @@ ctf_dump_type (ctf_id_t id, int flag, void *arg)
 
  err:
   ctf_dprintf ("Cannot %s dumping type 0x%lx: %s\n", err, id,
-               ctf_errmsg (ctf_errno (state->cds_fp)));
+	       ctf_errmsg (ctf_errno (state->cds_fp)));
   free (str);
   return -1;				/* errno is set for us.  */
 }

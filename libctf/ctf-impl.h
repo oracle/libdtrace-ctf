@@ -418,7 +418,7 @@ extern char *ctf_decl_buf (ctf_decl_t *cd);
 extern const char *ctf_strptr (ctf_file_t *, uint32_t);
 extern const char *ctf_strraw (ctf_file_t *, uint32_t);
 extern const char *ctf_strraw_explicit (ctf_file_t *, uint32_t,
-                                        ctf_strs_t *);
+					ctf_strs_t *);
 extern int ctf_str_create_atoms (ctf_file_t *);
 extern void ctf_str_free_atoms (ctf_file_t *);
 extern uint32_t ctf_str_add (ctf_file_t *, const char *);

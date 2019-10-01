@@ -26,7 +26,7 @@ ctf_strraw_explicit (ctf_file_t *fp, uint32_t name, ctf_strs_t *strtab)
   if (CTF_NAME_STID (name) == CTF_STRTAB_1
       && fp->ctf_syn_ext_strtab != NULL)
     return ctf_dynhash_lookup (fp->ctf_syn_ext_strtab,
-                               (void *) (uintptr_t) name);
+			       (void *) (uintptr_t) name);
 
   /* If the name is in the internal strtab, and the offset is beyond the end of
      the ctsp->cts_len but below the ctf_str_prov_offset, this is a provisional

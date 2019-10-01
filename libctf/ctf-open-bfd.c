@@ -145,7 +145,7 @@ ctf_bfdopen_ctfsect (struct bfd *abfd _libctf_unused_,
     }
 
   isymbuf = bfd_elf_get_elf_syms (abfd, symhdr, symcount, 0,
-                                  NULL, symtab, NULL);
+				  NULL, symtab, NULL);
   free (isymbuf);
   if (isymbuf == NULL)
     {
@@ -158,22 +158,22 @@ ctf_bfdopen_ctfsect (struct bfd *abfd _libctf_unused_,
     {
       strhdr = elf_elfsections (abfd)[symhdr->sh_link];
       if (strhdr->contents == NULL)
-        {
-          if ((strtab = bfd_elf_get_str_section (abfd, symhdr->sh_link)) == NULL)
-            {
-              bfderrstr = "Cannot read string table";
-              goto err_free_sym;
-            }
-        }
+	{
+	  if ((strtab = bfd_elf_get_str_section (abfd, symhdr->sh_link)) == NULL)
+	    {
+	      bfderrstr = "Cannot read string table";
+	      goto err_free_sym;
+	    }
+	}
       else
-        strtab = (const char *) strhdr->contents;
+	strtab = (const char *) strhdr->contents;
     }
 
   if (strtab)
     {
       /* The names here are more or less arbitrary, but there is no point
-         thrashing around digging the name out of the shstrtab given that we don't
-         use it for anything but debugging.  */
+	 thrashing around digging the name out of the shstrtab given that we don't
+	 use it for anything but debugging.  */
 
       strsect.cts_data = strtab;
       strsect.cts_name = ".strtab";

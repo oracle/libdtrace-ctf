@@ -477,7 +477,7 @@ ctf_serialize (ctf_file_t *fp)
      ctf_varent_t's.  */
   ctf_sort_var_arg_cb_t sort_var_arg = { fp, (ctf_strs_t *) &strtab };
   ctf_qsort_r (dvarents, nvars, sizeof (ctf_varent_t), ctf_sort_var,
-               &sort_var_arg);
+	       &sort_var_arg);
 
   if ((newbuf = ctf_realloc (fp, buf, buf_size + strtab.cts_len)) == NULL)
     {
@@ -1644,21 +1644,21 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
   if (tmp != 0)
     {
       if (ctf_dynhash_lookup (proc_tracking_fp->ctf_add_processing,
-                              (void *) (uintptr_t) src_type))
+			      (void *) (uintptr_t) src_type))
 	return tmp;
 
       /* If this type has already been added from this container, and is the same
-         kind and (if a struct or union) has the same number of members, hand it
-         straight back.  */
+	 kind and (if a struct or union) has the same number of members, hand it
+	 straight back.  */
 
       if ((ctf_type_kind_unsliced (tmp_fp, tmp) == (int) kind)
 	  && (kind == CTF_K_STRUCT || kind == CTF_K_UNION
 	      || kind == CTF_K_ENUM))
-        {
-          if ((dst_tp = ctf_lookup_by_id (&tmp_fp, dst_type)) != NULL)
+	{
+	  if ((dst_tp = ctf_lookup_by_id (&tmp_fp, dst_type)) != NULL)
 	    if (vlen == LCTF_INFO_VLEN (tmp_fp, dst_tp->ctt_info))
 	      return tmp;
-        }
+	}
     }
 
   forward_kind = kind;
@@ -1758,7 +1758,7 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	  else
 	    {
 	      /* We found a non-root-visible type in the hash.  If its encoding
-	         is the same, we can reuse it, unless it is a slice.  */
+		 is the same, we can reuse it, unless it is a slice.  */
 
 	      if (memcmp (&src_en, &dst_en, sizeof (ctf_encoding_t)) == 0)
 		{
@@ -1789,7 +1789,7 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
      wholesale at the end of processing everything in this recursive stack.  */
 
   if (ctf_dynhash_insert (proc_tracking_fp->ctf_add_processing,
-                          (void *) (uintptr_t) src_type, (void *) 1) < 0)
+			  (void *) (uintptr_t) src_type, (void *) 1) < 0)
     return ctf_set_errno (dst_fp, ENOMEM);
 
   switch (kind)
@@ -1933,9 +1933,9 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	dst.ctb_type = dst_type;
 	dst.ctb_dtd = dtd;
 
-        /* Pre-emptively add this struct to the type mapping so that
-           structures that refer to themselves work.  */
-        ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
+	/* Pre-emptively add this struct to the type mapping so that
+	   structures that refer to themselves work.  */
+	ctf_add_type_mapping (src_fp, src_type, dst_fp, dst_type);
 
 	if (ctf_member_iter (src_fp, src_type, membadd, &dst) != 0)
 	  errs++;	       /* Increment errs and fail at bottom of case.  */
@@ -1964,22 +1964,22 @@ ctf_add_type_internal (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type
 	for (dmd = ctf_list_next (&dtd->dtd_u.dtu_members);
 	     dmd != NULL; dmd = ctf_list_next (dmd))
 	  {
-            ctf_file_t *dst = dst_fp;
-            ctf_id_t memb_type;
+	    ctf_file_t *dst = dst_fp;
+	    ctf_id_t memb_type;
 
 	    memb_type = ctf_type_mapping (src_fp, dmd->dmd_type, &dst);
 	    if (memb_type == 0)
-              {
-                if ((dmd->dmd_type =
+	      {
+		if ((dmd->dmd_type =
 		     ctf_add_type_internal (dst_fp, src_fp, dmd->dmd_type,
 					    proc_tracking_fp)) == CTF_ERR)
-                  {
-                    if (ctf_errno (dst_fp) != ECTF_NONREPRESENTABLE)
-                      errs++;
-                  }
-              }
-            else
-              dmd->dmd_type = memb_type;
+		  {
+		    if (ctf_errno (dst_fp) != ECTF_NONREPRESENTABLE)
+		      errs++;
+		  }
+	      }
+	    else
+	      dmd->dmd_type = memb_type;
 	  }
 
 	if (errs)
@@ -2050,8 +2050,8 @@ ctf_add_type (ctf_file_t *dst_fp, ctf_file_t *src_fp, ctf_id_t src_type)
 
   if (!src_fp->ctf_add_processing)
     src_fp->ctf_add_processing = ctf_dynhash_create (ctf_hash_integer,
-                                                     ctf_hash_eq_integer,
-                                                     NULL, NULL);
+						     ctf_hash_eq_integer,
+						     NULL, NULL);
 
   /* We store the hash on the source, because it contains only source type IDs:
      but callers will invariably expect errors to appear on the dest.  */
