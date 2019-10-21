@@ -782,7 +782,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
   for (id = 1, tp = tbuf; tp < tend; xp++, id++)
     {
       unsigned short kind = LCTF_INFO_KIND (fp, tp->ctt_info);
-      unsigned short flag = LCTF_INFO_ISROOT (fp, tp->ctt_info);
+      unsigned short isroot = LCTF_INFO_ISROOT (fp, tp->ctt_info);
       unsigned long vlen = LCTF_INFO_VLEN (fp, tp->ctt_info);
       ssize_t size, increment, vbytes;
 
@@ -804,7 +804,7 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 
 	  if (((ctf_hash_lookup_type (fp->ctf_names.ctn_readonly,
 				      fp, name)) == 0)
-	      || (flag & CTF_ADD_ROOT))
+	      || isroot)
 	    {
 	      err = ctf_hash_define_type (fp->ctf_names.ctn_readonly, fp,
 					  LCTF_INDEX_TO_TYPE (fp, id, child),
@@ -821,6 +821,9 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_FUNCTION:
+	  if (!isroot)
+	    break;
+
 	  err = ctf_hash_insert_type (fp->ctf_names.ctn_readonly, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
@@ -829,6 +832,12 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_STRUCT:
+	  if (size >= CTF_LSTRUCT_THRESH)
+	    nlstructs++;
+
+	  if (!isroot)
+	    break;
+
 	  err = ctf_hash_define_type (fp->ctf_structs.ctn_readonly, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
@@ -836,23 +845,27 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  if (err != 0)
 	    return err;
 
-	  if (size >= CTF_LSTRUCT_THRESH)
-	    nlstructs++;
 	  break;
 
 	case CTF_K_UNION:
+	  if (size >= CTF_LSTRUCT_THRESH)
+	    nlunions++;
+
+	  if (!isroot)
+	    break;
+
 	  err = ctf_hash_define_type (fp->ctf_unions.ctn_readonly, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
 
 	  if (err != 0)
 	    return err;
-
-	  if (size >= CTF_LSTRUCT_THRESH)
-	    nlunions++;
 	  break;
 
 	case CTF_K_ENUM:
+	  if (!isroot)
+	    break;
+
 	  err = ctf_hash_define_type (fp->ctf_enums.ctn_readonly, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
@@ -862,6 +875,9 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	  break;
 
 	case CTF_K_TYPEDEF:
+	  if (!isroot)
+	    break;
+
 	  err = ctf_hash_insert_type (fp->ctf_names.ctn_readonly, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
@@ -872,6 +888,10 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	case CTF_K_FORWARD:
 	  {
 	    ctf_names_t *np = ctf_name_table (fp, tp->ctt_type);
+
+	    if (!isroot)
+	      break;
+
 	    /* Only insert forward tags into the given hash if the type or tag
 	       name is not already present.  */
 	    if (ctf_hash_lookup_type (np->ctn_readonly, fp, name) == 0)
@@ -898,6 +918,9 @@ init_types (ctf_file_t *fp, ctf_header_t *cth)
 	case CTF_K_VOLATILE:
 	case CTF_K_CONST:
 	case CTF_K_RESTRICT:
+	  if (!isroot)
+	    break;
+
 	  err = ctf_hash_insert_type (fp->ctf_names.ctn_readonly, fp,
 				      LCTF_INDEX_TO_TYPE (fp, id, child),
 				      tp->ctt_name);
