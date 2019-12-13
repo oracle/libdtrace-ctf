@@ -14,7 +14,7 @@ libdtrace-ctf_DIR := $(current-dir)
 libdtrace-ctf_SOURCES = ctf-open.c ctf-open-bfd.c ctf-archive.c ctf-create.c \
                         ctf-error.c ctf-hash.c ctf-labels.c ctf-link.c \
                         ctf-lookup.c ctf-decl.c ctf-types.c ctf-dump.c \
-			ctf-string.c ctf-subr.c ctf-util.c
+			ctf-string.c ctf-subr.c ctf-util.c bsearch_r.c
 libdtrace-ctf_LIBS := $(shell pkg-config --libs glib-2.0) -lbfd -lz
 libdtrace-ctf_VERSION := 1.6.0
 libdtrace-ctf_SONAME := libdtrace-ctf.so.1

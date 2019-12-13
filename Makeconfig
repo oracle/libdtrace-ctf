@@ -71,5 +71,6 @@ $(CONFIG_H):
 
 $(eval $(call check-symbol-rule,MMAP,mmap,c))
 $(eval $(call check-symbol-rule,PREAD,pread,c))
+$(eval $(call check-symbol-rule,BSEARCH_R,bsearch_r,c))
 $(eval $(call check-header-rule,BYTESWAP,byteswap.h))
 $(eval $(call check-header-rule,ENDIAN,endian.h))

@@ -18,6 +18,14 @@
 #define ctf_qsort_r(base, nmemb, size, compar, arg)	\
   qsort_r ((base), (nmemb), (size), (compar), (arg))
 
+#ifndef HAVE_BSEARCH_R
+extern void *
+bsearch_r (register const void *key, const void *base0,
+	   size_t nmemb, register size_t size,
+	   register int (*compar)(const void *, const void *, void *),
+	   void *arg);
+#endif
+
 #define xstrdup(str) strdup (str)
 #define xstrndup(str, n) strndup (str, n)
 
