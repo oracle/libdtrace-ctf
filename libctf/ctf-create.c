@@ -11,6 +11,7 @@
 #include <sys/param.h>
 #include <assert.h>
 #include <string.h>
+#include <unistd.h>
 #include <zlib.h>
 
 #ifndef roundup
