@@ -67,6 +67,7 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
 
   if ((arc = ctf_bfdopen_ctfsect (abfd, &ctfsect, errp)) != NULL)
     {
+      /* This frees the cts_data later.  */
       arc->ctfi_data = (void *) ctfsect.cts_data;
       return arc;
     }
@@ -76,8 +77,7 @@ ctf_bfdopen (struct bfd *abfd, int *errp)
 }
 
 /* Open a CTF file given the specified BFD and CTF section (which may contain a
-   CTF archive or a file).  Takes ownership of the ctfsect, and frees it
-   later.  */
+   CTF archive or a file).  */
 
 ctf_archive_t *
 ctf_bfdopen_ctfsect (struct bfd *abfd _libctf_unused_,
@@ -152,9 +152,8 @@ ctf_bfdopen_ctfsect (struct bfd *abfd _libctf_unused_,
   arci = ctf_arc_bufopen (ctfsect, symsectp, strsectp, errp);
   if (arci)
     {
-      /* Stop the archive machinery freeing the strsect: it is bound to the
-	 bfd.  */
-      arci->ctfi_free_strsect = 0;
+      /* Request freeing of the symsect.  */
+      arci->ctfi_free_symsect = 1;
       return arci;
     }
 #ifdef HAVE_BFD_ELF

@@ -363,7 +363,7 @@ ctf_new_archive_internal (int is_archive, struct ctf_archive *arc,
      memcpy (&arci->ctfi_symsect, symsect, sizeof (struct ctf_sect));
   if (strsect)
      memcpy (&arci->ctfi_strsect, strsect, sizeof (struct ctf_sect));
-  arci->ctfi_free_strsect = 1;
+  arci->ctfi_free_symsect = 0;
 
   return arci;
 }
@@ -477,9 +477,8 @@ ctf_arc_close (ctf_archive_t *arc)
     ctf_arc_close_internal (arc->ctfi_archive);
   else
     ctf_file_close (arc->ctfi_file);
-  free ((void *) arc->ctfi_symsect.cts_data);
-  if (arc->ctfi_free_strsect)
-    free ((void *) arc->ctfi_strsect.cts_data);
+  if (arc->ctfi_free_symsect)
+    free ((void *) arc->ctfi_symsect.cts_data);
   free (arc->ctfi_data);
   if (arc->ctfi_bfd_close)
     arc->ctfi_bfd_close (arc);
