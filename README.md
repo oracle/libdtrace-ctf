@@ -18,12 +18,16 @@ with `libdtrace-ctf` for the Linux kernel.
 
 ## License
 
-Dual License: GPL and UPL (Universal Permissive License) https://oss.oracle.com/licenses/upl/
+libdtrace-ctf is licensed under either the GPLv2+ or the UPL 1.0 (Universal
+Permissive License). A copy of the GPLv2 license is included in this repository
+as the COPYING file. A copy of the UPL 1.0 license is included in this repository
+as the LICENSE file.
 
 ## Dependencies
 
-Dependencies include:
-- elfutils
+Dependencies may include:
+- elfutils (to the extent that elfutils is utilized, libdtrace-ctf uses only
+  those portions of elfutils that are licensed LGPLv3)
 - zlib
 
 ## Build
