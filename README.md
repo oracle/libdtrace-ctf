@@ -21,7 +21,7 @@ with `libdtrace-ctf` for the Linux kernel.
 libdtrace-ctf is licensed under either the GPLv2+ or the UPL 1.0 (Universal
 Permissive License). A copy of the GPLv2 license is included in this repository
 as the COPYING file. A copy of the UPL 1.0 license is included in this repository
-as the LICENSE file.
+as the LICENSE.txt file.
 
 ## Dependencies
 
@@ -46,10 +46,16 @@ For more detail, see [README.build-system](README.build-system).
 For questions, check the
 [dtrace-devel mailing list](https://oss.oracle.com/mailman/listinfo/dtrace-devel).
 
-## Pull Requests and Support
+## Contributing
 
-We currently do not accept pull requests via GitHub, please contact us via the mailing list above.
+This project is not accepting external contributions at this time. For bugs or enhancement requests, please file a GitHub issue unless it’s security related. When filing a bug remember that the better written the bug is, the more likely it is to be fixed. If you think you’ve found a security vulnerability, do not raise a GitHub issue and follow the instructions in our [security policy](./SECURITY.md).
+
+Please contact us via the mailing list above.
 
 The source code for libdtrace-ctf is published here without support. Compiled binaries are provided as part of Oracle Linux,
 which is [free to download](http://www.oracle.com/technetwork/server-storage/linux/downloads/index.html), distribute and use.
 Support for libdtrace-ctf is included in Oracle Linux support subscriptions. Individual packages and updates are available on the [Oracle Linux yum server](https://yum.oracle.com).
+
+## Security
+
+Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process
