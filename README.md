@@ -1,3 +1,13 @@
+# NOTE
+
+This project is in effect dead: it is only used by obsolete versions of
+its dependent projects, and is unlikely ever to see another release.
+
+The project has been merged into GNU binutils 2.33 and GCC 12; as of
+binutils 2.36 it is much more capable and can deduplicate CTF more reliably
+and rapidly than any other implementation (to my knowledge).  Please submit
+changes to [binutils upstream](https://sourceware.org/binutils/).
+
 # Linux libdtrace-ctf
 
 libdtrace-ctf is a port of the Solaris Compact Type Format library to Linux.
