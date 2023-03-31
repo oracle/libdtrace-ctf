@@ -1,12 +1,15 @@
 # NOTE
 
-This project is in effect dead: it is only used by obsolete versions of
-its dependent projects, and is unlikely ever to see another release.
+This project is superseded by the CTF support in GNU binutils: it is only
+used by old versions of its dependent projects.  It is still published here
+in case a bugfix is needed to support one of those projects.
 
 The project has been merged into GNU binutils 2.33 and GCC 12; as of
 binutils 2.36 it is much more capable and can deduplicate CTF more reliably
 and rapidly than any other implementation (to my knowledge).  Please submit
-changes to [binutils upstream](https://sourceware.org/binutils/).
+changes to [binutils upstream](https://sourceware.org/binutils/).  (Please
+indicate if you need those changes in an old project that still uses
+libdtrace-ctf, but all changes should flow in through GNU binutils first.)
 
 # Linux libdtrace-ctf
 
